@@ -127,4 +127,21 @@ export const BOTTOM_NAV_ITEMS = [
   { href: "/settings", label: "Ajustes", icon: "settings" }
 ] as const;
 
+export const BOSS_POINT_RULES = {
+  perSet: 5,
+  habitCompletionBonus: 10,
+  dayCompletionBonus: 20,
+  streakMilestoneBonus: 35,
+  streakMilestoneInterval: 7
+} as const;
+
+export const LEVEL_TITLES = [
+  "Base",
+  "Momentum",
+  "Disciplina",
+  "Enfoque",
+  "Dominio",
+  "Boss"
+] as const;
+
 export const STORAGE_KEY = "bossfit-store";

@@ -15,6 +15,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PageHeader } from "@/components/ui/page-header";
 import { formatLongDate, getGreeting } from "@/lib/date";
 import { getDashboardSnapshot, getHabitProgress } from "@/lib/habit-logic";
+import { getBossProfile } from "@/lib/progress-analytics";
 import { formatHabitTarget } from "@/lib/utils";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
@@ -33,6 +34,7 @@ export default function DashboardPage() {
 
   const today = new Date();
   const snapshot = getDashboardSnapshot(habits, completions, today);
+  const bossProfile = getBossProfile(habits, completions, today);
   const dateLabel = formatLongDate(today);
   const greeting = getGreeting(today);
 
@@ -48,7 +50,7 @@ export default function DashboardPage() {
         }
       />
 
-      <DashboardHero snapshot={snapshot} greeting={greeting} dateLabel={dateLabel} />
+      <DashboardHero snapshot={snapshot} bossProfile={bossProfile} greeting={greeting} dateLabel={dateLabel} />
 
       {habits.length === 0 ? (
         <EmptyState
@@ -61,20 +63,20 @@ export default function DashboardPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <Card>
-              <p className="text-sm text-foreground/60">Plan de hoy</p>
-              <p className="mt-2 font-display text-3xl font-semibold text-foreground">{snapshot.scheduledHabits.length}</p>
-              <p className="text-sm text-foreground/65">hábitos programados</p>
+              <p className="text-sm text-muted-foreground">Plan de hoy</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-card-foreground">{snapshot.scheduledHabits.length}</p>
+              <p className="text-sm text-muted-foreground">hábitos programados</p>
               <Link href="/today" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-accent">
                 Abrir hábitos de hoy
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Card>
             <Card>
-              <p className="text-sm text-foreground/60">Pendientes</p>
-              <p className="mt-2 font-display text-3xl font-semibold text-foreground">{snapshot.pendingHabits}</p>
-              <p className="text-sm text-foreground/65">por cerrar antes de terminar el día</p>
+              <p className="text-sm text-muted-foreground">Nivel actual</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-card-foreground">{bossProfile.levelProgress.level}</p>
+              <p className="text-sm text-muted-foreground">{bossProfile.levelProgress.pointsToNextLevel} pts para subir</p>
               <Link href="/progress" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-accent">
-                Ver estadísticas
+                Ver progreso y gráficas
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Card>
@@ -101,10 +103,10 @@ export default function DashboardPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <h3 className="font-display text-lg font-semibold text-foreground">{habit.name}</h3>
-                              <p className="text-sm text-foreground/60">{formatHabitTarget(habit.targetSets, habit.repsPerSet)}</p>
+                              <h3 className="font-display text-lg font-semibold text-card-foreground">{habit.name}</h3>
+                              <p className="text-sm text-muted-foreground">{formatHabitTarget(habit.targetSets, habit.repsPerSet)}</p>
                             </div>
-                            <div className="text-right text-sm text-foreground/60">
+                            <div className="text-right text-sm text-muted-foreground">
                               <p>{progress.completedSets}/{habit.targetSets}</p>
                               <p>{progress.statusMessage}</p>
                             </div>

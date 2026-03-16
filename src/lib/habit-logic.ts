@@ -129,6 +129,7 @@ export function getWeeklySummary(
 
   return {
     streak: calculateCurrentStreak(habits, completions, date),
+    bestStreak: calculateCurrentStreak(habits, completions, date),
     completedHabitDays,
     scheduledHabitDays,
     compliance: safePercentage(completedHabitDays, scheduledHabitDays),

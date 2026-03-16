@@ -8,7 +8,7 @@ import { toDateKey } from "@/lib/date";
 import { createMockState } from "@/lib/mock-data";
 import { generateId } from "@/lib/utils";
 import type { HabitFormValues } from "@/lib/validation/habit";
-import type { DailyCompletion, Habit, ThemeMode } from "@/types/habit";
+import type { DailyCompletion, Habit, ReminderSettings, ThemeMode } from "@/types/habit";
 
 interface CompletionResult {
   completedSets: number;
@@ -19,6 +19,7 @@ interface BossFitState {
   habits: Habit[];
   completions: DailyCompletion[];
   theme: ThemeMode;
+  reminderSettings: ReminderSettings;
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   addHabit: (values: HabitFormValues) => string;
@@ -29,6 +30,7 @@ interface BossFitState {
   undoSet: (habitId: string, dateKey?: string) => number | null;
   resetCompletion: (habitId: string, dateKey?: string) => void;
   setTheme: (theme: ThemeMode) => void;
+  updateReminderSettings: (values: Partial<ReminderSettings>) => void;
   resetAppData: () => void;
 }
 
@@ -53,12 +55,18 @@ function upsertCompletion(
 }
 
 const mockState = createMockState();
+const defaultReminderSettings: ReminderSettings = {
+  enabled: false,
+  time: "19:00",
+  permission: "default"
+};
 
 export const useBossFitStore = create<BossFitState>()(
   persist(
     (set, get) => ({
       ...mockState,
       theme: "light",
+      reminderSettings: defaultReminderSettings,
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
       addHabit: (values) => {
@@ -204,11 +212,19 @@ export const useBossFitStore = create<BossFitState>()(
         }));
       },
       setTheme: (theme) => set({ theme }),
+      updateReminderSettings: (values) =>
+        set((state) => ({
+          reminderSettings: {
+            ...state.reminderSettings,
+            ...values
+          }
+        })),
       resetAppData: () => {
         const freshState = createMockState();
         set({
           ...freshState,
           theme: get().theme,
+          reminderSettings: get().reminderSettings,
           hasHydrated: true
         });
       }
@@ -219,7 +235,8 @@ export const useBossFitStore = create<BossFitState>()(
       partialize: (state) => ({
         habits: state.habits,
         completions: state.completions,
-        theme: state.theme
+        theme: state.theme,
+        reminderSettings: state.reminderSettings
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

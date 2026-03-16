@@ -25,6 +25,14 @@ export function parseDateKey(dateKey: string) {
   return new Date(year, month - 1, day, 12, 0, 0, 0);
 }
 
+export function compareDateKeys(left: string, right: string) {
+  if (left === right) {
+    return 0;
+  }
+
+  return left < right ? -1 : 1;
+}
+
 export function getWeekdayKey(date: Date): WeekdayKey {
   const keys: WeekdayKey[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   return keys[date.getDay()];
@@ -46,10 +54,40 @@ export function getWeekDates(anchor: Date = new Date()) {
   return Array.from({ length: 7 }, (_, index) => addDays(start, index));
 }
 
+export function startOfMonth(date: Date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 12, 0, 0, 0);
+}
+
+export function endOfMonth(date: Date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 12, 0, 0, 0);
+}
+
+export function isSameMonth(left: Date, right: Date) {
+  return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth();
+}
+
+export function getMonthGridDates(anchor: Date = new Date()) {
+  const monthStart = startOfMonth(anchor);
+  const monthEnd = endOfMonth(anchor);
+  const gridStart = startOfWeek(monthStart);
+  const monthEndWeekStart = startOfWeek(monthEnd);
+  const gridEnd = addDays(monthEndWeekStart, 6);
+  const totalDays = Math.round((startOfDay(gridEnd).getTime() - startOfDay(gridStart).getTime()) / 86400000) + 1;
+
+  return Array.from({ length: totalDays }, (_, index) => addDays(gridStart, index));
+}
+
 export function formatDayMonth(date: Date) {
   return new Intl.DateTimeFormat("es-CR", {
     day: "numeric",
     month: "short"
+  }).format(date);
+}
+
+export function formatMonthYear(date: Date) {
+  return new Intl.DateTimeFormat("es-CR", {
+    month: "long",
+    year: "numeric"
   }).format(date);
 }
 

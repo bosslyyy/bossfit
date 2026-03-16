@@ -16,6 +16,10 @@ export type HabitIcon = "flame" | "dumbbell" | "heart" | "mountain" | "bolt" | "
 
 export type ThemeMode = "light" | "dark";
 
+export type DayCompletionStatus = "complete" | "partial" | "missed" | "none";
+
+export type ReminderPermissionState = NotificationPermission | "unsupported";
+
 export interface HabitSchedule {
   habitId: string;
   days: WeekdayKey[];
@@ -61,6 +65,30 @@ export interface DailyOverview {
   pendingCount: number;
   completionPercentage: number;
   points: number;
+  completedSets: number;
+  totalSets: number;
+  status: DayCompletionStatus;
+  streakAfterDay: number;
+}
+
+export interface LevelProgress {
+  level: number;
+  title: string;
+  currentPoints: number;
+  levelStartPoints: number;
+  nextLevelPoints: number;
+  progressPercentage: number;
+  pointsToNextLevel: number;
+  pointsIntoLevel: number;
+  message: string;
+}
+
+export interface BossProfile {
+  totalPoints: number;
+  todayPoints: number;
+  currentStreak: number;
+  bestStreak: number;
+  levelProgress: LevelProgress;
 }
 
 export interface DashboardSnapshot {
@@ -75,6 +103,7 @@ export interface DashboardSnapshot {
 
 export interface WeeklySummary {
   streak: number;
+  bestStreak: number;
   completedHabitDays: number;
   scheduledHabitDays: number;
   compliance: number;
@@ -89,4 +118,44 @@ export interface HabitHistoryPoint {
   completedSets: number;
   targetSets: number;
   isCompleted: boolean;
+}
+
+export interface CompletionCalendarEntry {
+  date: string;
+  shortLabel: string;
+  completed: number;
+  scheduled: number;
+  percentage: number;
+  points: number;
+  status: DayCompletionStatus;
+}
+
+export interface ProgressChartPoint {
+  date: string;
+  label: string;
+  shortLabel: string;
+  completedHabits: number;
+  scheduledHabits: number;
+  percentage: number;
+  points: number;
+  status: DayCompletionStatus;
+}
+
+export interface CalendarDay {
+  date: string;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isFuture: boolean;
+  status: DayCompletionStatus;
+  scheduledCount: number;
+  completedCount: number;
+  points: number;
+}
+
+export interface ReminderSettings {
+  enabled: boolean;
+  time: string;
+  permission: ReminderPermissionState;
+  lastSentDate?: string;
 }

@@ -1,6 +1,6 @@
 ﻿# BossFit
 
-BossFit es una PWA fitness mobile-first para crear hábitos, marcar series completadas por día y seguir progreso semanal con una experiencia premium tipo app.
+BossFit es una PWA fitness mobile-first para crear hábitos, marcar series completadas por día y seguir progreso real con una experiencia premium tipo app.
 
 ## Stack
 
@@ -11,16 +11,17 @@ BossFit es una PWA fitness mobile-first para crear hábitos, marcar series compl
 - PWA manual con manifest, iconos y service worker
 - Estructura lista para integrar Supabase después
 
-## Funcionalidades del MVP
+## Funcionalidades actuales
 
 - CRUD completo de hábitos
 - Programación por días con selector táctil `L M X J V S D`
 - Ejecución diaria por series, no por repetición individual
 - Persistencia local con `localStorage`
-- Dashboard con progreso del día
+- Dashboard con progreso del día, racha actual, mejor racha, Boss Points y nivel
 - Vista de hoy con estado `0/3`, `1/3`, `2/3`, `3/3`
-- Vista de progreso con racha, cumplimiento e historial por hábito
-- Ajustes básicos con modo oscuro y reinicio de datos
+- Vista de progreso con resumen semanal, calendario mensual, gráfica de 7 días e historial por hábito
+- Sistema de Boss Points con niveles y progreso al siguiente nivel
+- Ajustes con modo oscuro, recordatorios locales y reinicio de datos
 - Experiencia PWA instalable con soporte iPhone/iOS
 
 ## Requisitos
@@ -68,6 +69,8 @@ src/
     constants.ts
     date.ts
     habit-logic.ts
+    progress-analytics.ts
+    reminders.ts
     mock-data.ts
     validation/habit.ts
     supabase/client.ts
@@ -80,9 +83,34 @@ public/
   favicon.svg
 ```
 
+## Boss Points y niveles
+
+BossFit calcula los puntos a partir del progreso local guardado:
+
+- completar 1 serie: `+5`
+- completar un hábito: `+10`
+- completar todo el día: `+20`
+- alcanzar un múltiplo de 7 días de racha: `+35`
+
+Los niveles crecen de forma progresiva y se derivan automáticamente de tus Boss Points acumulados.
+
+## Recordatorios
+
+BossFit usa la Notifications API del navegador con configuración local:
+
+- activar o desactivar recordatorios
+- elegir una hora diaria
+- guardar permiso y última fecha enviada localmente
+- ejecutar recordatorios mientras BossFit está abierta o instalada en un entorno compatible
+
+Limitación importante:
+
+- sin backend, push remota ni service worker de notificaciones, no existe garantía de recordatorios persistentes cuando la app está cerrada
+- en iPhone/iOS esta limitación es especialmente importante; la experiencia es más fiable si BossFit está instalada en la pantalla de inicio
+
 ## Supabase
 
-El MVP corre sin backend. Para dejar lista una futura conexión:
+El MVP sigue corriendo sin backend. Para dejar lista una futura conexión:
 
 1. Copia `.env.example` a `.env.local`.
 2. Agrega `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.

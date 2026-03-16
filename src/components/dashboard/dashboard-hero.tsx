@@ -1,16 +1,18 @@
-﻿import { Flame, Sparkles, Target } from "lucide-react";
+﻿import { Flame, Sparkles, Target, Trophy } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import type { DashboardSnapshot } from "@/types/habit";
+import type { BossProfile, DashboardSnapshot } from "@/types/habit";
 
 export function DashboardHero({
   snapshot,
+  bossProfile,
   greeting,
   dateLabel
 }: {
   snapshot: DashboardSnapshot;
+  bossProfile: BossProfile;
   greeting: string;
   dateLabel: string;
 }) {
@@ -46,30 +48,56 @@ export function DashboardHero({
               className="bg-border/55 dark:bg-white/10"
               indicatorClassName="bg-gradient-to-r from-[#FF9E4D] to-[#24A47E]"
             />
+            <p className="text-sm text-muted-foreground dark:text-white/65">+{bossProfile.todayPoints} Boss Points hoy</p>
           </div>
 
           <div className="grid gap-3">
             <div className="rounded-[24px] border border-border bg-background/96 p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
               <div className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
                 <Flame className="h-4 w-4" />
-                <span className="text-sm">Racha</span>
+                <span className="text-sm">Racha actual</span>
               </div>
               <p className="mt-3 font-display text-3xl font-semibold text-card-foreground dark:text-white">
-                {snapshot.streak}
+                {bossProfile.currentStreak}
               </p>
-              <p className="text-xs text-muted-foreground dark:text-white/60">días consecutivos</p>
+              <p className="text-xs text-muted-foreground dark:text-white/60">días seguidos cerrados</p>
             </div>
             <div className="rounded-[24px] border border-border bg-background/96 p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
               <div className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-sm">Boss Points</span>
+                <Trophy className="h-4 w-4" />
+                <span className="text-sm">Mejor racha</span>
               </div>
               <p className="mt-3 font-display text-3xl font-semibold text-card-foreground dark:text-white">
-                {snapshot.totalPoints}
+                {bossProfile.bestStreak}
               </p>
-              <p className="text-xs text-muted-foreground dark:text-white/60">reps convertidas hoy</p>
+              <p className="text-xs text-muted-foreground dark:text-white/60">récord histórico</p>
             </div>
           </div>
+        </div>
+
+        <div className="space-y-3 rounded-[24px] border border-border bg-background/96 p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm">Boss Points</span>
+            </div>
+            <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20 dark:bg-accent/20 dark:text-accent-foreground dark:ring-accent/20">
+              Nivel {bossProfile.levelProgress.level}
+            </Badge>
+          </div>
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="font-display text-4xl font-semibold text-card-foreground dark:text-white">
+                {bossProfile.totalPoints}
+              </p>
+              <p className="text-sm text-muted-foreground dark:text-white/65">{bossProfile.levelProgress.title}</p>
+            </div>
+            <p className="max-w-[11rem] text-right text-xs text-muted-foreground dark:text-white/60">
+              {bossProfile.levelProgress.pointsToNextLevel} pts para el siguiente nivel
+            </p>
+          </div>
+          <ProgressBar value={bossProfile.levelProgress.progressPercentage} className="bg-border/55 dark:bg-white/10" />
+          <p className="text-sm text-muted-foreground dark:text-white/70">{bossProfile.levelProgress.message}</p>
         </div>
 
         <div className="flex items-center justify-between rounded-[24px] border border-border bg-background/96 px-4 py-3 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-white/80">
