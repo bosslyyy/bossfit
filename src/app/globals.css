@@ -1,0 +1,93 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: 245 241 235;
+  --foreground: 20 24 31;
+  --card: 252 251 248;
+  --card-foreground: 20 24 31;
+  --surface: 243 246 249;
+  --muted: 233 238 243;
+  --muted-foreground: 88 99 113;
+  --border: 206 214 224;
+  --accent: 15 124 89;
+  --accent-foreground: 246 251 248;
+  --success: 36 164 126;
+  --danger: 215 82 82;
+  --ring: 15 124 89;
+  --shadow: 15 23 33;
+  --mesh-warm: 244 124 34;
+  --mesh-cool: 15 124 89;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: 11 15 20;
+  --foreground: 241 245 249;
+  --card: 15 20 28;
+  --card-foreground: 241 245 249;
+  --surface: 24 31 40;
+  --muted: 31 40 50;
+  --muted-foreground: 182 190 199;
+  --border: 60 72 84;
+  --accent: 36 164 126;
+  --accent-foreground: 10 17 22;
+  --success: 52 211 153;
+  --danger: 248 113 113;
+  --ring: 36 164 126;
+  --shadow: 2 8 16;
+  --mesh-warm: 244 124 34;
+  --mesh-cool: 36 164 126;
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background: rgb(var(--background));
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+      radial-gradient(circle at top left, rgb(var(--mesh-warm) / 0.06), transparent 28%),
+      radial-gradient(circle at top right, rgb(var(--mesh-cool) / 0.08), transparent 30%),
+      linear-gradient(180deg, rgb(var(--card) / 0.06), rgb(var(--card) / 0)),
+      rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-family: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.18);
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

@@ -1,0 +1,11 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="18" fill="url(#bossfit-gradient)" />
+  <path d="M23 16h10.5c8.8 0 14.5 4.5 14.5 11.8 0 4.9-2.6 8.4-6.9 10.2 5.1 1.6 8.1 5.5 8.1 10.7C49.2 57 42.9 61 33 61H23V16Zm9.1 18.1c4.2 0 6.7-1.9 6.7-5.2 0-3.3-2.5-5.1-6.7-5.1h-.6v10.3h.6Zm1.3 19c4.6 0 7.3-2 7.3-5.6 0-3.7-2.7-5.6-7.3-5.6h-1.9v11.2h1.9Z" fill="white" />
+  <defs>
+    <linearGradient id="bossfit-gradient" x1="10" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F7C59" />
+      <stop offset="0.55" stop-color="#11161D" />
+      <stop offset="1" stop-color="#F47C22" />
+    </linearGradient>
+  </defs>
+</svg>
