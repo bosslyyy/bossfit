@@ -18,7 +18,7 @@ export function HabitCard({ habit }: { habit: Habit }) {
 
   return (
     <Card className={`border bg-card dark:!border-border dark:bg-[#121922] dark:shadow-[0_14px_32px_rgba(2,8,16,0.34)] ${styles.border}`}>
-      <div className="flex items-start justify-between gap-4 text-card-foreground">
+      <div className="flex items-start justify-between gap-4 text-white">
         <div className="flex min-w-0 items-start gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-muted text-card-foreground shadow-sm ring-1 ring-border dark:bg-surface dark:ring-border">
             <HabitIcon icon={habit.icon} />
@@ -26,22 +26,22 @@ export function HabitCard({ habit }: { habit: Habit }) {
           <div className="min-w-0 space-y-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h3 className="truncate font-display text-lg font-semibold text-card-foreground">{habit.name}</h3>
+                <h3 className="truncate font-display text-lg font-semibold text-white">{habit.name}</h3>
                 <Badge
                   className={
                     habit.active
                       ? "bg-accent/12 text-accent ring-1 ring-accent/20 dark:bg-accent/15 dark:text-accent dark:ring-accent/25"
-                      : "bg-muted text-card-foreground ring-1 ring-border dark:bg-surface dark:text-muted-foreground dark:ring-border"
+                      : "bg-muted text-slate-900 ring-1 ring-border dark:bg-surface dark:text-white/80 dark:ring-border"
                   }
                 >
                   {habit.active ? "Activo" : "Pausado"}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-white/70">
                 {formatHabitTarget(habit.targetSets, habit.repsPerSet)} · {formatSelectedDays(habit.selectedDays)}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
               {habit.category ? <span>{habit.category}</span> : null}
               {habit.level ? <span>· {habit.level}</span> : null}
             </div>

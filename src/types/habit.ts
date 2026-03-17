@@ -1,4 +1,4 @@
-﻿export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
 export type HabitCategory =
   | "fuerza"
@@ -158,4 +158,10 @@ export interface ReminderSettings {
   time: string;
   permission: ReminderPermissionState;
   lastSentDate?: string;
+}
+
+export interface CloudSyncState {
+  userId?: string;
+  lastLocalChangeAt?: string;
+  lastSyncedAt?: string;
 }

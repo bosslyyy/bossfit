@@ -1,4 +1,4 @@
-﻿import type { HabitColor, HabitIcon, WeekdayKey } from "@/types/habit";
+import type { HabitColor, HabitIcon, WeekdayKey } from "@/types/habit";
 
 export const WEEK_DAYS: Array<{
   key: WeekdayKey;
@@ -145,7 +145,4 @@ export const LEVEL_TITLES = [
 ] as const;
 
 export const STORAGE_KEY = "bossfit-store";
-export const STORAGE_VERSION = 2;
-
-
-
+export const STORAGE_VERSION = 3;

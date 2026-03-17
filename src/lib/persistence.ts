@@ -1,8 +1,14 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 
 import { STORAGE_VERSION } from "@/lib/constants";
-import type { DailyCompletion, Habit, ReminderSettings, ThemeMode } from "@/types/habit";
+import type {
+  CloudSyncState,
+  DailyCompletion,
+  Habit,
+  ReminderSettings,
+  ThemeMode
+} from "@/types/habit";
 
 const corruptBackupSuffix = ":corrupt-backup";
 const dateKeyPattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -53,11 +59,18 @@ const reminderSettingsSchema = z.object({
   lastSentDate: z.string().regex(dateKeyPattern).optional()
 });
 
+const cloudSyncSchema = z.object({
+  userId: z.string().min(1).optional(),
+  lastLocalChangeAt: z.string().min(1).optional(),
+  lastSyncedAt: z.string().min(1).optional()
+});
+
 export interface BossFitPersistedState {
   habits: Habit[];
   completions: DailyCompletion[];
   theme: ThemeMode;
   reminderSettings: ReminderSettings;
+  cloudSync: CloudSyncState;
 }
 
 export const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
@@ -66,12 +79,15 @@ export const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
   permission: "default"
 };
 
+export const DEFAULT_CLOUD_SYNC_STATE: CloudSyncState = {};
+
 export function createInitialPersistedState(): BossFitPersistedState {
   return {
     habits: [],
     completions: [],
     theme: "light",
-    reminderSettings: { ...DEFAULT_REMINDER_SETTINGS }
+    reminderSettings: { ...DEFAULT_REMINDER_SETTINGS },
+    cloudSync: { ...DEFAULT_CLOUD_SYNC_STATE }
   };
 }
 
@@ -103,6 +119,14 @@ function normalizeTheme(value: unknown): ThemeMode {
   return parsed.success ? parsed.data : "light";
 }
 
+function normalizeCloudSync(value: unknown): CloudSyncState {
+  const parsed = cloudSyncSchema.safeParse(value);
+  return {
+    ...DEFAULT_CLOUD_SYNC_STATE,
+    ...(parsed.success ? parsed.data : {})
+  };
+}
+
 export function migratePersistedState(
   persistedState: unknown,
   version = 0
@@ -112,12 +136,14 @@ export function migratePersistedState(
     habits: parseCollection(habitSchema, candidate.habits),
     completions: parseCollection(dailyCompletionSchema, candidate.completions),
     theme: normalizeTheme(candidate.theme),
-    reminderSettings: normalizeReminderSettings(candidate.reminderSettings)
+    reminderSettings: normalizeReminderSettings(candidate.reminderSettings),
+    cloudSync: normalizeCloudSync(candidate.cloudSync)
   };
 
   switch (version) {
     case 0:
     case 1:
+    case 2:
     default:
       return {
         ...createInitialPersistedState(),
@@ -125,6 +151,10 @@ export function migratePersistedState(
         reminderSettings: {
           ...DEFAULT_REMINDER_SETTINGS,
           ...baseState.reminderSettings
+        },
+        cloudSync: {
+          ...DEFAULT_CLOUD_SYNC_STATE,
+          ...baseState.cloudSync
         }
       };
   }

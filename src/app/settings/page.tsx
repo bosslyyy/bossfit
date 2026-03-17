@@ -1,10 +1,20 @@
 ﻿"use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { BellRing, Cloud, DatabaseZap, MoonStar, RotateCcw, SunMedium } from "lucide-react";
+import {
+  BellRing,
+  Cloud,
+  DatabaseZap,
+  LogOut,
+  MoonStar,
+  RotateCcw,
+  ShieldCheck,
+  SunMedium
+} from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
+import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { InstallHint } from "@/components/pwa/install-hint";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -16,17 +26,39 @@ import { getReminderPermissionLabel, getReminderSupport, requestReminderPermissi
 import { getSupabaseStatusLabel } from "@/lib/supabase/client";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
+function formatSyncDate(value?: string) {
+  if (!value) {
+    return "Aún no se ha sincronizado en este dispositivo.";
+  }
+
+  return new Intl.DateTimeFormat("es-CR", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
 export default function SettingsPage() {
-  const { theme, reminderSettings, hasHydrated, setTheme, updateReminderSettings, resetAppData } = useBossFitStore(
+  const {
+    theme,
+    reminderSettings,
+    cloudSync,
+    hasHydrated,
+    setTheme,
+    updateReminderSettings,
+    resetAppData
+  } = useBossFitStore(
     useShallow((state) => ({
       theme: state.theme,
       reminderSettings: state.reminderSettings,
+      cloudSync: state.cloudSync,
       hasHydrated: state.hasHydrated,
       setTheme: state.setTheme,
       updateReminderSettings: state.updateReminderSettings,
       resetAppData: state.resetAppData
     }))
   );
+  const { user, signOut } = useSupabaseAuth();
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -39,11 +71,11 @@ export default function SettingsPage() {
     }
   }, [hasHydrated, reminderSettings.permission, updateReminderSettings]);
 
+  const reminderSupport = useMemo(() => getReminderSupport(), []);
+
   if (!hasHydrated) {
     return <LoadingScreen title="Abriendo ajustes..." />;
   }
-
-  const reminderSupport = getReminderSupport();
 
   const handleReminderToggle = async (checked: boolean) => {
     if (!checked) {
@@ -68,12 +100,62 @@ export default function SettingsPage() {
     });
   };
 
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      const result = await signOut();
+      if (result.error) {
+        window.alert(`No se pudo cerrar sesión: ${result.error}`);
+      }
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-rise">
       <PageHeader
         title="Ajustes"
-        description="Configura el look, revisa el estado local de la app y deja lista la futura sincronización."
+        description="Gestiona tu cuenta, la apariencia y los recordatorios de BossFit."
       />
+
+      <Card>
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle>Cuenta y sincronización</CardTitle>
+              <CardDescription>
+                Tus hábitos, progreso, tema y recordatorios pueden mantenerse bajo tu cuenta de Supabase.
+              </CardDescription>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[24px] border border-border bg-surface p-4">
+              <p className="text-sm font-semibold text-card-foreground">Sesión activa</p>
+              <p className="mt-2 break-all font-display text-xl font-semibold text-card-foreground">
+                {user?.email ?? "Sin email disponible"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{getSupabaseStatusLabel()}</p>
+            </div>
+            <div className="rounded-[24px] border border-border bg-surface p-4">
+              <p className="text-sm font-semibold text-card-foreground">Última sincronización</p>
+              <p className="mt-2 font-display text-xl font-semibold text-card-foreground">
+                {cloudSync.lastSyncedAt ? "Lista" : "Pendiente"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{formatSyncDate(cloudSync.lastSyncedAt)}</p>
+            </div>
+          </div>
+
+          <Button variant="outline" onClick={handleSignOut} disabled={signingOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            {signingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+          </Button>
+        </div>
+      </Card>
 
       <Card>
         <div className="flex items-center justify-between gap-4">
@@ -174,24 +256,53 @@ export default function SettingsPage() {
               <DatabaseZap className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>Persistencia local</CardTitle>
-              <CardDescription>Tus hábitos, progreso y ajustes sobreviven al recargar en este dispositivo.</CardDescription>
+              <CardTitle>Tu cuenta guarda</CardTitle>
+              <CardDescription>
+                Cuando inicias sesión, BossFit puede recuperar este progreso desde cualquier dispositivo.
+              </CardDescription>
             </div>
           </div>
-          <div className="rounded-[22px] border border-border bg-background p-4 text-sm text-muted-foreground">
-            La estructura ya está lista para conectar autenticación y Supabase más adelante sin rehacer el dominio.
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              "Hábitos y días programados",
+              "Series completadas por día",
+              "Rachas, puntos y nivel",
+              "Tema y recordatorios"
+            ].map((item) => (
+              <div key={item} className="rounded-[22px] border border-border bg-background px-4 py-3 text-sm font-medium text-card-foreground">
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </Card>
 
       <Card>
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
-            <Cloud className="h-5 w-5" />
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+              <Cloud className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Sácale más provecho</CardTitle>
+              <CardDescription>
+                Tres ajustes simples para que BossFit se sienta más útil y constante en tu rutina.
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle>Sincronización futura</CardTitle>
-            <CardDescription>{getSupabaseStatusLabel()}</CardDescription>
+          <div className="space-y-3 rounded-[22px] border border-border bg-background p-4">
+            <div>
+              <p className="text-sm font-semibold text-card-foreground">Instálala en tu pantalla de inicio</p>
+              <p className="mt-1 text-sm text-muted-foreground">Se siente más rápida, más inmersiva y más parecida a una app real.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-card-foreground">Usa una sola hora de recordatorio</p>
+              <p className="mt-1 text-sm text-muted-foreground">Repetir el mismo horario facilita crear constancia sin pensar demasiado.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-card-foreground">Empieza con pocos hábitos</p>
+              <p className="mt-1 text-sm text-muted-foreground">Dos o tres hábitos bien cumplidos sostienen mejor la racha que una lista enorme.</p>
+            </div>
           </div>
         </div>
       </Card>
@@ -200,7 +311,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div>
             <CardTitle>Reiniciar datos</CardTitle>
-            <CardDescription>Restablece hábitos y progreso al estado de ejemplo del MVP.</CardDescription>
+            <CardDescription>Restablece hábitos y progreso en este dispositivo. Si tienes sesión activa, la próxima sincronización reflejará ese cambio.</CardDescription>
           </div>
           <Button
             variant="danger"
@@ -219,4 +330,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

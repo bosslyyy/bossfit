@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -8,13 +8,20 @@ import { toDateKey } from "@/lib/date";
 import {
   bossFitPersistStorage,
   createInitialPersistedState,
+  DEFAULT_CLOUD_SYNC_STATE,
   DEFAULT_REMINDER_SETTINGS,
-  migratePersistedState,
-  type BossFitPersistedState
+  type BossFitPersistedState,
+  migratePersistedState
 } from "@/lib/persistence";
 import { generateId } from "@/lib/utils";
 import type { HabitFormValues } from "@/lib/validation/habit";
-import type { DailyCompletion, Habit, ReminderSettings, ThemeMode } from "@/types/habit";
+import type {
+  CloudSyncState,
+  DailyCompletion,
+  Habit,
+  ReminderSettings,
+  ThemeMode
+} from "@/types/habit";
 
 interface CompletionResult {
   completedSets: number;
@@ -26,6 +33,7 @@ interface BossFitState {
   completions: DailyCompletion[];
   theme: ThemeMode;
   reminderSettings: ReminderSettings;
+  cloudSync: CloudSyncState;
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   addHabit: (values: HabitFormValues) => string;
@@ -37,7 +45,17 @@ interface BossFitState {
   resetCompletion: (habitId: string, dateKey?: string) => void;
   setTheme: (theme: ThemeMode) => void;
   updateReminderSettings: (values: Partial<ReminderSettings>) => void;
+  replacePersistedState: (values: BossFitPersistedState) => void;
+  setCloudSyncState: (values: Partial<CloudSyncState>) => void;
   resetAppData: () => void;
+}
+
+function createLocalChangeCloudState(cloudSync: CloudSyncState): CloudSyncState {
+  return {
+    ...DEFAULT_CLOUD_SYNC_STATE,
+    ...cloudSync,
+    lastLocalChangeAt: new Date().toISOString()
+  };
 }
 
 function upsertCompletion(
@@ -62,7 +80,7 @@ function upsertCompletion(
 
 function createStoreState(): Pick<
   BossFitState,
-  "habits" | "completions" | "theme" | "reminderSettings" | "hasHydrated"
+  "habits" | "completions" | "theme" | "reminderSettings" | "cloudSync" | "hasHydrated"
 > {
   const initialState = createInitialPersistedState();
 
@@ -84,6 +102,10 @@ function mergePersistedSlice(
     reminderSettings: {
       ...DEFAULT_REMINDER_SETTINGS,
       ...migratedState.reminderSettings
+    },
+    cloudSync: {
+      ...DEFAULT_CLOUD_SYNC_STATE,
+      ...migratedState.cloudSync
     }
   };
 }
@@ -112,7 +134,8 @@ export const useBossFitStore = create<BossFitState>()(
         };
 
         set((state) => ({
-          habits: [nextHabit, ...state.habits]
+          habits: [nextHabit, ...state.habits],
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
         }));
 
         return habitId;
@@ -135,13 +158,15 @@ export const useBossFitStore = create<BossFitState>()(
                   updatedAt: new Date().toISOString()
                 }
               : habit
-          )
+          ),
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
         }));
       },
       deleteHabit: (habitId) => {
         set((state) => ({
           habits: state.habits.filter((habit) => habit.id !== habitId),
-          completions: state.completions.filter((completion) => completion.habitId !== habitId)
+          completions: state.completions.filter((completion) => completion.habitId !== habitId),
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
         }));
       },
       toggleHabitActive: (habitId) => {
@@ -154,7 +179,8 @@ export const useBossFitStore = create<BossFitState>()(
                   updatedAt: new Date().toISOString()
                 }
               : habit
-          )
+          ),
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
         }));
       },
       completeSet: (habitId, dateKey = toDateKey()) => {
@@ -189,7 +215,8 @@ export const useBossFitStore = create<BossFitState>()(
         };
 
         set((currentState) => ({
-          completions: upsertCompletion(currentState.completions, nextCompletion)
+          completions: upsertCompletion(currentState.completions, nextCompletion),
+          cloudSync: createLocalChangeCloudState(currentState.cloudSync)
         }));
 
         return {
@@ -223,7 +250,8 @@ export const useBossFitStore = create<BossFitState>()(
                   date: dateKey,
                   completedSets: nextSets,
                   updatedAt: new Date().toISOString()
-                })
+                }),
+          cloudSync: createLocalChangeCloudState(currentState.cloudSync)
         }));
 
         return nextSets;
@@ -232,14 +260,43 @@ export const useBossFitStore = create<BossFitState>()(
         set((state) => ({
           completions: state.completions.filter(
             (completion) => !(completion.habitId === habitId && completion.date === dateKey)
-          )
+          ),
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
         }));
       },
-      setTheme: (theme) => set({ theme }),
+      setTheme: (theme) =>
+        set((state) => ({
+          theme,
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
+        })),
       updateReminderSettings: (values) =>
         set((state) => ({
           reminderSettings: {
             ...state.reminderSettings,
+            ...values
+          },
+          cloudSync: createLocalChangeCloudState(state.cloudSync)
+        })),
+      replacePersistedState: (values) =>
+        set({
+          habits: values.habits,
+          completions: values.completions,
+          theme: values.theme,
+          reminderSettings: {
+            ...DEFAULT_REMINDER_SETTINGS,
+            ...values.reminderSettings
+          },
+          cloudSync: {
+            ...DEFAULT_CLOUD_SYNC_STATE,
+            ...values.cloudSync
+          },
+          hasHydrated: true
+        }),
+      setCloudSyncState: (values) =>
+        set((state) => ({
+          cloudSync: {
+            ...DEFAULT_CLOUD_SYNC_STATE,
+            ...state.cloudSync,
             ...values
           }
         })),
@@ -249,6 +306,7 @@ export const useBossFitStore = create<BossFitState>()(
           ...freshState,
           theme: get().theme,
           reminderSettings: get().reminderSettings,
+          cloudSync: createLocalChangeCloudState(get().cloudSync),
           hasHydrated: true
         });
       }
@@ -261,7 +319,8 @@ export const useBossFitStore = create<BossFitState>()(
         habits: state.habits,
         completions: state.completions,
         theme: state.theme,
-        reminderSettings: state.reminderSettings
+        reminderSettings: state.reminderSettings,
+        cloudSync: state.cloudSync
       }),
       migrate: (persistedState, version) => migratePersistedState(persistedState, version),
       merge: (persistedState, currentState) => mergePersistedSlice(persistedState, currentState),
