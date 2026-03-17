@@ -1,11 +1,17 @@
 ﻿"use client";
 
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 
-import { STORAGE_KEY } from "@/lib/constants";
+import { STORAGE_KEY, STORAGE_VERSION } from "@/lib/constants";
 import { toDateKey } from "@/lib/date";
-import { createMockState } from "@/lib/mock-data";
+import {
+  bossFitPersistStorage,
+  createInitialPersistedState,
+  DEFAULT_REMINDER_SETTINGS,
+  migratePersistedState,
+  type BossFitPersistedState
+} from "@/lib/persistence";
 import { generateId } from "@/lib/utils";
 import type { HabitFormValues } from "@/lib/validation/habit";
 import type { DailyCompletion, Habit, ReminderSettings, ThemeMode } from "@/types/habit";
@@ -54,20 +60,38 @@ function upsertCompletion(
   return [...filtered, nextCompletion];
 }
 
-const mockState = createMockState();
-const defaultReminderSettings: ReminderSettings = {
-  enabled: false,
-  time: "19:00",
-  permission: "default"
-};
+function createStoreState(): Pick<
+  BossFitState,
+  "habits" | "completions" | "theme" | "reminderSettings" | "hasHydrated"
+> {
+  const initialState = createInitialPersistedState();
+
+  return {
+    ...initialState,
+    hasHydrated: false
+  };
+}
+
+function mergePersistedSlice(
+  persistedState: unknown,
+  currentState: BossFitState
+): BossFitState {
+  const migratedState = migratePersistedState(persistedState, STORAGE_VERSION);
+
+  return {
+    ...currentState,
+    ...migratedState,
+    reminderSettings: {
+      ...DEFAULT_REMINDER_SETTINGS,
+      ...migratedState.reminderSettings
+    }
+  };
+}
 
 export const useBossFitStore = create<BossFitState>()(
   persist(
     (set, get) => ({
-      ...mockState,
-      theme: "light",
-      reminderSettings: defaultReminderSettings,
-      hasHydrated: false,
+      ...createStoreState(),
       setHasHydrated: (value) => set({ hasHydrated: value }),
       addHabit: (values) => {
         const timestamp = new Date().toISOString();
@@ -220,7 +244,7 @@ export const useBossFitStore = create<BossFitState>()(
           }
         })),
       resetAppData: () => {
-        const freshState = createMockState();
+        const freshState = createInitialPersistedState();
         set({
           ...freshState,
           theme: get().theme,
@@ -231,13 +255,16 @@ export const useBossFitStore = create<BossFitState>()(
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      version: STORAGE_VERSION,
+      storage: bossFitPersistStorage,
+      partialize: (state): BossFitPersistedState => ({
         habits: state.habits,
         completions: state.completions,
         theme: state.theme,
         reminderSettings: state.reminderSettings
       }),
+      migrate: (persistedState, version) => migratePersistedState(persistedState, version),
+      merge: (persistedState, currentState) => mergePersistedSlice(persistedState, currentState),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       }

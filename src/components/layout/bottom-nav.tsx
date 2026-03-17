@@ -16,10 +16,16 @@ const icons = {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const hasSideFab = pathname === "/today";
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[30rem] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="grid grid-cols-4 rounded-[28px] border border-border bg-card/96 p-2 shadow-soft backdrop-blur-xl supports-[backdrop-filter]:bg-card/92 dark:border-white/10 dark:bg-[#121922]/92">
+      <div
+        className={cn(
+          "grid grid-cols-4 rounded-[30px] border border-border/80 bg-background/84 p-2 shadow-[0_24px_58px_rgba(2,8,16,0.20)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/74",
+          hasSideFab && "mr-[5.5rem]"
+        )}
+      >
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = icons[item.icon];
           const isActive = pathname === item.href;
@@ -29,10 +35,10 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-[11px] font-semibold transition",
+                "flex flex-col items-center justify-center gap-1 rounded-[22px] px-2 py-3 text-[11px] font-semibold transition duration-200",
                 isActive
-                  ? "bg-background text-card-foreground shadow-sm ring-1 ring-border dark:bg-white dark:text-[#121922] dark:ring-white/15"
-                  : "text-muted-foreground hover:bg-muted hover:text-card-foreground dark:text-white/65 dark:hover:bg-white/10 dark:hover:text-white"
+                  ? "bg-[#121B29] text-white shadow-[0_16px_34px_rgba(91,140,255,0.30)] ring-1 ring-[#4E7DFF]/24"
+                  : "text-muted-foreground hover:bg-card hover:text-card-foreground"
               )}
             >
               <Icon className="h-5 w-5" />

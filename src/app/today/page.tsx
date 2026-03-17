@@ -1,15 +1,60 @@
 ﻿"use client";
 
+import Link from "next/link";
+import { useState } from "react";
+
+import { BarChart3, ChevronDown, Settings2, Sparkles, Target } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
 import { TodayHabitCard } from "@/components/habits/today-habit-card";
-import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { buttonVariants } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { PageHeader } from "@/components/ui/page-header";
-import { formatLongDate } from "@/lib/date";
+import { WEEK_DAYS } from "@/lib/constants";
+import { addDays, formatLongDate, getWeekdayKey, toDateKey } from "@/lib/date";
 import { getDashboardSnapshot, getHabitProgress } from "@/lib/habit-logic";
+import { getBossProfile } from "@/lib/progress-analytics";
+import { cn } from "@/lib/utils";
 import { useBossFitStore } from "@/store/use-bossfit-store";
+
+const actionCircleClass =
+  "flex h-12 w-12 items-center justify-center rounded-full border border-border/80 bg-card/94 text-card-foreground shadow-[0_14px_30px_rgba(2,8,16,0.12)] transition hover:border-[#4E7DFF]/32 hover:text-[#4E7DFF] active:scale-[0.98]";
+const listPanelClass =
+  "overflow-hidden rounded-[30px] border border-border/70 bg-card/96 shadow-[0_26px_60px_rgba(2,8,16,0.16)]";
+
+type FilterKey = "all" | "pending" | "completed";
+
+function getTodayHeadline(total: number, completed: number) {
+  if (!total) {
+    return {
+      title: "Recuperación activa",
+      emoji: "🌙",
+      subtitle: "No hay cargas programadas para hoy."
+    };
+  }
+
+  if (completed === total) {
+    return {
+      title: "Día cerrado",
+      emoji: "✅",
+      subtitle: "Todo tu bloque de hoy ya quedó marcado."
+    };
+  }
+
+  return {
+    title: "Enfoque del día",
+    emoji: "🔥",
+    subtitle: "Marca una serie, mantén el ritmo y cierra tu bloque diario."
+  };
+}
+
+function getDateRail(anchor: Date) {
+  return Array.from({ length: 5 }, (_, index) => addDays(anchor, index - 4));
+}
+
+function getDateChipLabel(date: Date) {
+  const weekday = WEEK_DAYS.find((day) => day.key === getWeekdayKey(date))?.label.slice(0, 3).toLowerCase() ?? "";
+  return `${weekday} ${date.getDate()}`;
+}
 
 export default function TodayPage() {
   const { habits, completions, hasHydrated } = useBossFitStore(
@@ -19,57 +64,193 @@ export default function TodayPage() {
       hasHydrated: state.hasHydrated
     }))
   );
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [completedOpen, setCompletedOpen] = useState(true);
 
   if (!hasHydrated) {
     return <LoadingScreen title="Preparando tu plan de hoy..." />;
   }
 
-  const today = new Date();
-  const snapshot = getDashboardSnapshot(habits, completions, today);
+  const selectedDate = new Date();
+  const snapshot = getDashboardSnapshot(habits, completions, selectedDate);
+  const bossProfile = getBossProfile(habits, completions, selectedDate);
+  const headline = getTodayHeadline(snapshot.scheduledHabits.length, snapshot.completedHabits);
+  const dateRail = getDateRail(selectedDate);
+
+  const scheduledEntries = snapshot.scheduledHabits.map((habit) => ({
+    habit,
+    progress: getHabitProgress(habit, completions, selectedDate)
+  }));
+  const pendingEntries = scheduledEntries.filter((entry) => !entry.progress.isCompleted);
+  const completedEntries = scheduledEntries.filter((entry) => entry.progress.isCompleted);
+
+  const filters: Array<{ key: FilterKey; label: string; count: number }> = [
+    { key: "all", label: "Todos los hábitos", count: scheduledEntries.length },
+    { key: "pending", label: "En curso", count: pendingEntries.length },
+    { key: "completed", label: "Completados", count: completedEntries.length }
+  ];
+
+  const visiblePending = filter === "completed" ? [] : pendingEntries;
+  const visibleCompleted = filter === "pending" ? [] : completedEntries;
 
   return (
     <div className="space-y-6 animate-rise">
-      <PageHeader
-        title="Hábitos de hoy"
-        description="Marca una serie por vez y BossFit actualizará al instante lo que te falta."
-      />
-
-      <Card className="border-none bg-[#11161D] text-white">
-        <div className="space-y-3">
-          <p className="text-sm text-white/65">{formatLongDate(today)}</p>
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="font-display text-4xl font-semibold">{snapshot.completionPercentage}%</p>
-              <p className="text-sm text-white/65">avance del día</p>
-            </div>
-            <div className="text-right text-sm text-white/70">
-              <p>{snapshot.completedHabits} completados</p>
-              <p>{snapshot.pendingHabits} pendientes</p>
+      <section className="space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 space-y-3">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">HOY</p>
+            <div className="space-y-2">
+              <h1 className="font-display text-[clamp(2.4rem,10vw,4rem)] font-semibold leading-[0.94] text-card-foreground">
+                <span className="mr-2">{headline.emoji}</span>
+                {headline.title}
+              </h1>
+              <p className="text-sm text-muted-foreground">{formatLongDate(selectedDate)}</p>
+              <p className="max-w-[20rem] text-sm leading-6 text-muted-foreground">{headline.subtitle}</p>
             </div>
           </div>
+
+          <div className="flex shrink-0 items-center gap-3 pt-1">
+            <Link href="/progress" aria-label="Abrir progreso" className={actionCircleClass}>
+              <BarChart3 className="h-5 w-5" />
+            </Link>
+            <Link href="/settings" aria-label="Abrir ajustes" className={actionCircleClass}>
+              <Settings2 className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
-      </Card>
+
+        <div className="-mx-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max gap-3 pb-1">
+            {filters.map((item) => {
+              const active = filter === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setFilter(item.key)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full px-5 py-4 text-base font-semibold transition active:scale-[0.98]",
+                    active
+                      ? "bg-[#4E7DFF] text-white shadow-[0_18px_36px_rgba(78,125,255,0.34)]"
+                      : "border border-border/70 bg-card/90 text-muted-foreground"
+                  )}
+                >
+                  <span>{item.label}</span>
+                  <span className={cn("rounded-full px-2.5 py-1 text-xs", active ? "bg-white/14 text-white" : "bg-background text-card-foreground")}>{item.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Sparkles className="h-4 w-4 text-[#4E7DFF]" />
+          <span>{bossProfile.todayPoints} Boss Points hoy</span>
+          <span className="opacity-50">·</span>
+          <span>{snapshot.completedHabits} completados</span>
+          <span className="opacity-50">·</span>
+          <span>racha {bossProfile.currentStreak}</span>
+        </div>
+      </section>
 
       {!habits.length ? (
-        <EmptyState
-          title="Aún no tienes hábitos"
-          description="Crea tu primera rutina para empezar a marcar series y construir tu progreso diario."
-          actionLabel="Crear hábito"
-          actionHref="/habits/new"
-        />
-      ) : !snapshot.scheduledHabits.length ? (
-        <EmptyState
-          title="Hoy no hay hábitos programados"
-          description="Puedes descansar, reprogramar una rutina o crear un hábito flexible para todos los días."
-          actionLabel="Crear hábito"
-          actionHref="/habits/new"
-        />
-      ) : (
-        <div className="space-y-4">
-          {snapshot.scheduledHabits.map((habit) => (
-            <TodayHabitCard key={habit.id} habit={habit} progress={getHabitProgress(habit, completions, today)} />
-          ))}
+        <div className="rounded-[30px] border border-border/70 bg-card/96 p-5 shadow-[0_24px_60px_rgba(2,8,16,0.14)]">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-[22px] border border-[#4E7DFF]/18 bg-[#4E7DFF]/12 text-[#4E7DFF]">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-display text-2xl font-semibold text-card-foreground">Crea tu primer hábito</h2>
+              <p className="max-w-[22rem] text-sm leading-6 text-muted-foreground">
+                Define un bloque simple y BossFit convertirá esta vista en tu sesión diaria principal.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex gap-3">
+            <Link href="/habits/new" className={buttonVariants({ className: "rounded-full bg-[#4E7DFF] px-5 text-white hover:bg-[#5F8BFF]" })}>
+              Crear hábito
+            </Link>
+          </div>
         </div>
+      ) : !snapshot.scheduledHabits.length ? (
+        <div className="rounded-[30px] border border-border/70 bg-card/96 p-5 shadow-[0_24px_60px_rgba(2,8,16,0.14)]">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-[22px] border border-success/18 bg-success/12 text-success">
+              <Target className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-display text-2xl font-semibold text-card-foreground">No hay hábitos programados</h2>
+              <p className="max-w-[22rem] text-sm leading-6 text-muted-foreground">
+                Puedes dejar el día liviano o crear un hábito flexible para mantener el ritmo durante la semana.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex gap-3">
+            <Link href="/habits/new" className={buttonVariants({ className: "rounded-full bg-[#4E7DFF] px-5 text-white hover:bg-[#5F8BFF]" })}>
+              Crear hábito
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={cn(listPanelClass, "divide-y divide-border/70") }>
+            {visiblePending.length ? (
+              visiblePending.map((entry) => (
+                <TodayHabitCard key={entry.habit.id} habit={entry.habit} progress={entry.progress} variant="active" />
+              ))
+            ) : (
+              <div className="px-5 py-6 text-sm text-muted-foreground">No hay hábitos activos en este filtro.</div>
+            )}
+          </div>
+
+          <section className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setCompletedOpen((value) => !value)}
+              className="flex w-full items-center justify-between px-1 text-left"
+            >
+              <div>
+                <h2 className="font-display text-[2rem] font-semibold leading-none text-card-foreground">
+                  {completedEntries.length} completados
+                </h2>
+              </div>
+              <ChevronDown className={cn("h-6 w-6 text-card-foreground transition", completedOpen && "rotate-180")} />
+            </button>
+
+            {completedOpen && visibleCompleted.length ? (
+              <div className={cn(listPanelClass, "divide-y divide-border/70 bg-surface/82") }>
+                {visibleCompleted.map((entry) => (
+                  <TodayHabitCard key={entry.habit.id} habit={entry.habit} progress={entry.progress} variant="completed" />
+                ))}
+              </div>
+            ) : completedOpen ? (
+              <div className="rounded-[26px] border border-border/70 bg-card/92 px-5 py-4 text-sm text-muted-foreground shadow-[0_18px_40px_rgba(2,8,16,0.12)]">
+                Todavía no tienes hábitos completados en esta vista.
+              </div>
+            ) : null}
+          </section>
+
+          <section className="space-y-3 pt-1">
+            <div className="rounded-[28px] border border-border/70 bg-card/96 p-2 shadow-[0_22px_48px_rgba(2,8,16,0.14)]">
+              <div className="grid grid-cols-5 gap-2">
+                {dateRail.map((date) => {
+                  const selected = toDateKey(date) === toDateKey(selectedDate);
+                  return (
+                    <div
+                      key={toDateKey(date)}
+                      className={cn(
+                        "rounded-[22px] px-2 py-4 text-center transition",
+                        selected ? "bg-background text-card-foreground shadow-sm ring-1 ring-border" : "text-muted-foreground"
+                      )}
+                    >
+                      <p className="text-sm font-semibold">{getDateChipLabel(date)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </>
       )}
     </div>
   );

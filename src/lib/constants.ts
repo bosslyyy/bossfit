@@ -145,3 +145,7 @@ export const LEVEL_TITLES = [
 ] as const;
 
 export const STORAGE_KEY = "bossfit-store";
+export const STORAGE_VERSION = 2;
+
+
+

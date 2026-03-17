@@ -6,9 +6,9 @@ export function FloatingCreateButton() {
     <Link
       href="/habits/new"
       aria-label="Crear hábito"
-      className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-soft transition hover:scale-[1.03] active:scale-[0.97]"
+      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-[#0F1621] text-[#4E7DFF] shadow-[0_24px_48px_rgba(2,8,16,0.34)] ring-1 ring-white/6 transition hover:scale-[1.03] hover:bg-[#131D2C] active:scale-[0.97]"
     >
-      <Plus className="h-6 w-6" />
+      <Plus className="h-8 w-8" />
     </Link>
   );
 }
