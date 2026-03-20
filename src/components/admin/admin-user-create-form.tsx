@@ -1,4 +1,4 @@
-"use client";
+Ôªø"use client";
 
 import { useEffect, useState } from "react";
 
@@ -100,7 +100,7 @@ export function AdminUserCreateForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!session?.access_token) {
-      setServerError("No encontramos una sesiÛn v·lida para crear el usuario.");
+      setServerError("No encontramos una sesi√≥n v√°lida para crear el usuario.");
       return;
     }
 
@@ -158,7 +158,7 @@ export function AdminUserCreateForm() {
           <div className="space-y-1">
             <CardTitle>Crear usuario del gym</CardTitle>
             <CardDescription>
-              BossFit generar· un acceso corto y una contraseÒa temporal. Si el rol es miembro, puedes dejarlo asignado desde ahora.
+              BossFit generar√° un acceso corto y una contrase√±a temporal. Si el rol es miembro, puedes dejarlo asignado desde ahora.
             </CardDescription>
           </div>
         </div>
@@ -191,7 +191,7 @@ export function AdminUserCreateForm() {
               <div>
                 <Label htmlFor="trainer-user-id">Entrenador</Label>
                 <select id="trainer-user-id" className={selectClassName} {...form.register("trainerUserId")}>
-                  <option value="">Sin asignar a˙n</option>
+                  <option value="">Sin asignar a√∫n</option>
                   {trainers.map((trainer) => (
                     <option key={trainer.userId} value={trainer.userId}>
                       {trainer.name}
@@ -202,7 +202,7 @@ export function AdminUserCreateForm() {
               <div>
                 <Label htmlFor="group-id">Grupo</Label>
                 <select id="group-id" className={selectClassName} {...form.register("groupId")}>
-                  <option value="">Sin grupo a˙n</option>
+                  <option value="">Sin grupo a√∫n</option>
                   {groups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
@@ -213,7 +213,7 @@ export function AdminUserCreateForm() {
             </div>
           ) : (
             <div className="rounded-[22px] border border-border bg-background/80 p-4 text-sm text-muted-foreground dark:bg-white/[0.04]">
-              Los roles admin y entrenador se crean ya vinculados al gym. Luego podr·s asignar bloques, grupos o permisos m·s finos desde el panel.
+              Los roles admin y entrenador se crean ya vinculados al gym. Luego podr√°s asignar bloques, grupos o permisos m√°s finos desde el panel.
             </div>
           )}
 
@@ -283,7 +283,7 @@ export function AdminUserCreateForm() {
             </div>
             <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04] sm:col-span-2">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-card-foreground dark:text-white">ContraseÒa temporal</p>
+                <p className="text-sm font-semibold text-card-foreground dark:text-white">Contrase√±a temporal</p>
                 <button type="button" onClick={() => void handleCopy(createdUser.password, "password")} className="text-sm font-semibold text-accent">
                   <Copy className="h-4 w-4" />
                 </button>
@@ -313,4 +313,5 @@ export function AdminUserCreateForm() {
     </div>
   );
 }
+
 
