@@ -1,4 +1,5 @@
-import { STORAGE_VERSION } from "@/lib/constants";
+﻿import { STORAGE_VERSION } from "@/lib/constants";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   createInitialPersistedState,
   DEFAULT_REMINDER_SETTINGS,
@@ -6,10 +7,8 @@ import {
   type BossFitPersistedState
 } from "@/lib/persistence";
 import { getBossProfile } from "@/lib/progress-analytics";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { ReminderSettings, ThemeMode } from "@/types/habit";
+import type { ReminderSettings, RemoteSaveReason, ThemeMode } from "@/types/habit";
 
-const USER_STATE_TABLE = "bossfit_user_state";
 const DEFAULT_LEVEL = 1;
 
 export interface BossFitRemoteSnapshot {
@@ -28,25 +27,17 @@ export interface BossFitRemoteMetrics {
   level: number;
 }
 
-interface BossFitRemoteRow {
-  user_id: string;
-  storage_version: number;
-  app_state: unknown;
-  last_synced_at: string | null;
-  updated_at: string | null;
-  habits_count: number | null;
-  completions_count: number | null;
-  current_streak: number | null;
-  best_streak: number | null;
-  total_points: number | null;
-  level: number | null;
-}
-
 export interface BossFitRemoteState extends BossFitRemoteMetrics {
   snapshot: BossFitRemoteSnapshot;
   storageVersion: number;
   lastSyncedAt?: string;
   updatedAt?: string;
+  lastSaveReason?: RemoteSaveReason;
+  source: "current" | "history";
+}
+
+export interface SaveRemoteStateOptions {
+  reason?: RemoteSaveReason;
 }
 
 export interface SupabaseErrorInfo {
@@ -54,6 +45,12 @@ export interface SupabaseErrorInfo {
   details: string | null;
   hint: string | null;
   code: string | null;
+}
+
+interface SaveRemoteStateResult extends BossFitRemoteMetrics {
+  lastSyncedAt: string;
+  updatedAt: string;
+  lastSaveReason?: RemoteSaveReason;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -119,6 +116,20 @@ export function logSupabaseError(context: string, error: unknown) {
   });
 }
 
+export function normalizeSaveReason(value: unknown): RemoteSaveReason | undefined {
+  switch (value) {
+    case "sync":
+    case "reset":
+    case "signout":
+    case "pagehide":
+    case "bootstrap":
+    case "recovery":
+      return value;
+    default:
+      return undefined;
+  }
+}
+
 export function toRemoteSnapshot(
   value:
     | Pick<BossFitPersistedState, "habits" | "completions" | "theme" | "reminderSettings">
@@ -149,7 +160,7 @@ export function hasMeaningfulSnapshotData(snapshot: BossFitRemoteSnapshot) {
   );
 }
 
-function buildRemoteMetrics(snapshot: BossFitRemoteSnapshot): BossFitRemoteMetrics {
+export function buildRemoteMetrics(snapshot: BossFitRemoteSnapshot): BossFitRemoteMetrics {
   const bossProfile = getBossProfile(snapshot.habits, snapshot.completions, new Date());
 
   return {
@@ -162,102 +173,73 @@ function buildRemoteMetrics(snapshot: BossFitRemoteSnapshot): BossFitRemoteMetri
   };
 }
 
-function normalizeRemoteMetrics(
-  row: Partial<BossFitRemoteRow>,
-  snapshot: BossFitRemoteSnapshot
-): BossFitRemoteMetrics {
-  const fallback = buildRemoteMetrics(snapshot);
-
-  return {
-    habitsCount: row.habits_count ?? fallback.habitsCount,
-    completionsCount: row.completions_count ?? fallback.completionsCount,
-    currentStreak: row.current_streak ?? fallback.currentStreak,
-    bestStreak: row.best_streak ?? fallback.bestStreak,
-    totalPoints: row.total_points ?? fallback.totalPoints,
-    level: row.level ?? fallback.level
-  };
-}
-
-function buildRemotePayload(userId: string, snapshot: BossFitRemoteSnapshot, syncedAt: string) {
-  const metrics = buildRemoteMetrics(snapshot);
-
-  return {
-    user_id: userId,
-    storage_version: STORAGE_VERSION,
-    app_state: toRemoteSnapshot(snapshot),
-    last_synced_at: syncedAt,
-    habits_count: metrics.habitsCount,
-    completions_count: metrics.completionsCount,
-    current_streak: metrics.currentStreak,
-    best_streak: metrics.bestStreak,
-    total_points: metrics.totalPoints,
-    level: metrics.level
-  };
-}
-
-export async function fetchRemoteState(userId: string): Promise<BossFitRemoteState | null> {
+async function getAccessToken() {
   const supabase = createSupabaseBrowserClient();
   if (!supabase) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { data, error } = await supabase
-    .from(USER_STATE_TABLE)
-    .select(
-      "user_id, storage_version, app_state, last_synced_at, updated_at, habits_count, completions_count, current_streak, best_streak, total_points, level"
-    )
-    .eq("user_id", userId)
-    .maybeSingle();
-
+  const { data, error } = await supabase.auth.getSession();
   if (error) {
     throw error;
   }
 
-  if (!data) {
-    return null;
+  const accessToken = data.session?.access_token;
+  if (!accessToken) {
+    throw new Error("No hay una sesion activa para sincronizar tu cuenta.");
   }
 
-  const row = data as BossFitRemoteRow;
-  const migrated = migratePersistedState(row.app_state, row.storage_version);
-  const snapshot = toRemoteSnapshot(migrated);
-  const metrics = normalizeRemoteMetrics(row, snapshot);
-
-  return {
-    snapshot,
-    storageVersion: typeof row.storage_version === "number" ? row.storage_version : 0,
-    lastSyncedAt: row.last_synced_at ?? undefined,
-    updatedAt: row.updated_at ?? undefined,
-    ...metrics
-  };
+  return accessToken;
 }
 
-export async function saveRemoteState(userId: string, snapshot: BossFitRemoteSnapshot) {
-  const supabase = createSupabaseBrowserClient();
-  if (!supabase) {
-    throw new Error("Supabase no esta configurado.");
+async function requestUserStateApi<T>(init: RequestInit & { method?: string }) {
+  const accessToken = await getAccessToken();
+  const response = await fetch("/api/user-state", {
+    ...init,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.headers ?? {}),
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (!response.ok) {
+    throw {
+      message: typeof payload.error === "string" ? payload.error : "No se pudo sincronizar con Supabase.",
+      details: payload.details ?? null,
+      hint: payload.hint ?? null,
+      code: payload.code ?? null
+    };
   }
 
-  const syncedAt = new Date().toISOString();
-  const payload = buildRemotePayload(userId, snapshot, syncedAt);
-
-  const { data, error } = await supabase
-    .from(USER_STATE_TABLE)
-    .upsert(payload, { onConflict: "user_id" })
-    .select(
-      "last_synced_at, updated_at, habits_count, completions_count, current_streak, best_streak, total_points, level"
-    )
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  const row = (data ?? {}) as Partial<BossFitRemoteRow>;
-  const metrics = normalizeRemoteMetrics(row, snapshot);
-
-  return {
-    lastSyncedAt: row.last_synced_at ?? syncedAt,
-    updatedAt: row.updated_at ?? row.last_synced_at ?? syncedAt,
-    ...metrics
-  };
+  return payload as T;
 }
+
+export async function fetchRemoteState(_userId: string): Promise<BossFitRemoteState | null> {
+  const payload = await requestUserStateApi<{ state?: BossFitRemoteState | null }>({
+    method: "GET"
+  });
+
+  return payload.state ?? null;
+}
+
+export async function saveRemoteState(
+  _userId: string,
+  snapshot: BossFitRemoteSnapshot,
+  options: SaveRemoteStateOptions = {}
+): Promise<SaveRemoteStateResult> {
+  const payload = await requestUserStateApi<{ saved: SaveRemoteStateResult }>({
+    method: "POST",
+    body: JSON.stringify({
+      snapshot,
+      reason: options.reason ?? "sync"
+    })
+  });
+
+  return payload.saved;
+}
+

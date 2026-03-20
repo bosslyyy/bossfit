@@ -38,7 +38,7 @@ export function HabitCard({ habit }: { habit: Habit }) {
                 </Badge>
               </div>
               <p className="text-sm text-white/70">
-                {formatHabitTarget(habit.targetSets, habit.repsPerSet)} · {formatSelectedDays(habit.selectedDays)}
+                {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays)}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">

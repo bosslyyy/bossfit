@@ -87,7 +87,7 @@ export function getDashboardSnapshot(
   const pendingHabits = Math.max(scheduledHabits.length - completedHabits, 0);
   const totalPoints = scheduledHabits.reduce((total, habit) => {
     const progress = getHabitProgress(habit, completions, date);
-    return total + calculatePoints(progress.completedSets, habit.repsPerSet);
+    return total + calculatePoints(progress.completedSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet);
   }, 0);
 
   return {
@@ -119,7 +119,7 @@ export function getWeeklySummary(
     for (const habit of scheduledHabits) {
       const progress = getHabitProgress(habit, completions, currentDate);
       completedSets += progress.completedSets;
-      totalPoints += calculatePoints(progress.completedSets, habit.repsPerSet);
+      totalPoints += calculatePoints(progress.completedSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet);
 
       if (progress.isCompleted) {
         completedHabitDays += 1;

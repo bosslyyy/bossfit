@@ -57,19 +57,20 @@ export function HabitForm({
 
   const values = form.watch();
   const active = form.watch("active");
+  const trackingMode = form.watch("trackingMode");
   const submitting = isPending || form.formState.isSubmitting;
 
   const onSubmit = form.handleSubmit((rawValues) => {
-    const values = habitSchema.parse(rawValues);
+    const parsedValues = habitSchema.parse(rawValues);
 
     if (mode === "create") {
-      addHabit(values);
+      addHabit(parsedValues);
       startTransition(() => router.push("/today"));
       return;
     }
 
     if (habitId) {
-      updateHabit(habitId, values);
+      updateHabit(habitId, parsedValues);
       startTransition(() => router.push("/"));
     }
   });
@@ -115,7 +116,7 @@ export function HabitForm({
         <div className="mt-5 space-y-4">
           <div>
             <Label htmlFor="name">Nombre del hábito</Label>
-            <Input id="name" placeholder="Ej. Lagartijas" {...form.register("name")} />
+            <Input id="name" placeholder="Ej. Lagartijas o cuerda" {...form.register("name")} />
             {form.formState.errors.name ? (
               <p className="mt-2 text-sm text-danger">{form.formState.errors.name.message}</p>
             ) : null}
@@ -148,23 +149,84 @@ export function HabitForm({
       <Card>
         <div className="space-y-1">
           <CardTitle>Objetivo diario</CardTitle>
-          <CardDescription>Registras bloques completos por serie, no repetición por repetición.</CardDescription>
+          <CardDescription>
+            Registras bloques completos por serie. Puedes medirlos por repeticiones o por tiempo.
+          </CardDescription>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-4">
+        <div className="mt-5 space-y-4">
           <div>
-            <Label htmlFor="targetSets">Series</Label>
-            <Input id="targetSets" type="number" min={1} max={12} inputMode="numeric" {...form.register("targetSets")} />
-            {form.formState.errors.targetSets ? (
-              <p className="mt-2 text-sm text-danger">{form.formState.errors.targetSets.message}</p>
-            ) : null}
+            <Label>Modo de registro</Label>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              {[
+                { value: "reps", label: "Repeticiones", helper: "Series con reps por bloque" },
+                { value: "timer", label: "Tiempo", helper: "Series cronometradas" }
+              ].map((option) => {
+                const selected = trackingMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      form.setValue("trackingMode", option.value as HabitFormValues["trackingMode"], {
+                        shouldDirty: true,
+                        shouldValidate: true
+                      })
+                    }
+                    className={cn(
+                      "rounded-[24px] border px-4 py-3 text-left transition",
+                      selected
+                        ? "border-accent bg-accent/12 text-accent ring-1 ring-accent/20"
+                        : "border-border bg-surface text-card-foreground hover:bg-muted"
+                    )}
+                  >
+                    <p className="text-sm font-semibold">{option.label}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{option.helper}</p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div>
-            <Label htmlFor="repsPerSet">Reps por serie</Label>
-            <Input id="repsPerSet" type="number" min={1} max={250} inputMode="numeric" {...form.register("repsPerSet")} />
-            {form.formState.errors.repsPerSet ? (
-              <p className="mt-2 text-sm text-danger">{form.formState.errors.repsPerSet.message}</p>
-            ) : null}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="targetSets">Series</Label>
+              <Input id="targetSets" type="number" min={1} max={999} inputMode="numeric" {...form.register("targetSets")} />
+              {form.formState.errors.targetSets ? (
+                <p className="mt-2 text-sm text-danger">{form.formState.errors.targetSets.message}</p>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">Puedes programar rutinas largas de cardio o circuitos grandes.</p>
+              )}
+            </div>
+            <div>
+              {trackingMode === "timer" ? (
+                <>
+                  <Label htmlFor="secondsPerSet">Tiempo por serie (segundos)</Label>
+                  <Input
+                    id="secondsPerSet"
+                    type="number"
+                    min={5}
+                    max={7200}
+                    inputMode="numeric"
+                    placeholder="60"
+                    {...form.register("secondsPerSet")}
+                  />
+                  {form.formState.errors.secondsPerSet ? (
+                    <p className="mt-2 text-sm text-danger">{form.formState.errors.secondsPerSet.message}</p>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">Ej. 60 = 1 minuto por serie.</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Label htmlFor="repsPerSet">Reps por serie</Label>
+                  <Input id="repsPerSet" type="number" min={1} max={2500} inputMode="numeric" {...form.register("repsPerSet")} />
+                  {form.formState.errors.repsPerSet ? (
+                    <p className="mt-2 text-sm text-danger">{form.formState.errors.repsPerSet.message}</p>
+                  ) : null}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </Card>

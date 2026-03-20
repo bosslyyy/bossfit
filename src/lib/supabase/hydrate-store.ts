@@ -1,5 +1,5 @@
 ﻿import { createInitialPersistedState } from "@/lib/persistence";
-import { fetchRemoteState } from "@/lib/supabase/data";
+import { fetchRemoteState, saveRemoteState } from "@/lib/supabase/data";
 import { readCachedUserSnapshot, writeCachedUserSnapshot } from "@/lib/supabase/user-cache";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
@@ -11,20 +11,33 @@ export async function hydrateStoreForUser(userId: string) {
   const remote = await fetchRemoteState(userId);
 
   if (remote) {
-    const syncedAt = remote.lastSyncedAt ?? remote.updatedAt ?? new Date().toISOString();
+    let syncedAt = remote.lastSyncedAt ?? remote.updatedAt ?? new Date().toISOString();
+    let updatedAt = remote.updatedAt;
+
+    if (remote.source === "history") {
+      try {
+        const repaired = await saveRemoteState(userId, remote.snapshot, { reason: "recovery" });
+        syncedAt = repaired.lastSyncedAt;
+        updatedAt = repaired.updatedAt;
+      } catch {
+        // If recovery write fails, still hydrate from the most recent remote backup.
+      }
+    }
+
     writeCachedUserSnapshot(userId, remote.snapshot, {
-      lastSyncedAt: remote.lastSyncedAt,
-      updatedAt: remote.updatedAt
+      lastSyncedAt: syncedAt,
+      updatedAt
     });
     store.replacePersistedState({
       ...remote.snapshot,
       cloudSync: {
         userId,
         lastSyncedAt: syncedAt,
-        lastLocalChangeAt: syncedAt
+        lastLocalChangeAt: syncedAt,
+        pendingRemoteReason: undefined
       }
     });
-    return { source: "remote" as const };
+    return { source: remote.source === "history" ? ("remote-recovery" as const) : ("remote" as const) };
   }
 
   if (cached) {
@@ -34,7 +47,8 @@ export async function hydrateStoreForUser(userId: string) {
       cloudSync: {
         userId,
         lastSyncedAt: syncedAt,
-        lastLocalChangeAt: syncedAt
+        lastLocalChangeAt: syncedAt,
+        pendingRemoteReason: undefined
       }
     });
     return { source: "cache" as const };
@@ -48,7 +62,8 @@ export async function hydrateStoreForUser(userId: string) {
     cloudSync: {
       userId,
       lastSyncedAt: syncedAt,
-      lastLocalChangeAt: syncedAt
+      lastLocalChangeAt: syncedAt,
+      pendingRemoteReason: undefined
     }
   });
   return { source: "empty" as const };

@@ -1,4 +1,4 @@
-# BossFit
+﻿# BossFit
 
 BossFit es una PWA fitness mobile-first para crear h?bitos, completar series por d?a y seguir progreso real con una experiencia premium tipo app.
 
@@ -40,9 +40,10 @@ BossFit espera estas variables en `.env.local`:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-No uses una `service_role` en el frontend.
+`SUPABASE_SERVICE_ROLE_KEY` se usa solo en rutas del servidor para operaciones administrativas y para la sync critica de cuenta. No la expongas en el frontend ni la subas a Git.
 
 ## Configuraci?n de Supabase
 
@@ -50,7 +51,7 @@ No uses una `service_role` en el frontend.
 2. Ejecuta el SQL de [supabase/schema.sql](./supabase/schema.sql) en el SQL Editor del proyecto.
 3. Verifica que tus variables de entorno en `.env.local` apunten al mismo proyecto.
 
-La sync usa una sola tabla: `public.bossfit_user_state`.
+La sync usa dos tablas remotas: `public.bossfit_user_state` para el snapshot actual y `public.bossfit_user_state_history` para backups remotos recuperables.
 
 ### Columnas requeridas en `bossfit_user_state`
 
@@ -194,3 +195,5 @@ Limitaci?n importante:
 - El manifest se genera desde `src/app/manifest.ts`.
 - Los iconos PWA se generan desde `src/app/icon.tsx` y `src/app/apple-icon.tsx`.
 - La protecci?n de rutas actual se resuelve en el cliente para no introducir una capa SSR adicional mientras no podamos instalar `@supabase/ssr` en este entorno.
+
+

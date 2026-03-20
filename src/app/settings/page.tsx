@@ -1,11 +1,14 @@
 ﻿"use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import {
   BellRing,
+  BriefcaseBusiness,
   Cloud,
   DatabaseZap,
+  KeyRound,
   LogOut,
   MoonStar,
   RotateCcw,
@@ -16,7 +19,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { InstallHint } from "@/components/pwa/install-hint";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -24,6 +27,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import { getReminderPermissionLabel, getReminderSupport, requestReminderPermission } from "@/lib/reminders";
 import { getSupabaseStatusLabel } from "@/lib/supabase/client";
+import { fetchActiveCoachGymContext } from "@/lib/supabase/coach";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
 function formatSyncDate(value?: string) {
@@ -57,8 +61,14 @@ export default function SettingsPage() {
       resetAppData: state.resetAppData
     }))
   );
-  const { user, signOut } = useSupabaseAuth();
+  const { user, signOut, supabase } = useSupabaseAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const [hasCoachAccess, setHasCoachAccess] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -70,6 +80,34 @@ export default function SettingsPage() {
       updateReminderSettings({ permission: support.permission });
     }
   }, [hasHydrated, reminderSettings.permission, updateReminderSettings]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!user?.id) {
+      setHasCoachAccess(false);
+      return;
+    }
+
+    const loadCoachAccess = async () => {
+      try {
+        const context = await fetchActiveCoachGymContext(user.id);
+        if (!cancelled) {
+          setHasCoachAccess(Boolean(context));
+        }
+      } catch {
+        if (!cancelled) {
+          setHasCoachAccess(false);
+        }
+      }
+    };
+
+    void loadCoachAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const reminderSupport = useMemo(() => getReminderSupport(), []);
 
@@ -109,6 +147,52 @@ export default function SettingsPage() {
       }
     } finally {
       setSigningOut(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordMessage(null);
+
+    if (!supabase || !user) {
+      setPasswordError("Necesitas una sesión activa para cambiar tu contraseña.");
+      return;
+    }
+
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setPasswordError("Completa los dos campos de contraseña.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        setPasswordError(error.message);
+        return;
+      }
+
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordMessage("Tu contraseña fue actualizada correctamente.");
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "No se pudo actualizar la contraseña.");
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -156,6 +240,93 @@ export default function SettingsPage() {
           </Button>
         </div>
       </Card>
+
+      <Card>
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+              <KeyRound className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle>Seguridad</CardTitle>
+              <CardDescription>
+                Cambia tu contraseña desde tu sesión actual. Si no recuerdas la anterior, usa la recuperación desde la pantalla de login.
+              </CardDescription>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="new-password" className="text-sm font-semibold text-card-foreground">
+                Nueva contraseña
+              </label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                className="mt-2"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="confirm-password" className="text-sm font-semibold text-card-foreground">
+                Confirmar contraseña
+              </label>
+              <Input
+                id="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                className="mt-2"
+                placeholder="Repite tu nueva contraseña"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+              />
+            </div>
+          </div>
+
+          {passwordError ? (
+            <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">
+              {passwordError}
+            </div>
+          ) : null}
+
+          {passwordMessage ? (
+            <div className="rounded-[20px] border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-card-foreground">
+              {passwordMessage}
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={handleChangePassword} disabled={changingPassword || !user}>
+              <KeyRound className="mr-2 h-4 w-4" />
+              {changingPassword ? "Actualizando..." : "Cambiar contraseña"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {hasCoachAccess ? (
+        <Card>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+                <BriefcaseBusiness className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle>Panel coach</CardTitle>
+                <CardDescription>
+                  Tu cuenta tiene acceso como entrenador. Desde aquí puedes revisar alumnos asignados y gestionar sus entrenamientos.
+                </CardDescription>
+              </div>
+            </div>
+            <Link href="/coach" className={buttonVariants({ variant: "primary" })}>
+              Abrir panel
+            </Link>
+          </div>
+        </Card>
+      ) : null}
 
       <Card>
         <div className="flex items-center justify-between gap-4">
@@ -263,12 +434,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              "Hábitos y días programados",
-              "Series completadas por día",
-              "Rachas, puntos y nivel",
-              "Tema y recordatorios"
-            ].map((item) => (
+            {["Hábitos y días programados", "Series completadas por día", "Rachas, puntos y nivel", "Tema y recordatorios"].map((item) => (
               <div key={item} className="rounded-[22px] border border-border bg-background px-4 py-3 text-sm font-medium text-card-foreground">
                 {item}
               </div>

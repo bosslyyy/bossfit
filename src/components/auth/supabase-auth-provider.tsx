@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
@@ -113,11 +113,12 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
 
           if (shouldFlushBeforeLogout) {
             try {
-              const saved = await saveRemoteState(currentUserId, snapshot);
+              const saved = await saveRemoteState(currentUserId, snapshot, { reason: "signout" });
               state.setCloudSyncState({
                 userId: currentUserId,
                 lastSyncedAt: saved.lastSyncedAt,
-                lastLocalChangeAt: saved.lastSyncedAt
+                lastLocalChangeAt: saved.lastSyncedAt,
+                pendingRemoteReason: undefined
               });
             } catch (error) {
               logSupabaseError("BossFit: no se pudo sincronizar antes de cerrar sesion.", error);
@@ -147,3 +148,6 @@ export function useSupabaseAuth() {
 
   return context;
 }
+
+
+

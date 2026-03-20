@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -20,6 +20,7 @@ import type {
   DailyCompletion,
   Habit,
   ReminderSettings,
+  RemoteSaveReason,
   ThemeMode
 } from "@/types/habit";
 
@@ -50,11 +51,15 @@ interface BossFitState {
   resetAppData: () => void;
 }
 
-function createLocalChangeCloudState(cloudSync: CloudSyncState): CloudSyncState {
+function createLocalChangeCloudState(
+  cloudSync: CloudSyncState,
+  reason: RemoteSaveReason = "sync"
+): CloudSyncState {
   return {
     ...DEFAULT_CLOUD_SYNC_STATE,
     ...cloudSync,
-    lastLocalChangeAt: new Date().toISOString()
+    lastLocalChangeAt: new Date().toISOString(),
+    pendingRemoteReason: reason
   };
 }
 
@@ -122,8 +127,10 @@ export const useBossFitStore = create<BossFitState>()(
           id: habitId,
           name: values.name,
           category: values.category,
+          trackingMode: values.trackingMode,
           targetSets: values.targetSets,
           repsPerSet: values.repsPerSet,
+          secondsPerSet: values.secondsPerSet,
           selectedDays: values.selectedDays,
           active: values.active,
           color: values.color,
@@ -148,8 +155,10 @@ export const useBossFitStore = create<BossFitState>()(
                   ...habit,
                   name: values.name,
                   category: values.category,
+                  trackingMode: values.trackingMode,
                   targetSets: values.targetSets,
                   repsPerSet: values.repsPerSet,
+                  secondsPerSet: values.secondsPerSet,
                   selectedDays: values.selectedDays,
                   active: values.active,
                   color: values.color,
@@ -306,7 +315,7 @@ export const useBossFitStore = create<BossFitState>()(
           ...freshState,
           theme: get().theme,
           reminderSettings: get().reminderSettings,
-          cloudSync: createLocalChangeCloudState(get().cloudSync),
+          cloudSync: createLocalChangeCloudState(get().cloudSync, "reset"),
           hasHydrated: true
         });
       }
@@ -330,3 +339,9 @@ export const useBossFitStore = create<BossFitState>()(
     }
   )
 );
+
+
+
+
+
+

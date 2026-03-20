@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { PropsWithChildren } from "react";
 import { useEffect } from "react";
@@ -11,7 +11,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 
-const PUBLIC_ROUTES = new Set(["/login", "/register"]);
+const PUBLIC_ROUTES = new Set(["/login", "/register", "/forgot-password", "/reset-password"]);
+const REDIRECT_IF_AUTH_ROUTES = new Set(["/login", "/register", "/forgot-password"]);
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.has(pathname);
@@ -22,13 +23,14 @@ export function AuthGuard({ children }: PropsWithChildren) {
   const router = useRouter();
   const { status, isConfigured } = useSupabaseAuth();
   const publicRoute = isPublicRoute(pathname);
+  const redirectIfAuth = REDIRECT_IF_AUTH_ROUTES.has(pathname);
 
   useEffect(() => {
     if (!isConfigured) {
       return;
     }
 
-    if (status === "authenticated" && publicRoute) {
+    if (status === "authenticated" && publicRoute && redirectIfAuth) {
       router.replace("/");
       return;
     }
@@ -37,7 +39,7 @@ export function AuthGuard({ children }: PropsWithChildren) {
       const next = pathname && pathname !== "/" ? `?next=${encodeURIComponent(pathname)}` : "";
       router.replace(`/login${next}`);
     }
-  }, [isConfigured, pathname, publicRoute, router, status]);
+  }, [isConfigured, pathname, publicRoute, redirectIfAuth, router, status]);
 
   if (!isConfigured && !publicRoute) {
     return (
@@ -66,7 +68,7 @@ export function AuthGuard({ children }: PropsWithChildren) {
     return <LoadingScreen title="Abriendo acceso seguro..." />;
   }
 
-  if (status === "authenticated" && publicRoute) {
+  if (status === "authenticated" && publicRoute && redirectIfAuth) {
     return <LoadingScreen title="Entrando a BossFit..." />;
   }
 

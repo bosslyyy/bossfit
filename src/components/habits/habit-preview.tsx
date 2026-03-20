@@ -20,7 +20,7 @@ export function HabitPreview({ values }: { values: HabitFormValues }) {
           <div className="space-y-1">
             <h3 className="font-display text-lg font-semibold text-white">{values.name || "Tu nuevo hábito"}</h3>
             <p className="text-sm text-white/70">
-              {formatHabitTarget(values.targetSets, values.repsPerSet)} · {selectedDays.join(" · ") || "Selecciona días"}
+              {formatHabitTarget(values.targetSets, values.repsPerSet, values.trackingMode, values.secondsPerSet)} · {selectedDays.join(" · ") || "Selecciona días"}
             </p>
           </div>
         </div>

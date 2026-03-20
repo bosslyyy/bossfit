@@ -1,12 +1,13 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
 import { HabitIcon } from "@/components/habits/habit-icon";
 import { Button } from "@/components/ui/button";
 import { HABIT_COLORS } from "@/lib/constants";
-import { cn, formatHabitTarget } from "@/lib/utils";
+import { playSeriesIncrementSound, playTimerTickSound, warmupAppSound } from "@/lib/sound";
+import { cn, formatDurationShort, formatHabitTarget } from "@/lib/utils";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 import type { Habit, HabitProgress } from "@/types/habit";
 
@@ -24,8 +25,14 @@ export function TodayHabitCard({
   const completeSet = useBossFitStore((state) => state.completeSet);
   const undoSet = useBossFitStore((state) => state.undoSet);
   const [celebrate, setCelebrate] = useState(false);
+  const [timerDeadline, setTimerDeadline] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(habit.secondsPerSet ?? 60);
+  const lastTickSecondRef = useRef<number | null>(null);
   const swatch = HABIT_COLORS.find((entry) => entry.value === habit.color)?.swatch ?? "#EF4444";
   const isCompleted = progress.isCompleted || variant === "completed";
+  const isTimerHabit = habit.trackingMode === "timer";
+  const configuredSeconds = habit.secondsPerSet ?? 60;
+  const timerRunning = timerDeadline !== null;
 
   useEffect(() => {
     if (!celebrate) {
@@ -36,11 +43,103 @@ export function TodayHabitCard({
     return () => window.clearTimeout(timer);
   }, [celebrate]);
 
-  const handleComplete = () => {
+  useEffect(() => {
+    setTimerDeadline(null);
+    setRemainingSeconds(configuredSeconds);
+    lastTickSecondRef.current = configuredSeconds;
+  }, [habit.id, configuredSeconds]);
+
+  useEffect(() => {
+    if (!timerDeadline) {
+      return;
+    }
+
+    if (progress.isCompleted) {
+      setTimerDeadline(null);
+      setRemainingSeconds(configuredSeconds);
+      lastTickSecondRef.current = configuredSeconds;
+      return;
+    }
+
+    let intervalId = 0;
+
+    const tick = () => {
+      const diff = timerDeadline - Date.now();
+      if (diff <= 0) {
+        window.clearInterval(intervalId);
+        setTimerDeadline(null);
+        setRemainingSeconds(configuredSeconds);
+        lastTickSecondRef.current = configuredSeconds;
+        const result = completeSet(habit.id);
+        if (result) {
+          playSeriesIncrementSound();
+        }
+        if (result?.justCompleted) {
+          setCelebrate(true);
+        }
+        return;
+      }
+
+      const nextRemainingSeconds = Math.ceil(diff / 1000);
+      if (
+        typeof lastTickSecondRef.current === "number" &&
+        nextRemainingSeconds !== lastTickSecondRef.current &&
+        nextRemainingSeconds < configuredSeconds
+      ) {
+        playTimerTickSound();
+      }
+
+      lastTickSecondRef.current = nextRemainingSeconds;
+      setRemainingSeconds(nextRemainingSeconds);
+    };
+
+    intervalId = window.setInterval(tick, 250);
+    tick();
+
+    return () => window.clearInterval(intervalId);
+  }, [completeSet, configuredSeconds, habit.id, progress.isCompleted, timerDeadline]);
+
+  const handleComplete = async () => {
+    await warmupAppSound();
     const result = completeSet(habit.id);
+    if (result) {
+      playSeriesIncrementSound();
+    }
     if (result?.justCompleted) {
       setCelebrate(true);
     }
+  };
+
+  const handlePrimaryAction = async () => {
+    if (progress.isCompleted) {
+      return;
+    }
+
+    await warmupAppSound();
+
+    if (!isTimerHabit) {
+      await handleComplete();
+      return;
+    }
+
+    if (timerRunning) {
+      return;
+    }
+
+    setRemainingSeconds(configuredSeconds);
+    lastTickSecondRef.current = configuredSeconds;
+    setTimerDeadline(Date.now() + configuredSeconds * 1000);
+  };
+
+  const handleSecondaryAction = () => {
+    if (timerRunning) {
+      setTimerDeadline(null);
+      setRemainingSeconds(configuredSeconds);
+      lastTickSecondRef.current = configuredSeconds;
+      return;
+    }
+
+    undoSet(habit.id);
   };
 
   return (
@@ -85,39 +184,54 @@ export function TodayHabitCard({
               isCompleted && "text-muted-foreground line-through decoration-border decoration-2"
             )}
           >
-            {habit.name} - {formatHabitTarget(habit.targetSets, habit.repsPerSet)}
+            {habit.name} - {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)}
           </h3>
           <p className="text-sm text-muted-foreground">
             {progress.completedSets} / {habit.targetSets} series completadas
           </p>
+          {isTimerHabit ? (
+            <p className="text-xs text-muted-foreground">
+              {timerRunning
+                ? `Serie en curso · ${formatDurationShort(remainingSeconds)} restantes`
+                : `Cardio por tiempo · ${formatDurationShort(configuredSeconds)} por serie`}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
           <Button
             className={cn(
-              "h-12 min-w-[8.4rem] rounded-full border px-5 text-sm font-semibold shadow-none",
+              "h-12 min-w-[8.8rem] rounded-full border px-5 text-sm font-semibold shadow-none",
               isCompleted
                 ? "border-border/80 bg-background text-muted-foreground"
                 : "border-border/80 bg-surface text-card-foreground hover:bg-background"
             )}
-            onClick={handleComplete}
+            onClick={() => {
+              void handlePrimaryAction();
+            }}
             disabled={progress.isCompleted}
           >
-            {isCompleted ? "Listo" : "+ 1"}
+            {isCompleted
+              ? "Listo"
+              : isTimerHabit
+                ? timerRunning
+                  ? formatDurationShort(remainingSeconds)
+                  : "Iniciar serie"
+                : "+ 1"}
           </Button>
 
           <Button
             variant="ghost"
             className="h-9 rounded-full px-3 text-muted-foreground hover:bg-surface hover:text-card-foreground"
-            onClick={() => undoSet(habit.id)}
-            disabled={progress.completedSets === 0}
-            aria-label={`Deshacer una serie en ${habit.name}`}
+            onClick={handleSecondaryAction}
+            disabled={timerRunning ? false : progress.completedSets === 0}
+            aria-label={timerRunning ? `Cancelar serie en ${habit.name}` : `Deshacer una serie en ${habit.name}`}
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="mr-2 h-4 w-4" />
+            {timerRunning ? "Cancelar" : "Deshacer"}
           </Button>
         </div>
       </div>
     </article>
   );
 }
-

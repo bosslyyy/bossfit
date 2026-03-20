@@ -1,4 +1,4 @@
-export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+﻿export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
 export type HabitCategory =
   | "fuerza"
@@ -13,6 +13,8 @@ export type HabitLevel = "principiante" | "intermedio" | "avanzado";
 export type HabitColor = "ember" | "emerald" | "ocean" | "sun" | "rose" | "graphite";
 
 export type HabitIcon = "flame" | "dumbbell" | "heart" | "mountain" | "bolt" | "timer";
+
+export type HabitTrackingMode = "reps" | "timer";
 
 export type ThemeMode = "light" | "dark";
 
@@ -29,8 +31,10 @@ export interface Habit {
   id: string;
   name: string;
   category?: HabitCategory;
+  trackingMode: HabitTrackingMode;
   targetSets: number;
   repsPerSet: number;
+  secondsPerSet?: number;
   selectedDays: WeekdayKey[];
   active: boolean;
   color: HabitColor;
@@ -160,8 +164,11 @@ export interface ReminderSettings {
   lastSentDate?: string;
 }
 
+export type RemoteSaveReason = "sync" | "reset" | "signout" | "pagehide" | "bootstrap" | "recovery";
+
 export interface CloudSyncState {
   userId?: string;
   lastLocalChangeAt?: string;
   lastSyncedAt?: string;
+  pendingRemoteReason?: RemoteSaveReason;
 }

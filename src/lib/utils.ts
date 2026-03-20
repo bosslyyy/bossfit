@@ -2,7 +2,7 @@
 import { twMerge } from "tailwind-merge";
 
 import { WEEK_DAYS } from "@/lib/constants";
-import type { WeekdayKey } from "@/types/habit";
+import type { HabitTrackingMode, WeekdayKey } from "@/types/habit";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,12 +44,42 @@ export function formatSeriesProgress(completedSets: number, targetSets: number) 
   return `${completedSets}/${targetSets} series completadas`;
 }
 
-export function formatHabitTarget(targetSets: number, repsPerSet: number) {
+export function formatDurationShort(totalSeconds: number) {
+  const normalizedSeconds = Math.max(Math.round(totalSeconds), 0);
+  const hours = Math.floor(normalizedSeconds / 3600);
+  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
+  const seconds = normalizedSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function formatHabitTarget(
+  targetSets: number,
+  repsPerSet: number,
+  trackingMode: HabitTrackingMode = "reps",
+  secondsPerSet?: number
+) {
+  if (trackingMode === "timer") {
+    return `${targetSets} x ${formatDurationShort(secondsPerSet ?? 60)}`;
+  }
+
   return `${targetSets}x${repsPerSet}`;
 }
 
-export function calculatePoints(completedSets: number, repsPerSet: number) {
-  return completedSets * repsPerSet;
+export function calculatePoints(
+  completedSets: number,
+  repsPerSet: number,
+  trackingMode: HabitTrackingMode = "reps",
+  secondsPerSet?: number
+) {
+  const unitValue =
+    trackingMode === "timer" ? Math.max(Math.round((secondsPerSet ?? 60) / 10), 1) : repsPerSet;
+
+  return completedSets * unitValue;
 }
 
 export function formatSelectedDays(selectedDays: WeekdayKey[]) {

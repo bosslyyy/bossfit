@@ -51,8 +51,10 @@ export default function EditHabitPage() {
         initialValues={{
           name: habit.name,
           category: habit.category,
+          trackingMode: habit.trackingMode,
           targetSets: habit.targetSets,
           repsPerSet: habit.repsPerSet,
+          secondsPerSet: habit.secondsPerSet,
           selectedDays: habit.selectedDays,
           color: habit.color,
           icon: habit.icon,

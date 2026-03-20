@@ -4,13 +4,14 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { Loader2, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { hydrateStoreForUser } from "@/lib/supabase/hydrate-store";
+import { resolveLoginEmail } from "@/lib/supabase/resolve-login";
 
 function getSafeNextPath(candidate: string | null) {
   if (!candidate || !candidate.startsWith("/") || candidate === "/login" || candidate === "/register") {
@@ -26,7 +27,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
   const isRegister = mode === "register";
 
   const [nextPath, setNextPath] = useState("/");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -52,13 +53,18 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
       return;
     }
 
-    if (!email.trim() || !password.trim()) {
-      setError("Completa tu email y contraseña.");
+    if (!identifier.trim() || !password.trim()) {
+      setError(isRegister ? "Completa tu email y contraseña." : "Completa tu email o usuario y contraseña.");
       return;
     }
 
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    if (isRegister && !identifier.includes("@")) {
+      setError("Escribe un email válido para crear tu cuenta.");
       return;
     }
 
@@ -78,7 +84,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
     try {
       if (isRegister) {
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: identifier.trim().toLowerCase(),
           password
         });
 
@@ -100,8 +106,9 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
         return;
       }
 
+      const email = await resolveLoginEmail(identifier);
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email,
         password
       });
 
@@ -134,7 +141,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
           <p className="max-w-[26rem] text-sm text-muted-foreground">
             {isRegister
               ? "Activa tu progreso en la nube y sincroniza tus hábitos, series y ajustes por usuario."
-              : "Entra con tu email para recuperar tu progreso y seguir entrenando sin perder continuidad."}
+              : "Entra con tu email o usuario para recuperar tu progreso y seguir entrenando sin perder continuidad."}
           </p>
         </div>
 
@@ -153,16 +160,20 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-card-foreground">Email</span>
+              <span className="text-sm font-semibold text-card-foreground">{isRegister ? "Email" : "Email o Usuario"}</span>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                {isRegister ? (
+                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                ) : (
+                  <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                )}
                 <Input
-                  type="email"
-                  autoComplete="email"
-                  placeholder="tu@bossfit.app"
+                  type={isRegister ? "email" : "text"}
+                  autoComplete={isRegister ? "email" : "username"}
+                  placeholder={isRegister ? "tu@bossfit.app" : "Usuario o tu@email"}
                   className="pl-11"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
                 />
               </div>
             </label>
@@ -181,6 +192,14 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
                 />
               </div>
             </label>
+
+            {!isRegister ? (
+              <div className="flex justify-end">
+                <Link href="/forgot-password" className="text-sm font-semibold text-accent">
+                  Se me olvidó la contraseña
+                </Link>
+              </div>
+            ) : null}
 
             {isRegister ? (
               <label className="block space-y-2">

@@ -23,7 +23,7 @@ export function HabitHistoryCard({
           </div>
           <div>
             <h3 className="font-display text-lg font-semibold text-card-foreground">{habit.name}</h3>
-            <p className="text-sm text-muted-foreground">{formatHabitTarget(habit.targetSets, habit.repsPerSet)}</p>
+            <p className="text-sm text-muted-foreground">{formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)}</p>
           </div>
         </div>
         <Badge

@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 
 import { STORAGE_VERSION } from "@/lib/constants";
@@ -26,28 +26,53 @@ const habitCategorySchema = z.enum([
 const habitLevelSchema = z.enum(["principiante", "intermedio", "avanzado"]);
 const habitColorSchema = z.enum(["ember", "emerald", "ocean", "sun", "rose", "graphite"]);
 const habitIconSchema = z.enum(["flame", "dumbbell", "heart", "mountain", "bolt", "timer"]);
+const habitTrackingModeSchema = z.enum(["reps", "timer"]);
 const themeSchema = z.enum(["light", "dark"]);
 const reminderPermissionSchema = z.enum(["default", "granted", "denied", "unsupported"]);
+const remoteSaveReasonSchema = z.enum(["sync", "reset", "signout", "pagehide", "bootstrap", "recovery"]);
 
-const habitSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  category: habitCategorySchema.optional(),
-  targetSets: z.number().int().min(1).max(99),
-  repsPerSet: z.number().int().min(1).max(9999),
-  selectedDays: z.array(weekdayKeySchema).min(1),
-  active: z.boolean(),
-  color: habitColorSchema,
-  icon: habitIconSchema,
-  level: habitLevelSchema.optional(),
-  createdAt: z.string().min(1),
-  updatedAt: z.string().min(1)
-});
+const habitSchema: z.ZodType<Habit, z.ZodTypeDef, unknown> = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    category: habitCategorySchema.optional(),
+    trackingMode: habitTrackingModeSchema.optional(),
+    targetSets: z.number().int().min(1).max(999),
+    repsPerSet: z.number().int().min(1).max(9999).optional(),
+    secondsPerSet: z.number().int().min(5).max(7200).optional(),
+    selectedDays: z.array(weekdayKeySchema).min(1),
+    active: z.boolean(),
+    color: habitColorSchema,
+    icon: habitIconSchema,
+    level: habitLevelSchema.optional(),
+    createdAt: z.string().min(1),
+    updatedAt: z.string().min(1)
+  })
+  .transform((habit): Habit => {
+    const trackingMode = habit.trackingMode === "timer" ? "timer" : "reps";
+
+    return {
+      id: habit.id,
+      name: habit.name,
+      category: habit.category,
+      trackingMode,
+      targetSets: habit.targetSets,
+      repsPerSet: trackingMode === "reps" ? habit.repsPerSet ?? 1 : habit.repsPerSet ?? 1,
+      secondsPerSet: trackingMode === "timer" ? habit.secondsPerSet ?? 60 : undefined,
+      selectedDays: habit.selectedDays,
+      active: habit.active,
+      color: habit.color,
+      icon: habit.icon,
+      level: habit.level,
+      createdAt: habit.createdAt,
+      updatedAt: habit.updatedAt
+    };
+  });
 
 const dailyCompletionSchema = z.object({
   habitId: z.string().min(1),
   date: z.string().regex(dateKeyPattern),
-  completedSets: z.number().int().min(0).max(99),
+  completedSets: z.number().int().min(0).max(999),
   updatedAt: z.string().min(1),
   completedAt: z.string().min(1).optional()
 });
@@ -62,7 +87,8 @@ const reminderSettingsSchema = z.object({
 const cloudSyncSchema = z.object({
   userId: z.string().min(1).optional(),
   lastLocalChangeAt: z.string().min(1).optional(),
-  lastSyncedAt: z.string().min(1).optional()
+  lastSyncedAt: z.string().min(1).optional(),
+  pendingRemoteReason: remoteSaveReasonSchema.optional()
 });
 
 export interface BossFitPersistedState {
@@ -95,7 +121,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseCollection<T>(schema: z.ZodType<T>, value: unknown): T[] {
+function parseCollection<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, value: unknown): T[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -133,7 +159,7 @@ export function migratePersistedState(
 ): BossFitPersistedState {
   const candidate = isRecord(persistedState) ? persistedState : {};
   const baseState: BossFitPersistedState = {
-    habits: parseCollection(habitSchema, candidate.habits),
+    habits: parseCollection<Habit>(habitSchema, candidate.habits),
     completions: parseCollection(dailyCompletionSchema, candidate.completions),
     theme: normalizeTheme(candidate.theme),
     reminderSettings: normalizeReminderSettings(candidate.reminderSettings),
@@ -144,6 +170,7 @@ export function migratePersistedState(
     case 0:
     case 1:
     case 2:
+    case 3:
     default:
       return {
         ...createInitialPersistedState(),
