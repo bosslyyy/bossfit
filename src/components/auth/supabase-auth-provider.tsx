@@ -5,14 +5,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type PropsWith
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import {
-  getSupabaseErrorInfo,
-  hasMeaningfulSnapshotData,
-  logSupabaseError,
-  saveRemoteState,
-  toRemoteSnapshot
-} from "@/lib/supabase/data";
-import { useBossFitStore } from "@/store/use-bossfit-store";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -26,18 +18,6 @@ interface SupabaseAuthContextValue {
 }
 
 const SupabaseAuthContext = createContext<SupabaseAuthContextValue | null>(null);
-
-function hasUnsyncedLocalChanges(lastLocalChangeAt?: string, lastSyncedAt?: string) {
-  if (!lastLocalChangeAt) {
-    return false;
-  }
-
-  if (!lastSyncedAt) {
-    return true;
-  }
-
-  return new Date(lastLocalChangeAt).getTime() > new Date(lastSyncedAt).getTime();
-}
 
 export function SupabaseAuthProvider({ children }: PropsWithChildren) {
   const isConfigured = isSupabaseConfigured();
@@ -95,40 +75,6 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
           return { error: "Supabase no esta configurado." };
         }
 
-        const currentUserId = session?.user?.id;
-
-        if (currentUserId) {
-          const state = useBossFitStore.getState();
-          const sameOwner = state.cloudSync.userId === currentUserId;
-          const snapshot = toRemoteSnapshot({
-            habits: state.habits,
-            completions: state.completions,
-            theme: state.theme,
-            reminderSettings: state.reminderSettings
-          });
-          const shouldFlushBeforeLogout =
-            sameOwner &&
-            hasMeaningfulSnapshotData(snapshot) &&
-            hasUnsyncedLocalChanges(state.cloudSync.lastLocalChangeAt, state.cloudSync.lastSyncedAt);
-
-          if (shouldFlushBeforeLogout) {
-            try {
-              const saved = await saveRemoteState(currentUserId, snapshot, { reason: "signout" });
-              state.setCloudSyncState({
-                userId: currentUserId,
-                lastSyncedAt: saved.lastSyncedAt,
-                lastLocalChangeAt: saved.lastSyncedAt,
-                pendingRemoteReason: undefined
-              });
-            } catch (error) {
-              logSupabaseError("BossFit: no se pudo sincronizar antes de cerrar sesion.", error);
-              return {
-                error: getSupabaseErrorInfo(error).message
-              };
-            }
-          }
-        }
-
         const { error } = await supabase.auth.signOut();
         return { error: error?.message ?? null };
       }
@@ -148,6 +94,3 @@ export function useSupabaseAuth() {
 
   return context;
 }
-
-
-

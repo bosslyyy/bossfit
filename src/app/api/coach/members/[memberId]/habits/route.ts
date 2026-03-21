@@ -1,10 +1,13 @@
-﻿import { randomUUID } from "node:crypto";
+﻿import { NextResponse } from "next/server";
 
-import { NextResponse } from "next/server";
-
+import { SnapshotMutationError } from "@/lib/bossfit/snapshot-actions";
 import { getSupabaseErrorInfo } from "@/lib/supabase/data";
+import {
+  archiveUserHabit,
+  createUserHabit,
+  updateUserHabit
+} from "@/lib/supabase/normalized-user-state-server";
 import { createSupabaseServiceRoleClient, getAuthenticatedUserFromRequest } from "@/lib/supabase/server-admin";
-import { fetchRemoteSnapshotForUser, saveRemoteSnapshotForUser } from "@/lib/supabase/server-state";
 import { habitSchema } from "@/lib/validation/habit";
 
 interface RouteContext {
@@ -26,6 +29,7 @@ async function assertTrainerCanManageMember(request: Request, memberId: string) 
     .select("id, gym_id, trainer_user_id, member_user_id, status")
     .eq("member_user_id", memberId)
     .eq("trainer_user_id", requester.id)
+    .eq("status", "active")
     .maybeSingle();
 
   if (assignmentError) {
@@ -90,32 +94,13 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos." }, { status: 400 });
     }
 
-    const remoteState = await fetchRemoteSnapshotForUser(auth.supabase, memberId);
-    const now = new Date().toISOString();
-    const nextHabit = {
-      id: `habit-${randomUUID()}`,
-      name: parsed.data.name,
-      category: parsed.data.category,
-      trackingMode: parsed.data.trackingMode,
-      targetSets: parsed.data.targetSets,
-      repsPerSet: parsed.data.repsPerSet,
-      secondsPerSet: parsed.data.secondsPerSet,
-      selectedDays: parsed.data.selectedDays,
-      active: parsed.data.active,
-      color: parsed.data.color,
-      icon: parsed.data.icon,
-      level: parsed.data.level,
-      createdAt: now,
-      updatedAt: now
-    };
-
-    await saveRemoteSnapshotForUser(auth.supabase, memberId, {
-      ...remoteState.snapshot,
-      habits: [nextHabit, ...remoteState.snapshot.habits]
-    });
-
-    return NextResponse.json({ habit: nextHabit });
+    const outcome = await createUserHabit(auth.supabase, memberId, parsed.data);
+    return NextResponse.json({ habit: outcome.result.habit, state: outcome.state });
   } catch (error) {
+    if (error instanceof SnapshotMutationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     const info = getSupabaseErrorInfo(error);
     console.error("BossFit Coach: no se pudo crear el entrenamiento del alumno.", {
       message: info.message,
@@ -147,26 +132,13 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos." }, { status: 400 });
     }
 
-    const remoteState = await fetchRemoteSnapshotForUser(auth.supabase, memberId);
-    const targetHabit = remoteState.snapshot.habits.find((habit) => habit.id === body.habitId);
-
-    if (!targetHabit) {
-      return NextResponse.json({ error: "No encontramos ese entrenamiento en el alumno." }, { status: 404 });
+    const outcome = await updateUserHabit(auth.supabase, memberId, body.habitId, parsed.data);
+    return NextResponse.json({ habitId: body.habitId, state: outcome.state });
+  } catch (error) {
+    if (error instanceof SnapshotMutationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const updatedHabit = {
-      ...targetHabit,
-      ...parsed.data,
-      updatedAt: new Date().toISOString()
-    };
-
-    await saveRemoteSnapshotForUser(auth.supabase, memberId, {
-      ...remoteState.snapshot,
-      habits: remoteState.snapshot.habits.map((habit) => (habit.id === body.habitId ? updatedHabit : habit))
-    });
-
-    return NextResponse.json({ habit: updatedHabit });
-  } catch (error) {
     const info = getSupabaseErrorInfo(error);
     console.error("BossFit Coach: no se pudo actualizar el entrenamiento del alumno.", {
       message: info.message,
@@ -193,23 +165,13 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Falta habitId." }, { status: 400 });
     }
 
-    const remoteState = await fetchRemoteSnapshotForUser(auth.supabase, memberId);
-    const nextHabits = remoteState.snapshot.habits.filter((habit) => habit.id !== habitId);
-
-    if (nextHabits.length === remoteState.snapshot.habits.length) {
-      return NextResponse.json({ error: "No encontramos ese entrenamiento en el alumno." }, { status: 404 });
+    const outcome = await archiveUserHabit(auth.supabase, memberId, habitId);
+    return NextResponse.json({ success: true, state: outcome.state });
+  } catch (error) {
+    if (error instanceof SnapshotMutationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const nextCompletions = remoteState.snapshot.completions.filter((completion) => completion.habitId !== habitId);
-
-    await saveRemoteSnapshotForUser(auth.supabase, memberId, {
-      ...remoteState.snapshot,
-      habits: nextHabits,
-      completions: nextCompletions
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
     const info = getSupabaseErrorInfo(error);
     console.error("BossFit Coach: no se pudo eliminar el entrenamiento del alumno.", {
       message: info.message,
@@ -222,3 +184,4 @@ export async function DELETE(request: Request, context: RouteContext) {
     return NextResponse.json({ error: info.message, details: info.details, hint: info.hint, code: info.code }, { status: 500 });
   }
 }
+

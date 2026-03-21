@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { PencilLine, Power } from "lucide-react";
 
 import { HabitIcon } from "@/components/habits/habit-icon";
@@ -8,13 +9,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HABIT_COLOR_STYLES } from "@/lib/constants";
+import { toggleHabitActiveAction } from "@/lib/supabase/user-state-actions";
 import { formatHabitTarget, formatSelectedDays } from "@/lib/utils";
-import { useBossFitStore } from "@/store/use-bossfit-store";
 import type { Habit } from "@/types/habit";
 
 export function HabitCard({ habit }: { habit: Habit }) {
-  const toggleHabitActive = useBossFitStore((state) => state.toggleHabitActive);
+  const [toggling, setToggling] = useState(false);
   const styles = HABIT_COLOR_STYLES[habit.color];
+
+  const handleToggle = async () => {
+    setToggling(true);
+    try {
+      await toggleHabitActiveAction(habit.id);
+    } finally {
+      setToggling(false);
+    }
+  };
 
   return (
     <Card className={`border bg-card dark:!border-border dark:bg-[#121922] dark:shadow-[0_14px_32px_rgba(2,8,16,0.34)] ${styles.border}`}>
@@ -50,9 +60,9 @@ export function HabitCard({ habit }: { habit: Habit }) {
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <Button variant="secondary" className="flex-1" onClick={() => toggleHabitActive(habit.id)}>
+        <Button variant="secondary" className="flex-1" onClick={() => void handleToggle()} disabled={toggling}>
           <Power className="mr-2 h-4 w-4" />
-          {habit.active ? "Pausar" : "Activar"}
+          {toggling ? "Guardando..." : habit.active ? "Pausar" : "Activar"}
         </Button>
         <Link href={`/habits/${habit.id}/edit`} className={buttonVariants({ variant: "outline", className: "flex-1" })}>
           <PencilLine className="mr-2 h-4 w-4" />

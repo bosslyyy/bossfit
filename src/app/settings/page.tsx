@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { getReminderPermissionLabel, getReminderSupport, requestReminderPermission } from "@/lib/reminders";
 import { getSupabaseStatusLabel } from "@/lib/supabase/client";
 import { fetchActiveCoachGymContext } from "@/lib/supabase/coach";
+import { resetAppDataAction, setThemeAction, updateReminderSettingsAction } from "@/lib/supabase/user-state-actions";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
 function formatSyncDate(value?: string) {
@@ -46,19 +47,13 @@ export default function SettingsPage() {
     theme,
     reminderSettings,
     cloudSync,
-    hasHydrated,
-    setTheme,
-    updateReminderSettings,
-    resetAppData
+    hasHydrated
   } = useBossFitStore(
     useShallow((state) => ({
       theme: state.theme,
       reminderSettings: state.reminderSettings,
       cloudSync: state.cloudSync,
-      hasHydrated: state.hasHydrated,
-      setTheme: state.setTheme,
-      updateReminderSettings: state.updateReminderSettings,
-      resetAppData: state.resetAppData
+      hasHydrated: state.hasHydrated
     }))
   );
   const { user, signOut, supabase } = useSupabaseAuth();
@@ -77,9 +72,9 @@ export default function SettingsPage() {
 
     const support = getReminderSupport();
     if (support.permission !== reminderSettings.permission) {
-      updateReminderSettings({ permission: support.permission });
+      void updateReminderSettingsAction({ permission: support.permission });
     }
-  }, [hasHydrated, reminderSettings.permission, updateReminderSettings]);
+  }, [hasHydrated, reminderSettings.permission]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,12 +112,12 @@ export default function SettingsPage() {
 
   const handleReminderToggle = async (checked: boolean) => {
     if (!checked) {
-      updateReminderSettings({ enabled: false });
+      await updateReminderSettingsAction({ enabled: false });
       return;
     }
 
     if (!reminderSupport.supported) {
-      updateReminderSettings({ enabled: false, permission: "unsupported" });
+      await updateReminderSettingsAction({ enabled: false, permission: "unsupported" });
       return;
     }
 
@@ -130,10 +125,10 @@ export default function SettingsPage() {
 
     if (nextPermission !== "granted") {
       nextPermission = await requestReminderPermission();
-      updateReminderSettings({ permission: nextPermission });
+      await updateReminderSettingsAction({ permission: nextPermission });
     }
 
-    updateReminderSettings({
+    await updateReminderSettingsAction({
       enabled: nextPermission === "granted"
     });
   };
@@ -338,7 +333,7 @@ export default function SettingsPage() {
             <SunMedium className="h-4 w-4 text-muted-foreground" />
             <Switch
               checked={theme === "dark"}
-              onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              onCheckedChange={(checked) => { void setThemeAction(checked ? "dark" : "light"); }}
               ariaLabel="Cambiar tema"
             />
             <MoonStar className="h-4 w-4 text-muted-foreground" />
@@ -385,14 +380,14 @@ export default function SettingsPage() {
                 type="time"
                 className="mt-3"
                 value={reminderSettings.time}
-                onChange={(event) => updateReminderSettings({ time: event.target.value })}
+                onChange={(event) => { void updateReminderSettingsAction({ time: event.target.value }); }}
               />
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   onClick={async () => {
                     const permission = await requestReminderPermission();
-                    updateReminderSettings({
+                    void updateReminderSettingsAction({
                       permission,
                       enabled: permission === "granted" ? reminderSettings.enabled : false
                     });
@@ -403,7 +398,7 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => updateReminderSettings({ lastSentDate: undefined })}
+                  onClick={() => { void updateReminderSettingsAction({ lastSentDate: undefined }); }}
                   disabled={!reminderSettings.enabled}
                 >
                   Rearmar recordatorio
@@ -484,7 +479,7 @@ export default function SettingsPage() {
             onClick={() => {
               const confirmed = window.confirm("¿Restablecer BossFit al estado inicial?");
               if (confirmed) {
-                resetAppData();
+                void resetAppDataAction();
               }
             }}
           >
@@ -496,3 +491,11 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

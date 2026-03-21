@@ -5,27 +5,13 @@ import { AppShell } from "@/components/layout/app-shell";
 
 import "./globals.css";
 
-const themeInitScript = `
-  try {
-    const raw = localStorage.getItem("bossfit-store");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const theme = parsed?.state?.theme;
-      if (theme) {
-        document.documentElement.dataset.theme = theme;
-      }
-    }
-  } catch (error) {
-    document.documentElement.dataset.theme = "light";
-  }
-`;
-
 export const metadata: Metadata = {
   title: {
     default: "BossFit",
     template: "%s | BossFit"
   },
-  description: "BossFit es una PWA fitness para crear hábitos, completar series por día y seguir tu progreso con una experiencia premium móvil.",
+  description:
+    "BossFit es una PWA fitness para crear hábitos, completar series por día y seguir tu progreso con una experiencia premium móvil.",
   applicationName: "BossFit",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -58,7 +44,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="es" suppressHydrationWarning>
       <body className="bg-background text-foreground">
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <AppShell>{children}</AppShell>
       </body>
     </html>

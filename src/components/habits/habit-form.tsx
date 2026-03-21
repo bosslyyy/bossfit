@@ -21,9 +21,13 @@ import {
   HABIT_ICONS,
   HABIT_LEVELS
 } from "@/lib/constants";
+import {
+  createHabitAction,
+  deleteHabitAction,
+  updateHabitAction
+} from "@/lib/supabase/user-state-actions";
 import { cn } from "@/lib/utils";
 import { habitDefaultValues, habitSchema, type HabitFormValues } from "@/lib/validation/habit";
-import { useBossFitStore } from "@/store/use-bossfit-store";
 
 const selectClassName =
   "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm text-card-foreground shadow-sm outline-none transition focus:border-transparent focus:bg-card focus:ring-2 focus:ring-ring";
@@ -39,9 +43,6 @@ export function HabitForm({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const addHabit = useBossFitStore((state) => state.addHabit);
-  const updateHabit = useBossFitStore((state) => state.updateHabit);
-  const deleteHabit = useBossFitStore((state) => state.deleteHabit);
 
   const form = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
@@ -60,22 +61,29 @@ export function HabitForm({
   const trackingMode = form.watch("trackingMode");
   const submitting = isPending || form.formState.isSubmitting;
 
-  const onSubmit = form.handleSubmit((rawValues) => {
+  const onSubmit = form.handleSubmit(async (rawValues) => {
+    form.clearErrors("root");
     const parsedValues = habitSchema.parse(rawValues);
 
-    if (mode === "create") {
-      addHabit(parsedValues);
-      startTransition(() => router.push("/today"));
-      return;
-    }
+    try {
+      if (mode === "create") {
+        await createHabitAction(parsedValues);
+        startTransition(() => router.push("/today"));
+        return;
+      }
 
-    if (habitId) {
-      updateHabit(habitId, parsedValues);
-      startTransition(() => router.push("/"));
+      if (habitId) {
+        await updateHabitAction(habitId, parsedValues);
+        startTransition(() => router.push("/"));
+      }
+    } catch (error) {
+      form.setError("root", {
+        message: error instanceof Error ? error.message : "No se pudo guardar el hábito."
+      });
     }
   });
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!habitId) {
       return;
     }
@@ -85,8 +93,14 @@ export function HabitForm({
       return;
     }
 
-    deleteHabit(habitId);
-    startTransition(() => router.push("/"));
+    try {
+      await deleteHabitAction(habitId);
+      startTransition(() => router.push("/"));
+    } catch (error) {
+      form.setError("root", {
+        message: error instanceof Error ? error.message : "No se pudo eliminar el hábito."
+      });
+    }
   };
 
   return (
@@ -319,7 +333,7 @@ export function HabitForm({
                     className={cn(
                       "rounded-[20px] border px-3 py-3 text-sm font-semibold transition",
                       selected
-                        ? "border-accent bg-accent text-accent-foreground"
+                        ? "border-accent bg-accent/12 text-accent ring-1 ring-accent/20"
                         : "border-border bg-surface text-card-foreground hover:bg-muted"
                     )}
                   >
@@ -334,21 +348,24 @@ export function HabitForm({
 
       <HabitPreview values={values} />
 
-      <div className="sticky bottom-[calc(5.6rem+env(safe-area-inset-bottom))] z-20 rounded-[28px] border border-border bg-background/96 p-3 shadow-soft backdrop-blur-md supports-[backdrop-filter]:bg-background/92">
-        <div className="flex gap-3">
-          {mode === "edit" ? (
-            <Button type="button" variant="danger" className="flex-1" onClick={handleDelete}>
-              Eliminar
-            </Button>
-          ) : (
-            <Link href="/" className={buttonVariants({ variant: "secondary", className: "flex-1" })}>
-              Cancelar
-            </Link>
-          )}
-          <Button type="submit" className="flex-1" disabled={submitting}>
-            {submitting ? "Guardando..." : mode === "create" ? "Crear hábito" : "Guardar cambios"}
-          </Button>
+      {form.formState.errors.root?.message ? (
+        <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">
+          {form.formState.errors.root.message}
         </div>
+      ) : null}
+
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Guardando..." : mode === "create" ? "Crear hábito" : "Guardar cambios"}
+        </Button>
+        <Link href={mode === "create" ? "/today" : "/"} className={buttonVariants({ variant: "secondary" })}>
+          Cancelar
+        </Link>
+        {mode === "edit" && habitId ? (
+          <Button type="button" variant="danger" onClick={() => void handleDelete()} disabled={submitting}>
+            Eliminar hábito
+          </Button>
+        ) : null}
       </div>
     </form>
   );

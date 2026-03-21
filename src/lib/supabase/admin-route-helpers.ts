@@ -1,5 +1,6 @@
 ﻿import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+import { toDateKey } from "@/lib/date";
 import type {
   AdminGroupDetail,
   AdminGroupMemberListItem,
@@ -195,7 +196,7 @@ async function fetchGroupNameMap(supabase: SupabaseClient, gymId: string, groupI
 function buildUserStats(remoteState: Awaited<ReturnType<typeof fetchUserRemoteStateOrEmpty>>): AdminUserDetailStats {
   const snapshot = remoteState.snapshot;
   const todayKey = getTodayWeekdayKey();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = toDateKey();
   const activeHabits = snapshot.habits.filter((habit) => habit.active);
   const scheduledToday = activeHabits.filter((habit) => habit.selectedDays.includes(todayKey)).length;
   const completionMap = new Map<string, number>();
@@ -677,3 +678,6 @@ export async function stripGroupFromAssignments(supabase: SupabaseClient, gymId:
     }
   }
 }
+
+
+

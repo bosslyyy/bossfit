@@ -1,7 +1,5 @@
 ﻿import { z } from "zod";
-import type { PersistStorage, StorageValue } from "zustand/middleware";
 
-import { STORAGE_VERSION } from "@/lib/constants";
 import type {
   CloudSyncState,
   DailyCompletion,
@@ -10,7 +8,6 @@ import type {
   ThemeMode
 } from "@/types/habit";
 
-const corruptBackupSuffix = ":corrupt-backup";
 const dateKeyPattern = /^\d{4}-\d{2}-\d{2}$/;
 const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -57,7 +54,7 @@ const habitSchema: z.ZodType<Habit, z.ZodTypeDef, unknown> = z
       category: habit.category,
       trackingMode,
       targetSets: habit.targetSets,
-      repsPerSet: trackingMode === "reps" ? habit.repsPerSet ?? 1 : habit.repsPerSet ?? 1,
+      repsPerSet: habit.repsPerSet ?? 1,
       secondsPerSet: trackingMode === "timer" ? habit.secondsPerSet ?? 60 : undefined,
       selectedDays: habit.selectedDays,
       active: habit.active,
@@ -88,6 +85,7 @@ const cloudSyncSchema = z.object({
   userId: z.string().min(1).optional(),
   lastLocalChangeAt: z.string().min(1).optional(),
   lastSyncedAt: z.string().min(1).optional(),
+  revision: z.number().int().min(0).optional(),
   pendingRemoteReason: remoteSaveReasonSchema.optional()
 });
 
@@ -155,7 +153,7 @@ function normalizeCloudSync(value: unknown): CloudSyncState {
 
 export function migratePersistedState(
   persistedState: unknown,
-  version = 0
+  _version = 0
 ): BossFitPersistedState {
   const candidate = isRecord(persistedState) ? persistedState : {};
   const baseState: BossFitPersistedState = {
@@ -166,116 +164,16 @@ export function migratePersistedState(
     cloudSync: normalizeCloudSync(candidate.cloudSync)
   };
 
-  switch (version) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    default:
-      return {
-        ...createInitialPersistedState(),
-        ...baseState,
-        reminderSettings: {
-          ...DEFAULT_REMINDER_SETTINGS,
-          ...baseState.reminderSettings
-        },
-        cloudSync: {
-          ...DEFAULT_CLOUD_SYNC_STATE,
-          ...baseState.cloudSync
-        }
-      };
-  }
+  return {
+    ...createInitialPersistedState(),
+    ...baseState,
+    reminderSettings: {
+      ...DEFAULT_REMINDER_SETTINGS,
+      ...baseState.reminderSettings
+    },
+    cloudSync: {
+      ...DEFAULT_CLOUD_SYNC_STATE,
+      ...baseState.cloudSync
+    }
+  };
 }
-
-function getSafeLocalStorage() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function backupCorruptStorage(name: string, rawValue: string) {
-  const storage = getSafeLocalStorage();
-  if (!storage) {
-    return;
-  }
-
-  try {
-    storage.setItem(`${name}${corruptBackupSuffix}`, rawValue);
-  } catch {
-    // Ignore backup failures and keep recovery best-effort.
-  }
-
-  try {
-    storage.removeItem(name);
-  } catch {
-    // Ignore cleanup failures so the app can still continue.
-  }
-}
-
-export const bossFitPersistStorage: PersistStorage<BossFitPersistedState> = {
-  getItem: (name) => {
-    const storage = getSafeLocalStorage();
-    if (!storage) {
-      return null;
-    }
-
-    const rawValue = storage.getItem(name);
-    if (!rawValue) {
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(rawValue) as unknown;
-
-      if (isRecord(parsed) && "state" in parsed) {
-        return {
-          state: (parsed as StorageValue<BossFitPersistedState>).state,
-          version: typeof parsed.version === "number" ? parsed.version : 0
-        };
-      }
-
-      return {
-        state: parsed as BossFitPersistedState,
-        version: 0
-      };
-    } catch {
-      backupCorruptStorage(name, rawValue);
-      return null;
-    }
-  },
-  setItem: (name, value) => {
-    const storage = getSafeLocalStorage();
-    if (!storage) {
-      return;
-    }
-
-    const sanitizedValue: StorageValue<BossFitPersistedState> = {
-      state: migratePersistedState(value.state, STORAGE_VERSION),
-      version: STORAGE_VERSION
-    };
-
-    try {
-      storage.setItem(name, JSON.stringify(sanitizedValue));
-    } catch {
-      // Ignore write failures so the in-memory app state remains usable.
-    }
-  },
-  removeItem: (name) => {
-    const storage = getSafeLocalStorage();
-    if (!storage) {
-      return;
-    }
-
-    try {
-      storage.removeItem(name);
-    } catch {
-      // Ignore remove failures.
-    }
-  }
-};

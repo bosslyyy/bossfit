@@ -11,6 +11,8 @@ import type { ReminderSettings, RemoteSaveReason, ThemeMode } from "@/types/habi
 
 const DEFAULT_LEVEL = 1;
 
+export const REMOTE_STATE_CONFLICT_CODE = "BOSSFIT_REMOTE_REVISION_CONFLICT";
+
 export interface BossFitRemoteSnapshot {
   habits: BossFitPersistedState["habits"];
   completions: BossFitPersistedState["completions"];
@@ -30,6 +32,7 @@ export interface BossFitRemoteMetrics {
 export interface BossFitRemoteState extends BossFitRemoteMetrics {
   snapshot: BossFitRemoteSnapshot;
   storageVersion: number;
+  revision: number;
   lastSyncedAt?: string;
   updatedAt?: string;
   lastSaveReason?: RemoteSaveReason;
@@ -38,6 +41,7 @@ export interface BossFitRemoteState extends BossFitRemoteMetrics {
 
 export interface SaveRemoteStateOptions {
   reason?: RemoteSaveReason;
+  expectedRevision?: number;
 }
 
 export interface SupabaseErrorInfo {
@@ -47,10 +51,16 @@ export interface SupabaseErrorInfo {
   code: string | null;
 }
 
-interface SaveRemoteStateResult extends BossFitRemoteMetrics {
+export interface RemoteStateConflictError extends SupabaseErrorInfo {
+  code: typeof REMOTE_STATE_CONFLICT_CODE;
+  state: BossFitRemoteState | null;
+}
+
+export interface SaveRemoteStateResult extends BossFitRemoteMetrics {
   lastSyncedAt: string;
   updatedAt: string;
   lastSaveReason?: RemoteSaveReason;
+  revision: number;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -114,6 +124,10 @@ export function logSupabaseError(context: string, error: unknown) {
     code: info.code,
     raw: error
   });
+}
+
+export function isRemoteStateConflictError(error: unknown): error is RemoteStateConflictError {
+  return isRecord(error) && error.code === REMOTE_STATE_CONFLICT_CODE;
 }
 
 export function normalizeSaveReason(value: unknown): RemoteSaveReason | undefined {
@@ -212,7 +226,8 @@ async function requestUserStateApi<T>(init: RequestInit & { method?: string }) {
       message: typeof payload.error === "string" ? payload.error : "No se pudo sincronizar con Supabase.",
       details: payload.details ?? null,
       hint: payload.hint ?? null,
-      code: payload.code ?? null
+      code: typeof payload.code === "string" ? payload.code : null,
+      state: isRecord(payload.state) ? (payload.state as unknown as BossFitRemoteState) : null
     };
   }
 
@@ -236,10 +251,12 @@ export async function saveRemoteState(
     method: "POST",
     body: JSON.stringify({
       snapshot,
-      reason: options.reason ?? "sync"
+      reason: options.reason ?? "sync",
+      expectedRevision: options.expectedRevision ?? null
     })
   });
 
   return payload.saved;
 }
+
 

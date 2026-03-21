@@ -12,6 +12,7 @@ import {
   getAuthenticatedUserFromRequest
 } from "@/lib/supabase/server-admin";
 import {
+  RemoteStateConflictError,
   fetchUserRemoteStateWithClient,
   saveUserRemoteStateWithClient
 } from "@/lib/supabase/user-state-server";
@@ -59,10 +60,24 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       snapshot?: Partial<BossFitRemoteSnapshot>;
       reason?: SaveRemoteStateOptions["reason"];
+      expectedRevision?: number | null;
     };
 
     if (!body.snapshot) {
       return NextResponse.json({ error: "Falta el snapshot del usuario." }, { status: 400, headers: noStoreHeaders });
+    }
+
+    if (
+      !Array.isArray(body.snapshot.habits) ||
+      !Array.isArray(body.snapshot.completions) ||
+      typeof body.snapshot.theme !== "string" ||
+      typeof body.snapshot.reminderSettings !== "object" ||
+      body.snapshot.reminderSettings === null
+    ) {
+      return NextResponse.json(
+        { error: "El snapshot remoto debe venir completo para evitar sobrescribir datos con vac?os." },
+        { status: 400, headers: noStoreHeaders }
+      );
     }
 
     const supabase = createSupabaseServiceRoleClient();
@@ -70,19 +85,32 @@ export async function POST(request: Request) {
       supabase,
       requester.id,
       toRemoteSnapshot({
-        habits: body.snapshot.habits ?? [],
-        completions: body.snapshot.completions ?? [],
-        theme: body.snapshot.theme ?? "light",
+        habits: body.snapshot.habits,
+        completions: body.snapshot.completions,
+        theme: body.snapshot.theme,
         reminderSettings: {
           ...DEFAULT_REMINDER_SETTINGS,
-          ...(body.snapshot.reminderSettings ?? {})
+          ...body.snapshot.reminderSettings
         }
       }),
-      { reason: body.reason }
+      {
+        reason: body.reason,
+        expectedRevision: typeof body.expectedRevision === "number" ? body.expectedRevision : undefined
+      }
     );
 
     return NextResponse.json({ saved }, { headers: noStoreHeaders });
   } catch (error) {
+    if (error instanceof RemoteStateConflictError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          state: error.state
+        },
+        { status: 409, headers: noStoreHeaders }
+      );
+    }
     const info = getSupabaseErrorInfo(error);
     return NextResponse.json(
       {

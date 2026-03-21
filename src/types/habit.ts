@@ -170,5 +170,6 @@ export interface CloudSyncState {
   userId?: string;
   lastLocalChangeAt?: string;
   lastSyncedAt?: string;
+  revision?: number;
   pendingRemoteReason?: RemoteSaveReason;
 }
