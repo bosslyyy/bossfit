@@ -2,6 +2,7 @@
 
 import { getCompletionCalendarData, getWeeklySummaryFromTimeline, getBossProfile } from "@/lib/progress-analytics";
 import { getSupabaseErrorInfo, createEmptyRemoteSnapshot } from "@/lib/supabase/data";
+import { findActiveMembershipByRoles } from "@/lib/supabase/gym-membership-roles";
 import { createSupabaseServiceRoleClient, getAuthenticatedUserFromRequest } from "@/lib/supabase/server-admin";
 import { fetchRemoteSnapshotForUser } from "@/lib/supabase/server-state";
 
@@ -85,18 +86,23 @@ export async function GET(request: Request) {
 
     const supabase = createSupabaseServiceRoleClient();
 
-    const { data: membership, error: membershipError } = await supabase
+    const { data: memberships, error: membershipError } = await supabase
       .from("gym_memberships")
-      .select("id, gym_id, user_id, role, status")
+      .select("id, gym_id, user_id, role, status, created_at")
       .eq("gym_id", gymId)
       .eq("user_id", requester.id)
-      .eq("status", "active")
-      .eq("role", "trainer")
-      .maybeSingle();
+      .eq("status", "active");
 
     if (membershipError) {
       throw membershipError;
     }
+
+    const membershipMatch = await findActiveMembershipByRoles(
+      supabase,
+      (memberships ?? []) as Array<{ id: string; gym_id: string; user_id: string; role: "owner" | "admin" | "trainer" | "member"; status: string }>,
+      ["trainer"]
+    );
+    const membership = membershipMatch?.membership;
 
     if (!membership) {
       return NextResponse.json({ error: "Tu cuenta no tiene acceso al panel coach." }, { status: 403, headers: noStoreHeaders });

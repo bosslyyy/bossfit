@@ -40,6 +40,13 @@ export const habitSchema = z
       .min(5, "El tiempo mínimo por serie es 5 segundos.")
       .max(7200, "El tiempo máximo por serie es 7200 segundos.")
       .optional(),
+    restEnabled: z.boolean().default(false),
+    restSeconds: z.coerce
+      .number()
+      .int()
+      .min(5, "El descanso mínimo por serie es 5 segundos.")
+      .max(7200, "El descanso máximo por serie es 7200 segundos.")
+      .optional(),
     selectedDays: z.array(weekdayEnum).min(1, "Selecciona al menos un día."),
     color: colorEnum,
     icon: iconEnum,
@@ -62,13 +69,23 @@ export const habitSchema = z
         message: "Define el tiempo de cada serie en segundos."
       });
     }
+
+    if (values.restEnabled && typeof values.restSeconds !== "number") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["restSeconds"],
+        message: "Define cuántos segundos durará el descanso."
+      });
+    }
   })
   .transform((values) => ({
     ...values,
     category: values.category || undefined,
     level: values.level || undefined,
     repsPerSet: values.trackingMode === "reps" ? values.repsPerSet ?? 8 : values.repsPerSet ?? 1,
-    secondsPerSet: values.trackingMode === "timer" ? values.secondsPerSet ?? 60 : undefined
+    secondsPerSet: values.trackingMode === "timer" ? values.secondsPerSet ?? 60 : undefined,
+    restEnabled: values.restEnabled,
+    restSeconds: values.restEnabled ? values.restSeconds ?? 60 : undefined
   }));
 
 export type HabitFormValues = z.output<typeof habitSchema>;
@@ -80,9 +97,36 @@ export const habitDefaultValues: HabitFormValues = {
   targetSets: 3,
   repsPerSet: 8,
   secondsPerSet: 60,
+  restEnabled: false,
+  restSeconds: 60,
   selectedDays: ["mon", "wed", "fri"],
   color: "ember",
   icon: "flame",
   level: "principiante",
   active: true
 };
+
+export function normalizeHabitFormValues(
+  values?: Partial<HabitFormValues> | null
+): HabitFormValues {
+  if (!values) {
+    return {
+      ...habitDefaultValues,
+      selectedDays: [...habitDefaultValues.selectedDays]
+    };
+  }
+
+  return {
+    ...habitDefaultValues,
+    ...values,
+    selectedDays:
+      values.selectedDays && values.selectedDays.length
+        ? [...values.selectedDays]
+        : [...habitDefaultValues.selectedDays],
+    repsPerSet: values.repsPerSet ?? habitDefaultValues.repsPerSet,
+    secondsPerSet: values.secondsPerSet ?? habitDefaultValues.secondsPerSet,
+    restEnabled: values.restEnabled ?? false,
+    restSeconds: values.restSeconds ?? habitDefaultValues.restSeconds,
+    active: values.active ?? habitDefaultValues.active
+  };
+}

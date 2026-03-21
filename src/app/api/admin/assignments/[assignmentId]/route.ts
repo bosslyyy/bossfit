@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { ensureGroupBelongsToGym, ensureTrainerBelongsToGym, requireAdminGymAccess } from "@/lib/supabase/admin-route-helpers";
 import { getSupabaseErrorInfo } from "@/lib/supabase/data";
 import { createSupabaseServiceRoleClient, getAuthenticatedUserFromRequest } from "@/lib/supabase/server-admin";
 
@@ -44,19 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "No encontramos esa asignación." }, { status: 404 });
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from("gym_memberships")
-      .select("id")
-      .eq("gym_id", assignment.gym_id)
-      .eq("user_id", requester.id)
-      .eq("status", "active")
-      .in("role", ["owner", "admin"])
-      .maybeSingle();
-
-    if (membershipError) {
-      throw membershipError;
-    }
-
+    const membership = await requireAdminGymAccess(supabase, requester.id, assignment.gym_id);
     if (!membership) {
       return NextResponse.json({ error: "No tienes permisos para editar esta asignación." }, { status: 403 });
     }
@@ -64,19 +53,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const { trainerUserId, groupId, status } = parsed.data;
 
     if (trainerUserId) {
-      const { data: trainerMembership, error: trainerMembershipError } = await supabase
-        .from("gym_memberships")
-        .select("id")
-        .eq("gym_id", assignment.gym_id)
-        .eq("user_id", trainerUserId)
-        .eq("role", "trainer")
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (trainerMembershipError) {
-        throw trainerMembershipError;
-      }
-
+      const trainerMembership = await ensureTrainerBelongsToGym(supabase, assignment.gym_id, trainerUserId);
       if (!trainerMembership) {
         return NextResponse.json({ error: "El entrenador seleccionado no pertenece a este gym." }, { status: 400 });
       }
@@ -84,22 +61,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     let validatedGroupId: string | null = null;
     if (groupId) {
-      const { data: group, error: groupError } = await supabase
-        .from("gym_groups")
-        .select("id")
-        .eq("gym_id", assignment.gym_id)
-        .eq("id", groupId)
-        .maybeSingle();
-
-      if (groupError) {
-        throw groupError;
-      }
-
+      const group = await ensureGroupBelongsToGym(supabase, assignment.gym_id, groupId);
       if (!group) {
         return NextResponse.json({ error: "El grupo seleccionado no pertenece a este gym." }, { status: 400 });
       }
 
-      validatedGroupId = group.id;
+      validatedGroupId = groupId;
     }
 
     const { error: updateError } = await supabase

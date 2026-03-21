@@ -80,10 +80,14 @@ export function updateAdminAssignment(accessToken: string, assignmentId: string,
   });
 }
 
-export function resetAdminUserCredentials(accessToken: string, userId: string) {
-  return requestAdminJson<{ credentials: AdminCredentialResetResult }>(`/api/admin/users/${userId}/credentials`, accessToken, {
-    method: "POST"
-  });
+export function resetAdminUserCredentials(accessToken: string, userId: string, gymId: string) {
+  return requestAdminJson<{ credentials: AdminCredentialResetResult }>(
+    `/api/admin/users/${userId}/credentials?gymId=${encodeURIComponent(gymId)}`,
+    accessToken,
+    {
+      method: "POST"
+    }
+  );
 }
 
 export function fetchAdminUserDetail(accessToken: string, userId: string, gymId: string) {

@@ -1,7 +1,6 @@
 ﻿import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { SnapshotMutationError, type CompletionMutationResult, type UndoMutationResult } from "@/lib/bossfit/snapshot-actions";
-import { toDateKey } from "@/lib/date";
 import { DEFAULT_REMINDER_SETTINGS } from "@/lib/persistence";
 import type { BossFitRemoteState } from "@/lib/supabase/data";
 import { syncUserProjectionFromNormalizedState } from "@/lib/supabase/user-state-server";
@@ -21,6 +20,8 @@ interface HabitRow {
   target_sets: number;
   reps_per_set: number;
   seconds_per_set: number | null;
+  rest_enabled: boolean;
+  rest_seconds: number | null;
   selected_days: string[] | null;
   is_active: boolean;
   color: Habit["color"];
@@ -63,7 +64,7 @@ async function fetchHabitRow(supabase: SupabaseClient, userId: string, habitId: 
   const { data, error } = await supabase
     .from(HABITS_TABLE)
     .select(
-      "habit_id, name, category, tracking_mode, target_sets, reps_per_set, seconds_per_set, selected_days, is_active, color, icon, level, created_at, updated_at, archived_at"
+      "habit_id, name, category, tracking_mode, target_sets, reps_per_set, seconds_per_set, rest_enabled, rest_seconds, selected_days, is_active, color, icon, level, created_at, updated_at, archived_at"
     )
     .eq("user_id", userId)
     .eq("habit_id", habitId)
@@ -86,6 +87,8 @@ function rowToHabit(row: HabitRow): Habit {
     targetSets: row.target_sets,
     repsPerSet: row.reps_per_set,
     secondsPerSet: row.seconds_per_set ?? undefined,
+    restEnabled: row.rest_enabled,
+    restSeconds: row.rest_enabled ? row.rest_seconds ?? 60 : undefined,
     selectedDays: (row.selected_days ?? []) as Habit["selectedDays"],
     active: row.is_active,
     color: row.color,
@@ -155,6 +158,8 @@ export async function createUserHabit(
     target_sets: values.targetSets,
     reps_per_set: values.repsPerSet,
     seconds_per_set: values.secondsPerSet ?? null,
+    rest_enabled: values.restEnabled,
+    rest_seconds: values.restEnabled ? values.restSeconds ?? 60 : null,
     selected_days: values.selectedDays,
     is_active: values.active,
     color: values.color,
@@ -201,6 +206,8 @@ export async function updateUserHabit(
       target_sets: values.targetSets,
       reps_per_set: values.repsPerSet,
       seconds_per_set: values.secondsPerSet ?? null,
+      rest_enabled: values.restEnabled,
+      rest_seconds: values.restEnabled ? values.restSeconds ?? 60 : null,
       selected_days: values.selectedDays,
       is_active: values.active,
       color: values.color,
@@ -306,7 +313,7 @@ export async function completeUserHabitSet(
   supabase: SupabaseClient,
   userId: string,
   habitId: string,
-  dateKey = toDateKey()
+  dateKey: string
 ): Promise<NormalizedActionResult<CompletionMutationResult>> {
   const { data, error } = await supabase.rpc("bossfit_increment_habit_completion", {
     p_user_id: userId,
@@ -337,7 +344,7 @@ export async function undoUserHabitSet(
   supabase: SupabaseClient,
   userId: string,
   habitId: string,
-  dateKey = toDateKey()
+  dateKey: string
 ): Promise<NormalizedActionResult<UndoMutationResult>> {
   const { data, error } = await supabase.rpc("bossfit_decrement_habit_completion", {
     p_user_id: userId,
@@ -367,7 +374,7 @@ export async function resetUserHabitCompletion(
   supabase: SupabaseClient,
   userId: string,
   habitId: string,
-  dateKey = toDateKey()
+  dateKey: string
 ): Promise<NormalizedActionResult<{ habitId: string; dateKey: string }>> {
   const { error } = await supabase.rpc("bossfit_reset_habit_completion", {
     p_user_id: userId,
@@ -450,5 +457,8 @@ export async function resetUserAppData(
   const state = await syncState(supabase, userId, "reset");
   return { state, result: { reset: true } };
 }
+
+
+
 
 

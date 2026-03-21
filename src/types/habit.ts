@@ -35,6 +35,8 @@ export interface Habit {
   targetSets: number;
   repsPerSet: number;
   secondsPerSet?: number;
+  restEnabled: boolean;
+  restSeconds?: number;
   selectedDays: WeekdayKey[];
   active: boolean;
   color: HabitColor;

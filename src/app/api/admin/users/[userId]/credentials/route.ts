@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 
+import { requireAdminGymAccess } from "@/lib/supabase/admin-route-helpers";
 import { getSupabaseErrorInfo } from "@/lib/supabase/data";
 import { generateManagedAccessForGym } from "@/lib/supabase/managed-credentials";
 import { createSupabaseServiceRoleClient, getAuthenticatedUserFromRequest } from "@/lib/supabase/server-admin";
@@ -10,6 +11,10 @@ interface RouteContext {
   }>;
 }
 
+function getGymIdFromRequest(request: Request) {
+  return new URL(request.url).searchParams.get("gymId");
+}
+
 export async function POST(request: Request, context: RouteContext) {
   try {
     const requester = await getAuthenticatedUserFromRequest(request);
@@ -17,12 +22,23 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
     }
 
+    const gymId = getGymIdFromRequest(request);
+    if (!gymId) {
+      return NextResponse.json({ error: "Falta gymId." }, { status: 400 });
+    }
+
     const { userId } = await context.params;
     const supabase = createSupabaseServiceRoleClient();
+
+    const requesterMembership = await requireAdminGymAccess(supabase, requester.id, gymId);
+    if (!requesterMembership) {
+      return NextResponse.json({ error: "No tienes permisos para gestionar credenciales en este gym." }, { status: 403 });
+    }
 
     const { data: targetMembership, error: targetMembershipError } = await supabase
       .from("gym_memberships")
       .select("gym_id, role")
+      .eq("gym_id", gymId)
       .eq("user_id", userId)
       .eq("status", "active")
       .maybeSingle();
@@ -32,28 +48,11 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     if (!targetMembership) {
-      return NextResponse.json({ error: "No encontramos una membresía activa para ese usuario." }, { status: 404 });
-    }
-
-    const { data: requesterMembership, error: requesterMembershipError } = await supabase
-      .from("gym_memberships")
-      .select("id")
-      .eq("gym_id", targetMembership.gym_id)
-      .eq("user_id", requester.id)
-      .eq("status", "active")
-      .in("role", ["owner", "admin"])
-      .maybeSingle();
-
-    if (requesterMembershipError) {
-      throw requesterMembershipError;
-    }
-
-    if (!requesterMembership) {
-      return NextResponse.json({ error: "No tienes permisos para gestionar credenciales de este usuario." }, { status: 403 });
+      return NextResponse.json({ error: "No encontramos una membresía activa para ese usuario en este gym." }, { status: 404 });
     }
 
     const [{ data: gym, error: gymError }, { data: profile, error: profileError }] = await Promise.all([
-      supabase.from("gyms").select("id, name, slug").eq("id", targetMembership.gym_id).maybeSingle(),
+      supabase.from("gyms").select("id, name, slug").eq("id", gymId).maybeSingle(),
       supabase.from("profiles").select("full_name, display_name, email").eq("user_id", userId).maybeSingle()
     ]);
 
@@ -82,7 +81,8 @@ export async function POST(request: Request, context: RouteContext) {
         full_name: fullName,
         display_name: fullName,
         gym_slug: gym.slug,
-        login_alias: managedAccess.alias
+        login_alias: managedAccess.alias,
+        username: managedAccess.alias
       }
     });
 
@@ -95,7 +95,8 @@ export async function POST(request: Request, context: RouteContext) {
         user_id: userId,
         email: managedAccess.email,
         full_name: fullName,
-        display_name: fullName
+        display_name: fullName,
+        username: managedAccess.alias
       },
       { onConflict: "user_id" }
     );

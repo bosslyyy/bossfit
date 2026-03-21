@@ -1,12 +1,12 @@
 ﻿import type { ReactNode } from "react";
 
-import { AdminAccessGate } from "@/components/admin/admin-access-gate";
-import { AdminShell } from "@/components/admin/admin-shell";
+import { PlatformAdminAccessGate } from "@/components/platform-admin/platform-admin-access-gate";
+import { PlatformAdminShell } from "@/components/platform-admin/platform-admin-shell";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default function PlatformAdminLayout({ children }: { children: ReactNode }) {
   return (
-    <AdminAccessGate>
-      <AdminShell>{children}</AdminShell>
-    </AdminAccessGate>
+    <PlatformAdminAccessGate>
+      <PlatformAdminShell>{children}</PlatformAdminShell>
+    </PlatformAdminAccessGate>
   );
 }

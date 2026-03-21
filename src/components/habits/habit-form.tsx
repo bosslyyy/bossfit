@@ -27,7 +27,11 @@ import {
   updateHabitAction
 } from "@/lib/supabase/user-state-actions";
 import { cn } from "@/lib/utils";
-import { habitDefaultValues, habitSchema, type HabitFormValues } from "@/lib/validation/habit";
+import {
+  habitSchema,
+  normalizeHabitFormValues,
+  type HabitFormValues
+} from "@/lib/validation/habit";
 
 const selectClassName =
   "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm text-card-foreground shadow-sm outline-none transition focus:border-transparent focus:bg-card focus:ring-2 focus:ring-ring";
@@ -46,18 +50,16 @@ export function HabitForm({
 
   const form = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
-    defaultValues: initialValues ?? habitDefaultValues,
+    defaultValues: normalizeHabitFormValues(initialValues),
     mode: "onChange"
   });
 
   useEffect(() => {
-    if (initialValues) {
-      form.reset(initialValues);
-    }
+    form.reset(normalizeHabitFormValues(initialValues));
   }, [form, initialValues]);
 
   const values = form.watch();
-  const active = form.watch("active");
+  const active = Boolean(form.watch("active"));
   const trackingMode = form.watch("trackingMode");
   const submitting = isPending || form.formState.isSubmitting;
 

@@ -3,78 +3,93 @@
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
-import { Activity, ArrowRight, BellDot, CalendarDays, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, Building2, ShieldCheck, Users2 } from "lucide-react";
 
-import { useAdminContext } from "@/components/admin/admin-access-gate";
 import { AdminDataState } from "@/components/admin/admin-data-state";
-import { AdminMetricCard } from "@/components/admin/admin-metric-card";
 import { AdminSectionHeader } from "@/components/admin/admin-section-header";
-import { adminToneStyles } from "@/components/admin/admin-tone";
+import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { fetchAdminDashboardData, type AdminDashboardData } from "@/lib/supabase/admin";
-import { cn } from "@/lib/utils";
+import { fetchPlatformAdminOverview } from "@/lib/supabase/platform-admin";
+import type { PlatformAdminOverviewData } from "@/types/platform-admin";
 
-const metricIcons = [Users, Activity, BellDot, ShieldCheck];
+const statCards = [
+  { key: "totalGyms", label: "Gyms totales", icon: Building2 },
+  { key: "activeGyms", label: "Gyms activos", icon: ShieldCheck },
+  { key: "totalUsers", label: "Usuarios", icon: Users2 },
+  { key: "totalMemberships", label: "Memberships activas", icon: ShieldCheck }
+] as const;
 
-export default function AdminDashboardPage() {
-  const { context } = useAdminContext();
-  const [data, setData] = useState<AdminDashboardData | null>(null);
+function formatDate(value?: string) {
+  if (!value) {
+    return "Sin fecha";
+  }
+
+  return new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+export default function PlatformAdminDashboardPage() {
+  const { session } = useSupabaseAuth();
+  const [overview, setOverview] = useState<PlatformAdminOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = async () => {
+  const loadOverview = async () => {
+    if (!session?.access_token) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const nextData = await fetchAdminDashboardData(context.gymId);
-      setData(nextData);
+      const nextOverview = await fetchPlatformAdminOverview(session.access_token);
+      setOverview(nextOverview);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el dashboard del gym.");
-      setData(null);
+      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el panel de plataforma.");
+      setOverview(null);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadDashboard();
-  }, [context.gymId]);
+    void loadOverview();
+  }, [session?.access_token]);
 
   if (loading) {
-    return <AdminDataState title="Cargando dashboard del gym" description="Estamos reuniendo métricas, alertas y actividad reciente del gimnasio." />;
+    return <AdminDataState title="Cargando control central" description="Estamos reuniendo gyms, usuarios y métricas globales." />;
   }
 
-  if (error || !data) {
-    return <AdminDataState title="No pudimos cargar el dashboard" description={error ?? "Ocurrió un problema inesperado."} actionLabel="Reintentar" onAction={() => void loadDashboard()} tone="warning" />;
+  if (error || !overview) {
+    return <AdminDataState title="No pudimos cargar el panel de plataforma" description={error ?? "Ocurrió un problema inesperado."} actionLabel="Reintentar" onAction={() => void loadOverview()} tone="warning" />;
   }
 
   return (
     <div className="space-y-6">
       <AdminSectionHeader
-        title="Resumen del gimnasio"
-        description="Vista operativa del gym con foco en miembros, coaches, grupos y asignaciones reales."
+        title="Resumen global"
+        description="Control central de gyms, usuarios y memberships de toda la operación BossFit."
         action={
-          <Link href="/admin/users" className={buttonVariants({ variant: "secondary" })}>
-            Ver usuarios
+          <Link href="/admin/gyms" className={buttonVariants({ variant: "secondary" })}>
+            Ver gyms
           </Link>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {data.metrics.map((metric, index) => {
-          const Icon = metricIcons[index] ?? Activity;
+        {statCards.map((item) => {
+          const Icon = item.icon;
+          const value = overview[item.key];
           return (
-            <AdminMetricCard
-              key={metric.label}
-              icon={<Icon className="h-5 w-5" />}
-              label={metric.label}
-              value={metric.value}
-              helper={metric.helper}
-              tone={metric.tone}
-            />
+            <Card key={item.key} className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Icon className="h-4 w-4 text-accent" />
+                <span className="text-sm">{item.label}</span>
+              </div>
+              <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{value}</p>
+            </Card>
           );
         })}
       </div>
@@ -83,77 +98,58 @@ export default function AdminDashboardPage() {
         <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-muted-foreground">Alertas del gym</p>
-              <h3 className="mt-1 font-display text-2xl font-semibold text-card-foreground dark:text-white">
-                Lo que conviene revisar hoy
-              </h3>
+              <p className="text-sm text-muted-foreground">Gyms recientes</p>
+              <h3 className="mt-1 font-display text-2xl font-semibold text-card-foreground dark:text-white">Últimos gyms creados</h3>
             </div>
-            <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{context.gymName}</Badge>
+            <Link href="/admin/gyms" className="inline-flex items-center gap-2 text-sm font-semibold text-accent">
+              Gestionar
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            {data.alerts.map((alert) => {
-              const styles = adminToneStyles[alert.tone];
-              return (
-                <div key={alert.title} className={cn("rounded-[24px] border p-4", styles.panel)}>
-                  <div className="flex items-center gap-2">
-                    <span className={cn("h-2.5 w-2.5 rounded-full", styles.dot)} aria-hidden="true" />
-                    <p className="text-sm font-semibold text-card-foreground dark:text-white">{alert.title}</p>
+          <div className="space-y-3">
+            {overview.recentGyms.map((gym) => (
+              <div key={gym.id} className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-card-foreground dark:text-white">{gym.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">/{gym.slug}</p>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">{alert.detail}</p>
+                  <Badge className={gym.active ? "bg-accent/12 text-accent ring-1 ring-accent/20" : "bg-muted text-card-foreground ring-1 ring-border"}>
+                    {gym.active ? "Activo" : "Inactivo"}
+                  </Badge>
                 </div>
-              );
-            })}
+                <p className="mt-3 text-sm text-muted-foreground">Owners: {gym.ownerNames.length ? gym.ownerNames.join(", ") : "Sin owner"}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{formatDate(gym.createdAt)}</p>
+              </div>
+            ))}
           </div>
         </Card>
 
         <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-muted-foreground">Actividad reciente</p>
-              <h3 className="mt-1 font-display text-2xl font-semibold text-card-foreground dark:text-white">
-                Últimas asignaciones
-              </h3>
+              <p className="text-sm text-muted-foreground">Usuarios recientes</p>
+              <h3 className="mt-1 font-display text-2xl font-semibold text-card-foreground dark:text-white">Altas recientes</h3>
             </div>
-            <CalendarDays className="h-5 w-5 text-accent" />
+            <Link href="/admin/users" className="inline-flex items-center gap-2 text-sm font-semibold text-accent">
+              Ver todos
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-
           <div className="space-y-3">
-            {data.recentActivity.length ? (
-              data.recentActivity.map((item) => (
-                <div key={`${item.title}-${item.time}`} className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-card-foreground dark:text-white">{item.title}</p>
-                    <span className="text-xs text-muted-foreground">{item.time}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
+            {overview.recentUsers.map((user) => (
+              <div key={user.userId} className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+                <p className="font-semibold text-card-foreground dark:text-white">{user.name}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge className="bg-surface text-card-foreground ring-1 ring-border">{user.gymCount} gyms</Badge>
+                  <Badge className="bg-surface text-card-foreground ring-1 ring-border">{user.roles.length ? user.roles.join(", ") : "Sin rol gym"}</Badge>
                 </div>
-              ))
-            ) : (
-              <AdminDataState title="Sin movimientos aún" description="Cuando empieces a asignar miembros, grupos o planes, aparecerán aquí." />
-            )}
+              </div>
+            ))}
           </div>
         </Card>
       </div>
-
-      <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground">Siguiente paso</p>
-            <h3 className="mt-1 font-display text-2xl font-semibold text-card-foreground dark:text-white">
-              Listo para creación de usuarios del gym
-            </h3>
-          </div>
-          <Link href="/admin/assignments" className="inline-flex items-center gap-2 text-sm font-semibold text-accent">
-            Ir a asignaciones
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          El panel ya lee datos reales del gym. El siguiente bloque será crear usuarios desde el panel, asignarlos a un entrenador o grupo y generar sus credenciales temporales.
-        </p>
-      </Card>
     </div>
   );
 }
-

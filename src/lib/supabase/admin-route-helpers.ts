@@ -1,6 +1,7 @@
 ﻿import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { toDateKey } from "@/lib/date";
+import { findActiveMembershipByRoles } from "@/lib/supabase/gym-membership-roles";
 import type {
   AdminGroupDetail,
   AdminGroupMemberListItem,
@@ -101,32 +102,30 @@ export async function requireAdminGymAccess(supabase: SupabaseClient, requesterI
     .select("id, gym_id, user_id, role, status, created_at")
     .eq("gym_id", gymId)
     .eq("user_id", requesterId)
-    .eq("status", "active")
-    .in("role", ["owner", "admin"])
-    .maybeSingle();
+    .eq("status", "active");
 
   if (error) {
     throw error;
   }
 
-  return (data as GymMembershipRow | null) ?? null;
+  const match = await findActiveMembershipByRoles(supabase, (data ?? []) as GymMembershipRow[], ["owner", "admin"]);
+  return match?.membership ?? null;
 }
 
 export async function ensureTrainerBelongsToGym(supabase: SupabaseClient, gymId: string, trainerUserId: string) {
   const { data, error } = await supabase
     .from("gym_memberships")
-    .select("id")
+    .select("id, gym_id, user_id, role, status, created_at")
     .eq("gym_id", gymId)
     .eq("user_id", trainerUserId)
-    .eq("role", "trainer")
-    .eq("status", "active")
-    .maybeSingle();
+    .eq("status", "active");
 
   if (error) {
     throw error;
   }
 
-  return data;
+  const match = await findActiveMembershipByRoles(supabase, (data ?? []) as GymMembershipRow[], ["trainer"]);
+  return match?.membership ?? null;
 }
 
 export async function ensureGroupBelongsToGym(supabase: SupabaseClient, gymId: string, groupId: string) {

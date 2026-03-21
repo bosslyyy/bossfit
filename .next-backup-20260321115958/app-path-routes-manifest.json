@@ -1,0 +1,8 @@
+{
+  "/api/user-state/route": "/api/user-state",
+  "/page": "/",
+  "/login/page": "/login",
+  "/habits/new/page": "/habits/new",
+  "/today/page": "/today",
+  "/habits/[id]/edit/page": "/habits/[id]/edit"
+}

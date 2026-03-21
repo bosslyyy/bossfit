@@ -73,9 +73,45 @@ async function emailExists(supabase: SupabaseClient, email: string, excludeUserI
   return data.user_id !== excludeUserId;
 }
 
+async function usernameExists(supabase: SupabaseClient, username: string, excludeUserId?: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return false;
+  }
+
+  return data.user_id !== excludeUserId;
+}
+
+async function managedAccessExists(
+  supabase: SupabaseClient,
+  alias: string,
+  email: string,
+  excludeUserId?: string
+) {
+  const [emailTaken, usernameTaken] = await Promise.all([
+    emailExists(supabase, email, excludeUserId),
+    usernameExists(supabase, alias, excludeUserId)
+  ]);
+
+  return emailTaken || usernameTaken;
+}
+
 function buildManagedEmail(alias: string, gymSlug: string) {
   const gymCode = buildGymCode(gymSlug);
   return `${alias}@${gymCode}.bossfit.app`;
+}
+
+function buildPlatformManagedEmail(alias: string) {
+  return `${alias}@staff.bossfit.app`;
 }
 
 export function generateTemporaryPassword() {
@@ -95,7 +131,7 @@ export async function generateManagedAccessForGym(
 
   for (const candidate of aliasCandidates) {
     const email = buildManagedEmail(candidate, gymSlug);
-    const exists = await emailExists(supabase, email, options?.excludeUserId);
+    const exists = await managedAccessExists(supabase, candidate, email, options?.excludeUserId);
     if (!exists) {
       return {
         alias: candidate,
@@ -109,7 +145,7 @@ export async function generateManagedAccessForGym(
   for (let suffix = 2; suffix <= 99; suffix += 1) {
     const alias = `${fallbackBase.slice(0, Math.max(3, 18 - String(suffix).length))}${suffix}`;
     const email = buildManagedEmail(alias, gymSlug);
-    const exists = await emailExists(supabase, email, options?.excludeUserId);
+    const exists = await managedAccessExists(supabase, alias, email, options?.excludeUserId);
     if (!exists) {
       return {
         alias,
@@ -123,6 +159,49 @@ export async function generateManagedAccessForGym(
   return {
     alias,
     email: buildManagedEmail(alias, gymSlug),
+    password: generateTemporaryPassword()
+  };
+}
+
+export async function generateManagedAccessForPlatform(
+  supabase: SupabaseClient,
+  fullName: string,
+  options?: {
+    excludeUserId?: string;
+  }
+) {
+  const aliasCandidates = buildAliasCandidates(fullName);
+
+  for (const candidate of aliasCandidates) {
+    const email = buildPlatformManagedEmail(candidate);
+    const exists = await managedAccessExists(supabase, candidate, email, options?.excludeUserId);
+    if (!exists) {
+      return {
+        alias: candidate,
+        email,
+        password: generateTemporaryPassword()
+      };
+    }
+  }
+
+  const fallbackBase = aliasCandidates[0] ?? "usuario";
+  for (let suffix = 2; suffix <= 99; suffix += 1) {
+    const alias = `${fallbackBase.slice(0, Math.max(3, 18 - String(suffix).length))}${suffix}`;
+    const email = buildPlatformManagedEmail(alias);
+    const exists = await managedAccessExists(supabase, alias, email, options?.excludeUserId);
+    if (!exists) {
+      return {
+        alias,
+        email,
+        password: generateTemporaryPassword()
+      };
+    }
+  }
+
+  const alias = `${fallbackBase.slice(0, 12)}${randomBytes(2).toString("hex")}`;
+  return {
+    alias,
+    email: buildPlatformManagedEmail(alias),
     password: generateTemporaryPassword()
   };
 }

@@ -37,6 +37,8 @@ const habitSchema: z.ZodType<Habit, z.ZodTypeDef, unknown> = z
     targetSets: z.number().int().min(1).max(999),
     repsPerSet: z.number().int().min(1).max(9999).optional(),
     secondsPerSet: z.number().int().min(5).max(7200).optional(),
+    restEnabled: z.boolean().optional(),
+    restSeconds: z.number().int().min(5).max(7200).optional(),
     selectedDays: z.array(weekdayKeySchema).min(1),
     active: z.boolean(),
     color: habitColorSchema,
@@ -47,6 +49,10 @@ const habitSchema: z.ZodType<Habit, z.ZodTypeDef, unknown> = z
   })
   .transform((habit): Habit => {
     const trackingMode = habit.trackingMode === "timer" ? "timer" : "reps";
+    const restEnabled =
+      typeof habit.restEnabled === "boolean"
+        ? habit.restEnabled
+        : typeof habit.restSeconds === "number" && habit.restSeconds > 0;
 
     return {
       id: habit.id,
@@ -56,6 +62,8 @@ const habitSchema: z.ZodType<Habit, z.ZodTypeDef, unknown> = z
       targetSets: habit.targetSets,
       repsPerSet: habit.repsPerSet ?? 1,
       secondsPerSet: trackingMode === "timer" ? habit.secondsPerSet ?? 60 : undefined,
+      restEnabled,
+      restSeconds: restEnabled ? habit.restSeconds ?? 60 : undefined,
       selectedDays: habit.selectedDays,
       active: habit.active,
       color: habit.color,

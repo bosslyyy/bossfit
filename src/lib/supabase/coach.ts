@@ -1,5 +1,7 @@
 ﻿import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { findActiveMembershipByRoles } from "@/lib/supabase/gym-membership-roles";
 import { getSupabaseErrorInfo } from "@/lib/supabase/data";
+import type { CoachAlert, CoachMemberDetailResponse, CoachMessage, CoachNote } from "@/types/coach";
 import type { HabitFormValues } from "@/lib/validation/habit";
 import type { CompletionCalendarEntry, Habit } from "@/types/habit";
 
@@ -99,15 +101,14 @@ export async function fetchActiveCoachGymContext(userId: string): Promise<CoachG
     .select("id, gym_id, user_id, role, status")
     .eq("user_id", userId)
     .eq("status", "active")
-    .eq("role", "trainer")
-    .order("created_at", { ascending: true })
-    .limit(1);
+    .order("created_at", { ascending: true });
 
   if (membershipsError) {
     throw mapError(membershipsError);
   }
 
-  const membership = ((memberships ?? []) as GymMembershipRow[])[0];
+  const match = await findActiveMembershipByRoles(supabase, (memberships ?? []) as GymMembershipRow[], ["trainer"]);
+  const membership = match?.membership;
   if (!membership) {
     return null;
   }
@@ -137,7 +138,7 @@ export async function fetchActiveCoachGymContext(userId: string): Promise<CoachG
     gymName: gymRow.name,
     gymSlug: gymRow.slug,
     gymActive: gymRow.active,
-    role: membership.role,
+    role: "trainer",
     userId,
     membershipId: membership.id,
     userEmail: profileRow?.email ?? undefined,
@@ -176,6 +177,15 @@ export function fetchCoachOverview(accessToken: string, gymId: string) {
   return requestCoachJson<CoachOverviewResponse>(`/api/coach/overview?${params.toString()}`, accessToken);
 }
 
+export function fetchCoachMemberDetail(accessToken: string, memberUserId: string, month?: string) {
+  const params = new URLSearchParams({ t: Date.now().toString() });
+  if (month) {
+    params.set("month", month);
+  }
+
+  return requestCoachJson<CoachMemberDetailResponse>(`/api/coach/members/${memberUserId}/detail?${params.toString()}`, accessToken);
+}
+
 export function createCoachHabit(accessToken: string, memberUserId: string, values: HabitFormValues) {
   return requestCoachJson<{ habit: Habit }>(`/api/coach/members/${memberUserId}/habits`, accessToken, {
     method: "POST",
@@ -201,3 +211,39 @@ export function deleteCoachHabit(accessToken: string, memberUserId: string, habi
     method: "DELETE"
   });
 }
+
+export function createCoachNote(accessToken: string, memberUserId: string, values: Omit<CoachNote, "id" | "createdAt" | "updatedAt" | "archivedAt">) {
+  return requestCoachJson<{ notes: CoachNote[] }>(`/api/coach/members/${memberUserId}/notes`, accessToken, {
+    method: "POST",
+    body: JSON.stringify(values)
+  });
+}
+
+export function updateCoachNote(accessToken: string, memberUserId: string, payload: { noteId: string; title?: string; body?: string; noteType?: CoachNote["noteType"]; pinned?: boolean; archived?: boolean; }) {
+  return requestCoachJson<{ notes: CoachNote[] }>(`/api/coach/members/${memberUserId}/notes`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function createCoachAlert(accessToken: string, memberUserId: string, values: { title: string; body: string; severity: CoachAlert["severity"]; expiresAt?: string | null; }) {
+  return requestCoachJson<{ alerts: CoachAlert[] }>(`/api/coach/members/${memberUserId}/alerts`, accessToken, {
+    method: "POST",
+    body: JSON.stringify(values)
+  });
+}
+
+export function updateCoachAlert(accessToken: string, memberUserId: string, payload: { alertId: string; title?: string; body?: string; severity?: CoachAlert["severity"]; expiresAt?: string | null; archived?: boolean; dismissed?: boolean; markRead?: boolean; }) {
+  return requestCoachJson<{ alerts: CoachAlert[] }>(`/api/coach/members/${memberUserId}/alerts`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function sendCoachMessage(accessToken: string, memberUserId: string, body: string) {
+  return requestCoachJson<{ messages: CoachMessage[] }>(`/api/coach/members/${memberUserId}/messages`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ body })
+  });
+}
+

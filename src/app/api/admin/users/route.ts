@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 
+import { ensureGroupBelongsToGym, ensureTrainerBelongsToGym, requireAdminGymAccess } from "@/lib/supabase/admin-route-helpers";
 import { getSupabaseErrorInfo } from "@/lib/supabase/data";
 import { generateManagedAccessForGym } from "@/lib/supabase/managed-credentials";
 import { createSupabaseServiceRoleClient, getAuthenticatedUserFromRequest } from "@/lib/supabase/server-admin";
@@ -29,19 +30,7 @@ export async function POST(request: Request) {
     const { gymId, fullName, role, trainerUserId, groupId } = parsed.data;
     const supabase = createSupabaseServiceRoleClient();
 
-    const { data: membership, error: membershipError } = await supabase
-      .from("gym_memberships")
-      .select("id, gym_id, role, status")
-      .eq("gym_id", gymId)
-      .eq("user_id", requester.id)
-      .eq("status", "active")
-      .in("role", ["owner", "admin"])
-      .maybeSingle();
-
-    if (membershipError) {
-      throw membershipError;
-    }
-
+    const membership = await requireAdminGymAccess(supabase, requester.id, gymId);
     if (!membership) {
       return NextResponse.json({ error: "Tu cuenta no tiene permisos para crear usuarios en este gym." }, { status: 403 });
     }
@@ -61,36 +50,14 @@ export async function POST(request: Request) {
     }
 
     if (role === "member" && trainerUserId) {
-      const { data: trainerMembership, error: trainerError } = await supabase
-        .from("gym_memberships")
-        .select("id")
-        .eq("gym_id", gymId)
-        .eq("user_id", trainerUserId)
-        .eq("role", "trainer")
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (trainerError) {
-        throw trainerError;
-      }
-
+      const trainerMembership = await ensureTrainerBelongsToGym(supabase, gymId, trainerUserId);
       if (!trainerMembership) {
         return NextResponse.json({ error: "El entrenador seleccionado no pertenece a este gym." }, { status: 400 });
       }
     }
 
     if (role === "member" && groupId) {
-      const { data: group, error: groupError } = await supabase
-        .from("gym_groups")
-        .select("id")
-        .eq("gym_id", gymId)
-        .eq("id", groupId)
-        .maybeSingle();
-
-      if (groupError) {
-        throw groupError;
-      }
-
+      const group = await ensureGroupBelongsToGym(supabase, gymId, groupId);
       if (!group) {
         return NextResponse.json({ error: "El grupo seleccionado no pertenece a este gym." }, { status: 400 });
       }
@@ -106,7 +73,8 @@ export async function POST(request: Request) {
         full_name: fullName,
         display_name: fullName,
         gym_slug: gym.slug,
-        login_alias: managedAccess.alias
+        login_alias: managedAccess.alias,
+        username: managedAccess.alias
       }
     });
 
@@ -117,15 +85,20 @@ export async function POST(request: Request) {
     const createdUserId = createdUser.user.id;
 
     try {
-      await supabase.from("profiles").upsert(
+      const { error: profileUpsertError } = await supabase.from("profiles").upsert(
         {
           user_id: createdUserId,
           email: managedAccess.email,
           full_name: fullName,
-          display_name: fullName
+          display_name: fullName,
+          username: managedAccess.alias
         },
         { onConflict: "user_id" }
       );
+
+      if (profileUpsertError) {
+        throw profileUpsertError;
+      }
 
       const { error: insertMembershipError } = await supabase.from("gym_memberships").insert({
         gym_id: gymId,

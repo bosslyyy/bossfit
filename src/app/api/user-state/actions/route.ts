@@ -29,6 +29,23 @@ const noStoreHeaders = {
   "Cache-Control": "no-store, no-cache, must-revalidate"
 };
 
+function mapActionSchemaErrorMessage(info: ReturnType<typeof getSupabaseErrorInfo>) {
+  const source = `${info.code ?? ""} ${info.message} ${info.details ?? ""} ${info.hint ?? ""}`.toLowerCase();
+
+  if (
+    (source.includes("42703") || source.includes("42p01") || source.includes("pgrst")) &&
+    (source.includes("rest_enabled") ||
+      source.includes("rest_seconds") ||
+      source.includes("bossfit_habits") ||
+      source.includes("bossfit_user_settings") ||
+      source.includes("bossfit_habit_completions"))
+  ) {
+    return "Falta actualizar la base de datos de BossFit. Ejecuta el schema.sql más reciente en Supabase y vuelve a intentar.";
+  }
+
+  return info.message;
+}
+
 const reminderPermissionSchema = z.enum(["default", "granted", "denied", "unsupported"]);
 const reminderSettingsPatchSchema = z
   .object({
@@ -40,6 +57,7 @@ const reminderSettingsPatchSchema = z
   .partial();
 
 const themeSchema = z.enum(["light", "dark"]);
+const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export async function POST(request: Request) {
   try {
@@ -117,34 +135,43 @@ export async function POST(request: Request) {
 
       case "complete_set": {
         const habitId = typeof body.habitId === "string" ? body.habitId : null;
-        const dateKey = typeof body.dateKey === "string" ? body.dateKey : undefined;
+        const parsedDateKey = dateKeySchema.safeParse(body.dateKey);
         if (!habitId) {
           return NextResponse.json({ error: "Falta habitId." }, { status: 400, headers: noStoreHeaders });
         }
+        if (!parsedDateKey.success) {
+          return NextResponse.json({ error: "Falta una fecha valida para registrar la serie." }, { status: 400, headers: noStoreHeaders });
+        }
 
-        const outcome = await completeUserHabitSet(supabase, requester.id, habitId, dateKey);
+        const outcome = await completeUserHabitSet(supabase, requester.id, habitId, parsedDateKey.data);
         return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
       }
 
       case "undo_set": {
         const habitId = typeof body.habitId === "string" ? body.habitId : null;
-        const dateKey = typeof body.dateKey === "string" ? body.dateKey : undefined;
+        const parsedDateKey = dateKeySchema.safeParse(body.dateKey);
         if (!habitId) {
           return NextResponse.json({ error: "Falta habitId." }, { status: 400, headers: noStoreHeaders });
         }
+        if (!parsedDateKey.success) {
+          return NextResponse.json({ error: "Falta una fecha valida para deshacer la serie." }, { status: 400, headers: noStoreHeaders });
+        }
 
-        const outcome = await undoUserHabitSet(supabase, requester.id, habitId, dateKey);
+        const outcome = await undoUserHabitSet(supabase, requester.id, habitId, parsedDateKey.data);
         return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
       }
 
       case "reset_completion": {
         const habitId = typeof body.habitId === "string" ? body.habitId : null;
-        const dateKey = typeof body.dateKey === "string" ? body.dateKey : undefined;
+        const parsedDateKey = dateKeySchema.safeParse(body.dateKey);
         if (!habitId) {
           return NextResponse.json({ error: "Falta habitId." }, { status: 400, headers: noStoreHeaders });
         }
+        if (!parsedDateKey.success) {
+          return NextResponse.json({ error: "Falta una fecha valida para reiniciar la serie." }, { status: 400, headers: noStoreHeaders });
+        }
 
-        const outcome = await resetUserHabitCompletion(supabase, requester.id, habitId, dateKey);
+        const outcome = await resetUserHabitCompletion(supabase, requester.id, habitId, parsedDateKey.data);
         return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
       }
 
@@ -189,7 +216,7 @@ export async function POST(request: Request) {
     const info = getSupabaseErrorInfo(error);
     return NextResponse.json(
       {
-        error: info.message,
+        error: mapActionSchemaErrorMessage(info),
         details: info.details,
         hint: info.hint,
         code: info.code
@@ -198,4 +225,7 @@ export async function POST(request: Request) {
     );
   }
 }
+
+
+
 

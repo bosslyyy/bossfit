@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Copy, KeyRound, RefreshCcw, Save, Shield, Trash2, UserRound, Users } from "lucide-react";
+import { useParams } from "next/navigation";
+import { Building2, ShieldCheck, UserRound } from "lucide-react";
 
-import { useAdminContext } from "@/components/admin/admin-access-gate";
 import { AdminDataState } from "@/components/admin/admin-data-state";
 import { AdminSectionHeader } from "@/components/admin/admin-section-header";
 import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
@@ -16,69 +15,133 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  deleteAdminUser,
-  fetchAdminUserDetail,
-  resetAdminUserCredentials,
-  updateAdminUser,
-  type AdminCredentialResetResult
-} from "@/lib/supabase/admin-actions";
-import { fetchAdminGroups, fetchAdminTrainers, type AdminGroupListItem, type AdminTrainerListItem, type AdminUserDetail } from "@/lib/supabase/admin";
-import { WEEK_DAYS } from "@/lib/constants";
-import { formatHabitTarget, titleCase } from "@/lib/utils";
+  addPlatformAdminUserToGym,
+  fetchPlatformAdminGyms,
+  fetchPlatformAdminUserDetail,
+  updatePlatformAdminUser,
+  updatePlatformAdminUserMembership
+} from "@/lib/supabase/platform-admin";
+import type {
+  PlatformAdminGymListItem,
+  PlatformAdminGymRole,
+  PlatformAdminMembershipStatus,
+  PlatformAdminUserDetail,
+  PlatformAdminUserMembershipItem
+} from "@/types/platform-admin";
 
+const membershipStatuses: PlatformAdminMembershipStatus[] = ["active", "invited", "paused", "suspended"];
+const membershipRoles: PlatformAdminGymRole[] = ["owner", "admin", "trainer", "member"];
 const selectClassName =
-  "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm text-card-foreground shadow-sm outline-none transition focus:border-transparent focus:bg-card focus:ring-2 focus:ring-ring";
+  "h-12 rounded-[18px] border border-border bg-surface px-4 text-sm text-card-foreground shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20";
 
-const membershipStatusStyles: Record<AdminUserDetail["status"], string> = {
-  active: "bg-[#EAF8F0] text-[#12704D] dark:bg-[#10251D] dark:text-[#6DDFB0]",
-  invited: "bg-[#E9F1FF] text-[#245BDB] dark:bg-[#12213D] dark:text-[#8FB1FF]",
-  paused: "bg-[#FFF6E8] text-[#A06100] dark:bg-[#2A1C0A] dark:text-[#F4C56D]",
-  suspended: "bg-[#FFF0F0] text-[#B44141] dark:bg-[#2B1515] dark:text-[#FF9A9A]"
+type MembershipDraft = {
+  role: PlatformAdminGymRole;
+  status: PlatformAdminMembershipStatus;
+  extraRoles: PlatformAdminGymRole[];
 };
 
-const assignmentStatusLabel = {
-  active: "Activa",
-  pending: "Pendiente",
-  paused: "Pausada"
-} as const;
+function formatDate(value?: string) {
+  if (!value) {
+    return "Sin fecha";
+  }
 
-function formatSelectedDays(selectedDays: string[]) {
-  return WEEK_DAYS.filter((day) => selectedDays.includes(day.key)).map((day) => day.short).join(" · ");
+  return new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-export default function AdminUserDetailPage() {
+function normalizeExtraRoles(primaryRole: PlatformAdminGymRole, extraRoles: PlatformAdminGymRole[] = []) {
+  return [...new Set(extraRoles.filter((role) => role !== primaryRole))];
+}
+
+function toMembershipDraft(membership: PlatformAdminUserMembershipItem): MembershipDraft {
+  return {
+    role: membership.role,
+    status: membership.status,
+    extraRoles: normalizeExtraRoles(membership.role, membership.extraRoles)
+  };
+}
+
+function toggleRole(roles: PlatformAdminGymRole[], role: PlatformAdminGymRole) {
+  return roles.includes(role) ? roles.filter((current) => current !== role) : [...roles, role];
+}
+
+function RoleCheckboxGroup({
+  primaryRole,
+  extraRoles,
+  onChange
+}: {
+  primaryRole: PlatformAdminGymRole;
+  extraRoles: PlatformAdminGymRole[];
+  onChange: (nextRoles: PlatformAdminGymRole[]) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>Roles adicionales</Label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {membershipRoles.map((role) => {
+          const disabled = role === primaryRole;
+          const checked = disabled ? true : extraRoles.includes(role);
+
+          return (
+            <label
+              key={role}
+              className="flex items-center gap-3 rounded-[18px] border border-border bg-background/80 px-4 py-3 text-sm dark:bg-white/[0.04]"
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={disabled}
+                onChange={() => {
+                  if (disabled) {
+                    return;
+                  }
+
+                  onChange(normalizeExtraRoles(primaryRole, toggleRole(extraRoles, role)));
+                }}
+              />
+              <span className="capitalize">{role}</span>
+              {disabled ? <span className="text-xs text-muted-foreground">principal</span> : null}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function PlatformAdminUserDetailPage() {
   const params = useParams<{ userId: string }>();
-  const router = useRouter();
-  const { context } = useAdminContext();
+  const userId = typeof params?.userId === "string" ? params.userId : "";
   const { session } = useSupabaseAuth();
-
-  const [detail, setDetail] = useState<AdminUserDetail | null>(null);
-  const [trainers, setTrainers] = useState<AdminTrainerListItem[]>([]);
-  const [groups, setGroups] = useState<AdminGroupListItem[]>([]);
+  const [detail, setDetail] = useState<PlatformAdminUserDetail | null>(null);
+  const [gyms, setGyms] = useState<PlatformAdminGymListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [resettingCredentials, setResettingCredentials] = useState(false);
-  const [credentials, setCredentials] = useState<AdminCredentialResetResult | null>(null);
-  const [copiedField, setCopiedField] = useState<"alias" | "email" | "password" | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [addingMembership, setAddingMembership] = useState(false);
+  const [membershipSavingId, setMembershipSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [role, setRole] = useState<"admin" | "trainer" | "member">("member");
-  const [status, setStatus] = useState<AdminUserDetail["status"]>("active");
-  const [trainerUserId, setTrainerUserId] = useState("");
-  const [groupId, setGroupId] = useState("");
-  const [assignmentStatus, setAssignmentStatus] = useState<"active" | "pending" | "paused">("pending");
+  const [platformAdminActive, setPlatformAdminActive] = useState(false);
+  const [platformAdminLabel, setPlatformAdminLabel] = useState("");
+  const [selectedGymId, setSelectedGymId] = useState("");
+  const [selectedRole, setSelectedRole] = useState<PlatformAdminGymRole>("member");
+  const [selectedStatus, setSelectedStatus] = useState<PlatformAdminMembershipStatus>("active");
+  const [selectedExtraRoles, setSelectedExtraRoles] = useState<PlatformAdminGymRole[]>([]);
+  const [membershipDrafts, setMembershipDrafts] = useState<Record<string, MembershipDraft>>({});
 
-  const userId = params.userId;
-
-  const backHref = detail?.role === "trainer" ? "/admin/trainers" : "/admin/users";
-  const activeGroups = useMemo(() => groups.filter((group) => group.active), [groups]);
+  const hydrateDetail = (nextDetail: PlatformAdminUserDetail) => {
+    setDetail(nextDetail);
+    setFullName(nextDetail.fullName || nextDetail.name);
+    setUsername(nextDetail.username || "");
+    setPlatformAdminActive(nextDetail.platformAdminActive);
+    setPlatformAdminLabel(nextDetail.platformAdminLabel || "");
+    setMembershipDrafts(
+      Object.fromEntries(nextDetail.memberships.map((membership) => [membership.gymId, toMembershipDraft(membership)]))
+    );
+  };
 
   const loadDetail = async () => {
-    if (!session?.access_token) {
+    if (!session?.access_token || !userId) {
       return;
     }
 
@@ -86,28 +149,22 @@ export default function AdminUserDetailPage() {
     setError(null);
 
     try {
-      const [detailResponse, trainerRows, groupRows] = await Promise.all([
-        fetchAdminUserDetail(session.access_token, userId, context.gymId),
-        fetchAdminTrainers(context.gymId),
-        fetchAdminGroups(context.gymId)
+      const [nextDetail, nextGyms] = await Promise.all([
+        fetchPlatformAdminUserDetail(session.access_token, userId),
+        fetchPlatformAdminGyms(session.access_token)
       ]);
 
-      const nextDetail = detailResponse.detail;
-      setDetail(nextDetail);
-      setTrainers(trainerRows);
-      setGroups(groupRows);
-      setFullName(nextDetail.fullName);
-      setUsername(nextDetail.username || "");
-      setRole(nextDetail.role === "owner" ? "admin" : nextDetail.role);
-      setStatus(nextDetail.status);
-      setTrainerUserId(nextDetail.assignment?.trainerUserId ?? "");
-      setGroupId(nextDetail.assignment?.groupId ?? "");
-      setAssignmentStatus(nextDetail.assignment?.status ?? "pending");
+      if (!nextDetail) {
+        setDetail(null);
+        setError("No encontramos esa cuenta.");
+        return;
+      }
+
+      hydrateDetail(nextDetail);
+      setGyms(nextGyms);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la ficha del usuario.");
+      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la ficha técnica.");
       setDetail(null);
-      setTrainers([]);
-      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -115,412 +172,330 @@ export default function AdminUserDetailPage() {
 
   useEffect(() => {
     void loadDetail();
-  }, [context.gymId, session?.access_token, userId]);
+  }, [session?.access_token, userId]);
 
-  const handleCopy = async (value: string, field: "alias" | "email" | "password") => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopiedField(field);
-      window.setTimeout(() => setCopiedField(null), 1500);
-    } catch {
-      setCopiedField(null);
+  const availableGyms = useMemo(() => {
+    const linkedGymIds = new Set(detail?.memberships.map((membership) => membership.gymId) ?? []);
+    return gyms.filter((gym) => !linkedGymIds.has(gym.id));
+  }, [detail?.memberships, gyms]);
+
+  useEffect(() => {
+    if (!selectedGymId && availableGyms.length) {
+      setSelectedGymId(availableGyms[0].id);
     }
-  };
 
-  const handleSave = async () => {
+    if (!availableGyms.length) {
+      setSelectedGymId("");
+    }
+  }, [availableGyms, selectedGymId]);
+
+  useEffect(() => {
+    setSelectedExtraRoles((current) => normalizeExtraRoles(selectedRole, current));
+  }, [selectedRole]);
+
+  const handleSaveProfile = async () => {
     if (!session?.access_token || !detail) {
       return;
     }
 
-    setSaving(true);
+    setSavingProfile(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
-      const response = await updateAdminUser(session.access_token, detail.userId, {
-        gymId: context.gymId,
+      const nextDetail = await updatePlatformAdminUser(session.access_token, detail.userId, {
         fullName,
         username,
-        role,
-        status,
-        trainerUserId: role === "member" ? trainerUserId || undefined : undefined,
-        groupId: role === "member" ? groupId || undefined : undefined,
-        assignmentStatus: role === "member" ? assignmentStatus : undefined
+        platformAdminActive,
+        platformAdminLabel
       });
 
-      const nextDetail = response.detail;
-      setDetail(nextDetail);
-      setFullName(nextDetail.fullName);
-      setUsername(nextDetail.username || "");
-      setRole(nextDetail.role === "owner" ? "admin" : nextDetail.role);
-      setStatus(nextDetail.status);
-      setTrainerUserId(nextDetail.assignment?.trainerUserId ?? "");
-      setGroupId(nextDetail.assignment?.groupId ?? "");
-      setAssignmentStatus(nextDetail.assignment?.status ?? "pending");
-      setSuccessMessage("Ficha actualizada correctamente.");
-      await loadDetail();
+      if (nextDetail) {
+        hydrateDetail(nextDetail);
+      }
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar la ficha.");
+      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar la ficha técnica.");
     } finally {
-      setSaving(false);
+      setSavingProfile(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleAddMembership = async () => {
+    if (!session?.access_token || !detail || !selectedGymId) {
+      return;
+    }
+
+    setAddingMembership(true);
+    setError(null);
+
+    try {
+      const nextDetail = await addPlatformAdminUserToGym(session.access_token, detail.userId, {
+        gymId: selectedGymId,
+        role: selectedRole,
+        status: selectedStatus,
+        extraRoles: selectedExtraRoles
+      });
+
+      if (nextDetail) {
+        hydrateDetail(nextDetail);
+        setSelectedExtraRoles([]);
+      }
+    } catch (membershipError) {
+      setError(membershipError instanceof Error ? membershipError.message : "No se pudo vincular el usuario al gym.");
+    } finally {
+      setAddingMembership(false);
+    }
+  };
+
+  const handleSaveMembership = async (gymId: string) => {
     if (!session?.access_token || !detail) {
       return;
     }
 
-    const confirmed = window.confirm(`¿Eliminar a ${detail.fullName} del sistema del gym?`);
-    if (!confirmed) {
+    const draft = membershipDrafts[gymId];
+    if (!draft) {
       return;
     }
 
-    setDeleting(true);
+    setMembershipSavingId(gymId);
     setError(null);
 
     try {
-      await deleteAdminUser(session.access_token, detail.userId, context.gymId);
-      router.push(backHref);
-      router.refresh();
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el usuario.");
+      const nextDetail = await updatePlatformAdminUserMembership(session.access_token, detail.userId, gymId, draft);
+      if (nextDetail) {
+        hydrateDetail(nextDetail);
+      }
+    } catch (membershipError) {
+      setError(membershipError instanceof Error ? membershipError.message : "No se pudo actualizar la membership.");
     } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleResetCredentials = async () => {
-    if (!session?.access_token || !detail) {
-      return;
-    }
-
-    const confirmed = window.confirm(`¿Regenerar acceso temporal para ${detail.fullName}?`);
-    if (!confirmed) {
-      return;
-    }
-
-    setResettingCredentials(true);
-    setError(null);
-
-    try {
-      const payload = await resetAdminUserCredentials(session.access_token, detail.userId);
-      setCredentials(payload.credentials);
-    } catch (resetError) {
-      setError(resetError instanceof Error ? resetError.message : "No se pudieron regenerar las credenciales.");
-    } finally {
-      setResettingCredentials(false);
+      setMembershipSavingId(null);
     }
   };
 
   if (loading) {
-    return <AdminDataState title="Cargando ficha del usuario" description="Estamos reuniendo perfil, estado del gym y progreso actual del usuario." />;
+    return <AdminDataState title="Cargando ficha técnica" description="Estamos reuniendo identidad, permisos y memberships del usuario." />;
+  }
+
+  if (error && !detail) {
+    return <AdminDataState title="No pudimos cargar la ficha" description={error} actionLabel="Reintentar" onAction={() => void loadDetail()} tone="warning" />;
   }
 
   if (!detail) {
-    return <AdminDataState title="No encontramos al usuario" description={error ?? "Puede que ya no pertenezca a este gym."} actionLabel="Volver" onAction={() => router.push("/admin/users")} tone="warning" />;
+    return <AdminDataState title="No encontramos esa cuenta" description="Puede que ya no exista o que no haya sincronizado su perfil." tone="warning" />;
   }
 
   return (
     <div className="space-y-6">
       <AdminSectionHeader
-        title={detail.fullName}
-        description="Ficha completa para editar cuenta, corregir asignaciones, revisar progreso y operar accesos desde el panel admin."
-        action={
-          <Link href={backHref} className={buttonVariants({ variant: "outline" })}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Link>
-        }
+        title={detail.name}
+        description="Ficha técnica global para identidad, permisos de plataforma y memberships por gym."
+        action={<Link href="/admin/users" className={buttonVariants({ variant: "outline" })}>Volver a usuarios</Link>}
       />
 
-      <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className={membershipStatusStyles[detail.status]}>{detail.status}</Badge>
-              <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{titleCase(detail.role)}</Badge>
-              {detail.assignment ? <Badge className="bg-surface text-card-foreground ring-1 ring-border">{assignmentStatusLabel[detail.assignment.status]}</Badge> : null}
+      {error ? <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
+
+      <div className="grid gap-4 xl:grid-cols-4">
+        <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
+          <div className="flex items-center gap-2 text-muted-foreground"><UserRound className="h-4 w-4 text-accent" /> Cuenta</div>
+          <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.technicalState.level}</p>
+          <p className="text-sm text-muted-foreground">nivel actual</p>
+        </Card>
+        <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
+          <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4 text-accent" /> Gyms</div>
+          <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.memberships.length}</p>
+          <p className="text-sm text-muted-foreground">memberships vinculadas</p>
+        </Card>
+        <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
+          <div className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-accent" /> Hábitos</div>
+          <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.technicalState.habitsCount}</p>
+          <p className="text-sm text-muted-foreground">completions: {detail.technicalState.completionsCount}</p>
+        </Card>
+        <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
+          <div className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-accent" /> Sync</div>
+          <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">r{detail.technicalState.revision}</p>
+          <p className="text-sm text-muted-foreground">{formatDate(detail.technicalState.updatedAt)}</p>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+        <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
+          <div className="space-y-1">
+            <CardTitle>Identidad y permisos globales</CardTitle>
+            <CardDescription>ID: {detail.userId}</CardDescription>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label>Email</Label>
+              <Input value={detail.email} disabled />
             </div>
             <div>
-              <h2 className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.fullName}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{detail.email}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Usuario: {detail.username || "Sin username"}</p>
+              <Label>Username</Label>
+              <Input value={username} onChange={(event) => setUsername(event.target.value.toLowerCase())} placeholder="usuario" />
+            </div>
+            <div>
+              <Label>Nombre completo</Label>
+              <Input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Nombre real" />
+            </div>
+            <div>
+              <Label>Etiqueta platform</Label>
+              <Input value={platformAdminLabel} onChange={(event) => setPlatformAdminLabel(event.target.value)} placeholder="BossFit Owners" />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-3 rounded-[20px] border border-border bg-background/80 px-4 py-3 text-sm dark:bg-white/[0.04]">
+            <input type="checkbox" checked={platformAdminActive} onChange={(event) => setPlatformAdminActive(event.target.checked)} />
+            <span>Dar permisos de plataforma completos (/admin)</span>
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2 text-sm">
+            <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+              <p className="text-muted-foreground">Creada</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.createdAt)}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+              <p className="text-muted-foreground">Último acceso</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.lastSignInAt)}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+              <p className="text-muted-foreground">Email confirmado</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.emailConfirmedAt)}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+              <p className="text-muted-foreground">Tipo</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{detail.isManagedAccount ? "Gestionada" : "Natural"}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={() => void handleResetCredentials()} disabled={resettingCredentials}>
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              {resettingCredentials ? "Regenerando acceso..." : "Regenerar acceso"}
-            </Button>
-            <Button variant="danger" onClick={() => void handleDelete()} disabled={deleting}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              {deleting ? "Eliminando..." : "Eliminar"}
-            </Button>
+            <Button onClick={() => void handleSaveProfile()} disabled={savingProfile}>{savingProfile ? "Guardando..." : "Guardar ficha"}</Button>
           </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card className="border border-border bg-background/80 dark:bg-white/[0.04]">
-            <p className="text-sm text-muted-foreground">Hábitos</p>
-            <p className="mt-2 font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.stats.habitsCount}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{detail.stats.activeHabits} activos</p>
-          </Card>
-          <Card className="border border-border bg-background/80 dark:bg-white/[0.04]">
-            <p className="text-sm text-muted-foreground">Racha actual</p>
-            <p className="mt-2 font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.stats.currentStreak}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Mejor: {detail.stats.bestStreak}</p>
-          </Card>
-          <Card className="border border-border bg-background/80 dark:bg-white/[0.04]">
-            <p className="text-sm text-muted-foreground">Boss Points</p>
-            <p className="mt-2 font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.stats.totalPoints}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Nivel {detail.stats.level}</p>
-          </Card>
-          <Card className="border border-border bg-background/80 dark:bg-white/[0.04]">
-            <p className="text-sm text-muted-foreground">Hoy</p>
-            <p className="mt-2 font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.stats.todayCompleted}/{detail.stats.todayScheduled}</p>
-            <p className="mt-1 text-sm text-muted-foreground">completados / programados</p>
-          </Card>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
-          <div className="space-y-4 rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-            <div className="space-y-1">
-              <CardTitle>Cuenta y perfil</CardTitle>
-              <CardDescription>Edita el nombre visible, username, rol y estado operativo de la cuenta dentro del gym.</CardDescription>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <Label htmlFor="user-full-name">Nombre completo</Label>
-                <Input id="user-full-name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="user-username">Username</Label>
-                <Input id="user-username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))} placeholder="usuario" />
-              </div>
-              <div>
-                <Label htmlFor="user-role">Rol</Label>
-                <select id="user-role" className={selectClassName} value={role} onChange={(event) => setRole(event.target.value as "admin" | "trainer" | "member")}>
-                  <option value="member">Miembro</option>
-                  <option value="trainer">Entrenador</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="user-status">Estado</Label>
-                <select id="user-status" className={selectClassName} value={status} onChange={(event) => setStatus(event.target.value as AdminUserDetail["status"])}>
-                  <option value="active">Activo</option>
-                  <option value="invited">Invitado</option>
-                  <option value="paused">Pausado</option>
-                  <option value="suspended">Suspendido</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-            <div className="space-y-1">
-              <CardTitle>Seguridad y cuenta</CardTitle>
-              <CardDescription>Resumen operativo del acceso y la actividad reciente de la cuenta.</CardDescription>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Alias</span>
-                <span className="font-semibold text-card-foreground dark:text-white">{detail.alias || "N/A"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Cuenta gestionada</span>
-                <span className="font-semibold text-card-foreground dark:text-white">{detail.isManagedAccount ? "Sí" : "No"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Última actividad</span>
-                <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.stats.lastSyncedAt ? new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(detail.stats.lastSyncedAt)) : "Sin registro"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Estado reciente</span>
-                <span className="font-semibold text-card-foreground dark:text-white">{detail.stats.lastSaveReason || "actualizado"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Creada</span>
-                <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.authCreatedAt ? new Intl.DateTimeFormat("es-CR", { dateStyle: "medium" }).format(new Date(detail.authCreatedAt)) : "Sin dato"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Último acceso</span>
-                <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.lastSignInAt ? new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(detail.lastSignInAt)) : "Sin dato"}</span>
-              </div>
-              {detail.trainerLoad ? (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Alumnos asignados</span>
-                    <span className="font-semibold text-card-foreground dark:text-white">{detail.trainerLoad.membersCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Grupos a cargo</span>
-                    <span className="font-semibold text-card-foreground dark:text-white">{detail.trainerLoad.groupsCount}</span>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {role === "member" ? (
-          <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-            <div className="space-y-1">
-              <CardTitle>Asignación principal</CardTitle>
-              <CardDescription>Corrige entrenador, grupo y estado del seguimiento sin salir de la ficha.</CardDescription>
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <div>
-                <Label htmlFor="assignment-trainer">Entrenador</Label>
-                <select id="assignment-trainer" className={selectClassName} value={trainerUserId} onChange={(event) => setTrainerUserId(event.target.value)}>
-                  <option value="">Sin entrenador</option>
-                  {trainers.map((trainer) => (
-                    <option key={trainer.userId} value={trainer.userId}>
-                      {trainer.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="assignment-group">Grupo</Label>
-                <select id="assignment-group" className={selectClassName} value={groupId} onChange={(event) => setGroupId(event.target.value)}>
-                  <option value="">Sin grupo</option>
-                  {activeGroups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="assignment-status">Estado</Label>
-                <select id="assignment-status" className={selectClassName} value={assignmentStatus} onChange={(event) => setAssignmentStatus(event.target.value as "active" | "pending" | "paused")}>
-                  <option value="active">Activa</option>
-                  <option value="pending">Pendiente</option>
-                  <option value="paused">Pausada</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {credentials ? (
-          <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
-            <div className="space-y-1">
-              <CardTitle>Credenciales temporales nuevas</CardTitle>
-              <CardDescription>Úsalas para entregar acceso actualizado al usuario desde el gym.</CardDescription>
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-card-foreground dark:text-white">Usuario</p>
-                  <button type="button" onClick={() => void handleCopy(credentials.alias, "alias")} className="text-accent">
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                  <UserRound className="h-4 w-4" />
-                  <span>{credentials.alias}</span>
-                </div>
-                {copiedField === "alias" ? <p className="mt-2 text-xs text-accent">Copiado</p> : null}
-              </div>
-              <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-card-foreground dark:text-white">Acceso completo</p>
-                  <button type="button" onClick={() => void handleCopy(credentials.email, "email")} className="text-accent">
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                <p className="mt-2 break-all text-sm text-muted-foreground">{credentials.email}</p>
-                {copiedField === "email" ? <p className="mt-2 text-xs text-accent">Copiado</p> : null}
-              </div>
-              <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-card-foreground dark:text-white">Contraseña temporal</p>
-                  <button type="button" onClick={() => void handleCopy(credentials.password, "password")} className="text-accent">
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                  <KeyRound className="h-4 w-4" />
-                  <span>{credentials.password}</span>
-                </div>
-                {copiedField === "password" ? <p className="mt-2 text-xs text-accent">Copiado</p> : null}
-              </div>
-            </div>
-          </Card>
-        ) : null}
-
-        {detail.groups.length ? (
-          <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
-            <div className="space-y-1">
-              <CardTitle>Grupos vinculados</CardTitle>
-              <CardDescription>Referencia rápida de grupos donde este usuario aparece actualmente.</CardDescription>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {detail.groups.map((group) => (
-                <Link key={group.id} href={`/admin/groups/${group.id}`} className={buttonVariants({ variant: "outline", className: "h-10 px-3 text-sm" })}>
-                  <Users className="mr-2 h-4 w-4" />
-                  {group.name}
-                </Link>
-              ))}
-            </div>
-          </Card>
-        ) : null}
-
-        <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <div className="space-y-1">
-            <CardTitle>Rutina actual</CardTitle>
-            <CardDescription>Hábitos actuales del usuario cargados en su cuenta.</CardDescription>
-          </div>
-          {detail.habits.length ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {detail.habits.map((habit) => (
-                <div key={habit.id} className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-card-foreground dark:text-white">{habit.name}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays)}</p>
-                    </div>
-                    <Badge className={habit.active ? "bg-accent/12 text-accent ring-1 ring-accent/20" : "bg-muted text-card-foreground ring-1 ring-border"}>
-                      {habit.active ? "Activo" : "Pausado"}
-                    </Badge>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {habit.category ? <span className="rounded-full border border-border px-2 py-1">{titleCase(habit.category)}</span> : null}
-                    {habit.level ? <span className="rounded-full border border-border px-2 py-1">{titleCase(habit.level)}</span> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-[22px] border border-dashed border-border bg-background/80 p-5 text-sm text-muted-foreground dark:bg-white/[0.04]">
-              Este usuario aún no tiene hábitos cargados en su cuenta.
-            </div>
-          )}
         </Card>
 
-        {error ? <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
-        {successMessage ? <div className="rounded-[20px] border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-accent">{successMessage}</div> : null}
-
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => void handleSave()} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? "Guardando cambios..." : "Guardar ficha"}
-          </Button>
-          <div className="flex items-center gap-2 rounded-[18px] border border-border bg-background/80 px-4 py-3 text-sm text-muted-foreground dark:bg-white/[0.04]">
-            <Shield className="h-4 w-4 text-accent" />
-            Los owners están protegidos y no se eliminan desde esta vista.
+        <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
+          <div className="space-y-1">
+            <CardTitle>Agregar a un gym</CardTitle>
+            <CardDescription>Convierte una cuenta natural o gestionada en miembro, trainer, admin u owner de un gym existente.</CardDescription>
           </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <Label>Gym</Label>
+              <select className={selectClassName} value={selectedGymId} onChange={(event) => setSelectedGymId(event.target.value)}>
+                {availableGyms.length === 0 ? <option value="">Sin gyms disponibles</option> : null}
+                {availableGyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>Rol principal</Label>
+              <select className={selectClassName} value={selectedRole} onChange={(event) => setSelectedRole(event.target.value as PlatformAdminGymRole)}>
+                {membershipRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <select className={selectClassName} value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value as PlatformAdminMembershipStatus)}>
+                {membershipStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <RoleCheckboxGroup primaryRole={selectedRole} extraRoles={selectedExtraRoles} onChange={setSelectedExtraRoles} />
+
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => void handleAddMembership()} disabled={addingMembership || !selectedGymId || availableGyms.length === 0}>
+              {addingMembership ? "Vinculando..." : "Agregar al gym"}
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
+        <div className="space-y-1">
+          <CardTitle>Permisos por gym</CardTitle>
+          <CardDescription>Gestiona rol principal, roles adicionales y estado sin tocar la identidad global de la cuenta.</CardDescription>
         </div>
+
+        {detail.memberships.length === 0 ? (
+          <AdminDataState title="Esta cuenta no pertenece a ningún gym" description="Usa el formulario superior para vincularla a su primera operación." />
+        ) : (
+          <div className="space-y-4">
+            {detail.memberships.map((membership) => {
+              const draft = membershipDrafts[membership.gymId] ?? toMembershipDraft(membership);
+              return (
+                <div key={membership.membershipId} className="space-y-4 rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-card-foreground dark:text-white">{membership.gymName}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">/{membership.gymSlug}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {membership.effectiveRoles.map((role) => (
+                          <Badge key={role} className="bg-surface text-card-foreground ring-1 ring-border">{role}</Badge>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Asignación: {membership.assignmentStatus || "Sin asignación"}
+                        {membership.trainerName ? ` · trainer ${membership.trainerName}` : ""}
+                        {membership.groupName ? ` · grupo ${membership.groupName}` : ""}
+                      </p>
+                    </div>
+                    <Badge className="bg-surface text-card-foreground ring-1 ring-border">{membership.status}</Badge>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>Rol principal</Label>
+                      <select
+                        className={selectClassName}
+                        value={draft.role}
+                        onChange={(event) => {
+                          const nextRole = event.target.value as PlatformAdminGymRole;
+                          setMembershipDrafts((current) => ({
+                            ...current,
+                            [membership.gymId]: {
+                              ...draft,
+                              role: nextRole,
+                              extraRoles: normalizeExtraRoles(nextRole, draft.extraRoles)
+                            }
+                          }));
+                        }}
+                      >
+                        {membershipRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Estado</Label>
+                      <select
+                        className={selectClassName}
+                        value={draft.status}
+                        onChange={(event) => setMembershipDrafts((current) => ({ ...current, [membership.gymId]: { ...draft, status: event.target.value as PlatformAdminMembershipStatus } }))}
+                      >
+                        {membershipStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <RoleCheckboxGroup
+                    primaryRole={draft.role}
+                    extraRoles={draft.extraRoles}
+                    onChange={(nextRoles) =>
+                      setMembershipDrafts((current) => ({
+                        ...current,
+                        [membership.gymId]: { ...draft, extraRoles: normalizeExtraRoles(draft.role, nextRoles) }
+                      }))
+                    }
+                  />
+
+                  <div className="flex items-end gap-3">
+                    <Button onClick={() => void handleSaveMembership(membership.gymId)} disabled={membershipSavingId === membership.gymId}>
+                      {membershipSavingId === membership.gymId ? "Guardando..." : "Guardar membership"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );
 }
-
-
-
-
-

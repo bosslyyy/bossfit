@@ -50,11 +50,11 @@ export interface AdminMetric {
 }
 
 export const ADMIN_NAV_ITEMS = [
-  { href: "/admin", label: "Resumen" },
-  { href: "/admin/users", label: "Usuarios" },
-  { href: "/admin/trainers", label: "Entrenadores" },
-  { href: "/admin/groups", label: "Grupos" },
-  { href: "/admin/assignments", label: "Asignaciones" }
+  { href: "/gym", label: "Resumen" },
+  { href: "/gym/users", label: "Usuarios" },
+  { href: "/gym/trainers", label: "Entrenadores" },
+  { href: "/gym/groups", label: "Grupos" },
+  { href: "/gym/assignments", label: "Asignaciones" }
 ] as const;
 
 export const ADMIN_GYM_SUMMARY = {
@@ -296,3 +296,8 @@ export const ADMIN_ASSIGNMENTS: AdminAssignment[] = [
     nextReview: "Lunes"
   }
 ];
+
+
+
+
+

@@ -14,7 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HABIT_CATEGORIES, HABIT_COLORS, HABIT_ICONS, HABIT_LEVELS } from "@/lib/constants";
 import { cn, formatHabitTarget, formatSelectedDays, titleCase } from "@/lib/utils";
-import { habitDefaultValues, habitSchema, type HabitFormValues } from "@/lib/validation/habit";
+import {
+  habitSchema,
+  normalizeHabitFormValues,
+  type HabitFormValues
+} from "@/lib/validation/habit";
 import type { CoachMemberOverview } from "@/lib/supabase/coach";
 import type { Habit } from "@/types/habit";
 
@@ -22,7 +26,7 @@ const selectClassName =
   "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm text-card-foreground shadow-sm outline-none transition focus:border-transparent focus:bg-card focus:ring-2 focus:ring-ring";
 
 function toFormValues(habit: Habit): HabitFormValues {
-  return {
+  return normalizeHabitFormValues({
     name: habit.name,
     category: habit.category,
     trackingMode: habit.trackingMode,
@@ -34,7 +38,7 @@ function toFormValues(habit: Habit): HabitFormValues {
     icon: habit.icon,
     level: habit.level,
     active: habit.active
-  };
+  });
 }
 
 export function CoachHabitEditor({
@@ -55,18 +59,19 @@ export function CoachHabitEditor({
 
   const form = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
-    defaultValues: habitDefaultValues,
+    defaultValues: normalizeHabitFormValues(),
     mode: "onChange"
   });
 
   useEffect(() => {
     setEditingHabitId(null);
     setError(null);
-    form.reset(habitDefaultValues);
+    form.reset(normalizeHabitFormValues());
   }, [form, member?.userId]);
 
   const values = form.watch();
   const trackingMode = form.watch("trackingMode");
+  const active = Boolean(form.watch("active"));
   const editingHabit = useMemo(
     () => member?.habits.find((habit) => habit.id === editingHabitId) ?? null,
     [editingHabitId, member?.habits]
@@ -103,7 +108,7 @@ export function CoachHabitEditor({
       }
 
       setEditingHabitId(null);
-      form.reset(habitDefaultValues);
+      form.reset(normalizeHabitFormValues());
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "No se pudo guardar el entrenamiento.");
     }
@@ -138,7 +143,7 @@ export function CoachHabitEditor({
       await onDelete(habitId);
       if (editingHabitId === habitId) {
         setEditingHabitId(null);
-        form.reset(habitDefaultValues);
+        form.reset(normalizeHabitFormValues());
       }
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el entrenamiento.");
@@ -183,7 +188,7 @@ export function CoachHabitEditor({
             onClick={() => {
               setEditingHabitId(null);
               setError(null);
-              form.reset(habitDefaultValues);
+              form.reset(normalizeHabitFormValues());
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -416,7 +421,7 @@ export function CoachHabitEditor({
           <label className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-white/5 px-4 py-3 text-sm font-medium text-white/82">
             <input
               type="checkbox"
-              checked={values.active}
+              checked={active}
               onChange={(event) => form.setValue("active", event.target.checked, { shouldDirty: true })}
               className="h-4 w-4 rounded border-white/20 bg-transparent"
             />
@@ -437,7 +442,7 @@ export function CoachHabitEditor({
                 onClick={() => {
                   setEditingHabitId(null);
                   setError(null);
-                  form.reset(habitDefaultValues);
+                  form.reset(normalizeHabitFormValues());
                 }}
                 disabled={busy}
               >

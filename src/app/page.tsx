@@ -8,6 +8,7 @@ import { useShallow } from "zustand/react/shallow";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { HabitCard } from "@/components/habits/habit-card";
 import { HabitIcon } from "@/components/habits/habit-icon";
+import { MemberInboxCard } from "@/components/member/member-inbox-card";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -51,6 +52,7 @@ export default function DashboardPage() {
       />
 
       <DashboardHero snapshot={snapshot} bossProfile={bossProfile} greeting={greeting} dateLabel={dateLabel} />
+      <MemberInboxCard />
 
       {habits.length === 0 ? (
         <EmptyState
@@ -145,3 +147,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

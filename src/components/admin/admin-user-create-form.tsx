@@ -225,7 +225,7 @@ export function AdminUserCreateForm() {
             <Button type="submit" disabled={submitting}>
               {submitting ? "Creando usuario..." : "Crear usuario"}
             </Button>
-            <Link href="/admin/users" className={buttonVariants({ variant: "outline" })}>
+            <Link href="/gym/users" className={buttonVariants({ variant: "outline" })}>
               Volver a usuarios
             </Link>
           </div>
@@ -300,10 +300,10 @@ export function AdminUserCreateForm() {
             <Button type="button" variant="secondary" onClick={() => setCreatedUser(null)}>
               Crear otro
             </Button>
-            <Link href="/admin/users" className={buttonVariants({ variant: "outline" })}>
+            <Link href="/gym/users" className={buttonVariants({ variant: "outline" })}>
               Ver usuarios
             </Link>
-            <Link href="/admin/assignments" className={buttonVariants({ variant: "ghost" })}>
+            <Link href="/gym/assignments" className={buttonVariants({ variant: "ghost" })}>
               Revisar asignaciones
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -313,5 +313,7 @@ export function AdminUserCreateForm() {
     </div>
   );
 }
+
+
 
 

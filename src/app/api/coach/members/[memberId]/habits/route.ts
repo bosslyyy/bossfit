@@ -7,6 +7,7 @@ import {
   createUserHabit,
   updateUserHabit
 } from "@/lib/supabase/normalized-user-state-server";
+import { findActiveMembershipByRoles } from "@/lib/supabase/gym-membership-roles";
 import { createSupabaseServiceRoleClient, getAuthenticatedUserFromRequest } from "@/lib/supabase/server-admin";
 import { habitSchema } from "@/lib/validation/habit";
 
@@ -14,6 +15,23 @@ interface RouteContext {
   params: Promise<{
     memberId: string;
   }>;
+}
+
+function mapCoachSchemaErrorMessage(info: ReturnType<typeof getSupabaseErrorInfo>) {
+  const source = `${info.code ?? ""} ${info.message} ${info.details ?? ""} ${info.hint ?? ""}`.toLowerCase();
+
+  if (
+    (source.includes("42703") || source.includes("42p01") || source.includes("pgrst")) &&
+    (source.includes("rest_enabled") ||
+      source.includes("rest_seconds") ||
+      source.includes("bossfit_habits") ||
+      source.includes("bossfit_user_settings") ||
+      source.includes("bossfit_habit_completions"))
+  ) {
+    return "Falta actualizar la base de datos de BossFit. Ejecuta el schema.sql más reciente en Supabase y vuelve a intentar.";
+  }
+
+  return info.message;
 }
 
 async function assertTrainerCanManageMember(request: Request, memberId: string) {
@@ -42,18 +60,22 @@ async function assertTrainerCanManageMember(request: Request, memberId: string) 
     } as const;
   }
 
-  const { data: membership, error: membershipError } = await supabase
+  const { data: memberships, error: membershipError } = await supabase
     .from("gym_memberships")
-    .select("id")
+    .select("id, gym_id, user_id, role, status, created_at")
     .eq("gym_id", assignment.gym_id)
     .eq("user_id", requester.id)
-    .eq("role", "trainer")
-    .eq("status", "active")
-    .maybeSingle();
+    .eq("status", "active");
 
   if (membershipError) {
     throw membershipError;
   }
+
+  const membership = await findActiveMembershipByRoles(
+    supabase,
+    (memberships ?? []) as Array<{ id: string; gym_id: string; user_id: string; role: "owner" | "admin" | "trainer" | "member"; status: string }>,
+    ["trainer"]
+  );
 
   if (!membership) {
     return {
@@ -103,14 +125,14 @@ export async function POST(request: Request, context: RouteContext) {
 
     const info = getSupabaseErrorInfo(error);
     console.error("BossFit Coach: no se pudo crear el entrenamiento del alumno.", {
-      message: info.message,
+      message: mapCoachSchemaErrorMessage(info),
       details: info.details,
       hint: info.hint,
       code: info.code,
       raw: error
     });
 
-    return NextResponse.json({ error: info.message, details: info.details, hint: info.hint, code: info.code }, { status: 500 });
+    return NextResponse.json({ error: mapCoachSchemaErrorMessage(info), details: info.details, hint: info.hint, code: info.code }, { status: 500 });
   }
 }
 
@@ -141,14 +163,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const info = getSupabaseErrorInfo(error);
     console.error("BossFit Coach: no se pudo actualizar el entrenamiento del alumno.", {
-      message: info.message,
+      message: mapCoachSchemaErrorMessage(info),
       details: info.details,
       hint: info.hint,
       code: info.code,
       raw: error
     });
 
-    return NextResponse.json({ error: info.message, details: info.details, hint: info.hint, code: info.code }, { status: 500 });
+    return NextResponse.json({ error: mapCoachSchemaErrorMessage(info), details: info.details, hint: info.hint, code: info.code }, { status: 500 });
   }
 }
 
@@ -174,14 +196,15 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     const info = getSupabaseErrorInfo(error);
     console.error("BossFit Coach: no se pudo eliminar el entrenamiento del alumno.", {
-      message: info.message,
+      message: mapCoachSchemaErrorMessage(info),
       details: info.details,
       hint: info.hint,
       code: info.code,
       raw: error
     });
 
-    return NextResponse.json({ error: info.message, details: info.details, hint: info.hint, code: info.code }, { status: 500 });
+    return NextResponse.json({ error: mapCoachSchemaErrorMessage(info), details: info.details, hint: info.hint, code: info.code }, { status: 500 });
   }
 }
+
 

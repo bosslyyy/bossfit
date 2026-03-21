@@ -57,6 +57,10 @@ export function formatDurationShort(totalSeconds: number) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+export function formatRestLabel(restSeconds?: number) {
+  return `Descanso ${formatDurationShort(restSeconds ?? 60)}`;
+}
+
 export function formatHabitTarget(
   targetSets: number,
   repsPerSet: number,

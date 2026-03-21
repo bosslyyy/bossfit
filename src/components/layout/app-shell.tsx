@@ -19,8 +19,9 @@ const authPaths = new Set(["/login", "/register", "/forgot-password", "/reset-pa
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith("/admin");
+  const isGymRoute = pathname.startsWith("/gym");
   const isCoachRoute = pathname.startsWith("/coach");
-  const isWideRoute = isAdminRoute || isCoachRoute;
+  const isWideRoute = isAdminRoute || isGymRoute || isCoachRoute;
   const hideFab = isWideRoute || pathname === "/habits/new" || pathname.endsWith("/edit") || authPaths.has(pathname);
   const hideNavigation = isWideRoute || authPaths.has(pathname);
 

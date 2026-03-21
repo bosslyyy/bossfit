@@ -47,7 +47,7 @@ export function AdminShell({ children }: PropsWithChildren) {
 
           <nav className="grid gap-2">
             {ADMIN_NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = item.href === "/gym" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
@@ -81,3 +81,4 @@ export function AdminShell({ children }: PropsWithChildren) {
     </div>
   );
 }
+

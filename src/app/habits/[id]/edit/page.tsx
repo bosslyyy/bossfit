@@ -7,6 +7,7 @@ import { HabitForm } from "@/components/habits/habit-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PageHeader } from "@/components/ui/page-header";
+import { normalizeHabitFormValues } from "@/lib/validation/habit";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
 export default function EditHabitPage() {
@@ -48,19 +49,21 @@ export default function EditHabitPage() {
       <HabitForm
         mode="edit"
         habitId={habit.id}
-        initialValues={{
+        initialValues={normalizeHabitFormValues({
           name: habit.name,
           category: habit.category,
           trackingMode: habit.trackingMode,
           targetSets: habit.targetSets,
           repsPerSet: habit.repsPerSet,
           secondsPerSet: habit.secondsPerSet,
+          restEnabled: habit.restEnabled ?? false,
+          restSeconds: habit.restSeconds,
           selectedDays: habit.selectedDays,
           color: habit.color,
           icon: habit.icon,
           level: habit.level,
           active: habit.active
-        }}
+        })}
       />
     </div>
   );

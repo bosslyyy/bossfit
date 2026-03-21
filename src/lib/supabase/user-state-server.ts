@@ -75,6 +75,8 @@ interface BossFitHabitRow {
   target_sets: number;
   reps_per_set: number;
   seconds_per_set: number | null;
+  rest_enabled: boolean;
+  rest_seconds: number | null;
   selected_days: string[] | null;
   is_active: boolean;
   color: Habit["color"];
@@ -143,7 +145,9 @@ function isNormalizedStateSchemaFallbackError(error: unknown) {
     source.includes(USER_COMPLETIONS_TABLE) ||
     source.includes("date_key") ||
     source.includes("archived_at") ||
-    source.includes("deleted_at")
+    source.includes("deleted_at") ||
+    source.includes("rest_enabled") ||
+    source.includes("rest_seconds")
   );
 }
 
@@ -243,6 +247,8 @@ function toHabitFromRow(row: BossFitHabitRow): Habit {
     targetSets: row.target_sets,
     repsPerSet: row.reps_per_set,
     secondsPerSet: row.seconds_per_set ?? undefined,
+    restEnabled: row.rest_enabled,
+    restSeconds: row.rest_enabled ? row.rest_seconds ?? 60 : undefined,
     selectedDays: (row.selected_days ?? []) as Habit["selectedDays"],
     active: row.is_active,
     color: row.color,
@@ -601,6 +607,8 @@ async function replaceNormalizedStateWithSnapshot(
         target_sets: habit.targetSets,
         reps_per_set: habit.repsPerSet,
         seconds_per_set: habit.secondsPerSet ?? null,
+        rest_enabled: habit.restEnabled,
+        rest_seconds: habit.restEnabled ? habit.restSeconds ?? 60 : null,
         selected_days: habit.selectedDays,
         is_active: habit.active,
         color: habit.color,
@@ -844,4 +852,6 @@ export async function fetchUserRemoteStateOrEmpty(
     ...buildRemoteMetrics(snapshot)
   };
 }
+
+
 

@@ -27,6 +27,7 @@ export function TodayHabitCard({
   const [remainingSeconds, setRemainingSeconds] = useState(habit.secondsPerSet ?? 60);
   const [submitting, setSubmitting] = useState(false);
   const lastTickSecondRef = useRef<number | null>(null);
+
   const swatch = HABIT_COLORS.find((entry) => entry.value === habit.color)?.swatch ?? "#EF4444";
   const isCompleted = progress.isCompleted || variant === "completed";
   const isTimerHabit = habit.trackingMode === "timer";

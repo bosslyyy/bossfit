@@ -1,0 +1,8 @@
+{
+  "/api/user-state/route": "app/api/user-state/route.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/habits/new/page": "app/habits/new/page.js",
+  "/today/page": "app/today/page.js",
+  "/habits/[id]/edit/page": "app/habits/[id]/edit/page.js"
+}

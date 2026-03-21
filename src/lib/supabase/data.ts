@@ -98,9 +98,11 @@ export function getSupabaseErrorInfo(error: unknown): SupabaseErrorInfo {
       message:
         typeof error.message === "string"
           ? error.message
-          : error instanceof Error
-            ? error.message
-            : "Error desconocido de Supabase.",
+          : typeof error.error === "string"
+            ? error.error
+            : error instanceof Error
+              ? error.message
+              : "Error desconocido de Supabase.",
       details: normalizeErrorField(error.details),
       hint: normalizeErrorField(error.hint),
       code: normalizeErrorField(error.code)
@@ -258,5 +260,6 @@ export async function saveRemoteState(
 
   return payload.saved;
 }
+
 
 

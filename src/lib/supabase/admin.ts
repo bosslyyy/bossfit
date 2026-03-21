@@ -1,4 +1,5 @@
 ﻿import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getPrimaryEffectiveRole, findActiveMembershipByRoles, fetchSecondaryRolesByMembershipIds, getEffectiveRoles } from "@/lib/supabase/gym-membership-roles";
 import { getSupabaseErrorInfo } from "@/lib/supabase/data";
 
 export type GymRole = "owner" | "admin" | "trainer" | "member";
@@ -362,19 +363,16 @@ export async function fetchActiveAdminGymContext(userId: string): Promise<AdminG
     .select("id, gym_id, user_id, role, status")
     .eq("user_id", userId)
     .eq("status", "active")
-    .in("role", ["owner", "admin"])
     .order("created_at", { ascending: true });
 
   if (membershipsError) {
     throw mapError(membershipsError);
   }
 
-  const candidates = ((memberships ?? []) as GymMembershipRow[]).sort(
-    (left, right) => rolePriority[left.role] - rolePriority[right.role]
-  );
-  const membership = candidates[0];
+  const match = await findActiveMembershipByRoles(supabase, (memberships ?? []) as GymMembershipRow[], ["owner", "admin"]);
+  const membership = match?.membership;
 
-  if (!membership) {
+  if (!membership || !match) {
     return null;
   }
 
@@ -411,7 +409,7 @@ export async function fetchActiveAdminGymContext(userId: string): Promise<AdminG
     gymName: gymRow.name,
     gymSlug: gymRow.slug,
     gymActive: gymRow.active,
-    role: membership.role,
+    role: getPrimaryEffectiveRole(membership.role, match.extraRoles),
     userId,
     membershipId: membership.id,
     userEmail: profileRow?.email ?? undefined,
@@ -505,7 +503,7 @@ export async function fetchAdminTrainers(gymId: string): Promise<AdminTrainerLis
     .from("gym_memberships")
     .select("id, gym_id, user_id, role, status, created_at")
     .eq("gym_id", gymId)
-    .eq("role", "trainer")
+    .eq("status", "active")
     .order("created_at", { ascending: true });
 
   if (membershipsError) {
@@ -513,20 +511,31 @@ export async function fetchAdminTrainers(gymId: string): Promise<AdminTrainerLis
   }
 
   const membershipRows = (memberships ?? []) as GymMembershipRow[];
-  const trainerIds = membershipRows.map((item) => item.user_id);
+  const secondaryRolesByMembershipId = await fetchSecondaryRolesByMembershipIds(
+    supabase,
+    membershipRows.map((membership) => membership.id)
+  );
+  const trainerMembershipRows = membershipRows.filter((membership) =>
+    getEffectiveRoles(membership.role, secondaryRolesByMembershipId.get(membership.id) ?? []).includes("trainer")
+  );
+  const trainerIds = trainerMembershipRows.map((item) => item.user_id);
 
   const [{ data: groups, error: groupsError }, { data: assignments, error: assignmentsError }, profilesMap] =
     await Promise.all([
-      supabase
-        .from("gym_groups")
-        .select("id, trainer_user_id")
-        .eq("gym_id", gymId)
-        .in("trainer_user_id", trainerIds),
-      supabase
-        .from("member_assignments")
-        .select("id, trainer_user_id")
-        .eq("gym_id", gymId)
-        .in("trainer_user_id", trainerIds),
+      trainerIds.length
+        ? supabase
+            .from("gym_groups")
+            .select("id, trainer_user_id")
+            .eq("gym_id", gymId)
+            .in("trainer_user_id", trainerIds)
+        : Promise.resolve({ data: [], error: null }),
+      trainerIds.length
+        ? supabase
+            .from("member_assignments")
+            .select("id, trainer_user_id")
+            .eq("gym_id", gymId)
+            .in("trainer_user_id", trainerIds)
+        : Promise.resolve({ data: [], error: null }),
       fetchProfilesMap(trainerIds)
     ]);
 
@@ -559,12 +568,12 @@ export async function fetchAdminTrainers(gymId: string): Promise<AdminTrainerLis
     );
   }
 
-  return membershipRows.map((membership) => {
+  return trainerMembershipRows.map((membership) => {
     const profile = profilesMap.get(membership.user_id);
     return {
       userId: membership.user_id,
       membershipId: membership.id,
-      name: profileName(profile, `Coach ${membership.user_id.slice(0, 6)}`),
+      name: profileName(profile, "Coach " + membership.user_id.slice(0, 6)),
       email: profile?.email ?? "Sin email",
       status: membership.status,
       membersCount: membersCountByTrainer.get(membership.user_id) ?? 0,
