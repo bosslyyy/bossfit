@@ -1,5 +1,6 @@
 ﻿import type { HabitFormValues } from "@/lib/validation/habit";
 import type { ReminderSettings, ThemeMode } from "@/types/habit";
+import { toDateKey } from "@/lib/date";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { applyRemoteStateToStore } from "@/lib/supabase/hydrate-store";
 import { getSupabaseErrorInfo, type BossFitRemoteState } from "@/lib/supabase/data";
@@ -86,7 +87,7 @@ export function completeSetAction(habitId: string, dateKey?: string) {
   return runUserStateAction<{ completedSets: number; justCompleted: boolean }>({
     type: "complete_set",
     habitId,
-    dateKey
+    dateKey: dateKey ?? toDateKey()
   });
 }
 
@@ -94,7 +95,7 @@ export function undoSetAction(habitId: string, dateKey?: string) {
   return runUserStateAction<{ completedSets: number }>({
     type: "undo_set",
     habitId,
-    dateKey
+    dateKey: dateKey ?? toDateKey()
   });
 }
 
@@ -102,7 +103,7 @@ export function resetCompletionAction(habitId: string, dateKey?: string) {
   return runUserStateAction<{ habitId: string; dateKey: string }>({
     type: "reset_completion",
     habitId,
-    dateKey
+    dateKey: dateKey ?? toDateKey()
   });
 }
 
@@ -125,4 +126,3 @@ export function resetAppDataAction() {
     type: "reset_app_data"
   });
 }
-
