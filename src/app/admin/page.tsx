@@ -44,7 +44,7 @@ export default function AdminDashboardPage() {
   }, [context.gymId]);
 
   if (loading) {
-    return <AdminDataState title="Cargando dashboard del gym" description="Estamos reuniendo métricas, alertas y actividad reciente desde Supabase." />;
+    return <AdminDataState title="Cargando dashboard del gym" description="Estamos reuniendo métricas, alertas y actividad reciente del gimnasio." />;
   }
 
   if (error || !data) {
@@ -156,3 +156,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

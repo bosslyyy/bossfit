@@ -214,7 +214,7 @@ export default function AdminUserDetailPage() {
   };
 
   if (loading) {
-    return <AdminDataState title="Cargando ficha del usuario" description="Estamos reuniendo perfil, estado del gym y progreso real desde Supabase." />;
+    return <AdminDataState title="Cargando ficha del usuario" description="Estamos reuniendo perfil, estado del gym y progreso actual del usuario." />;
   }
 
   if (!detail) {
@@ -322,7 +322,7 @@ export default function AdminUserDetailPage() {
           <div className="space-y-4 rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
             <div className="space-y-1">
               <CardTitle>Seguridad y cuenta</CardTitle>
-              <CardDescription>Resumen operativo del acceso y sincronización de la cuenta.</CardDescription>
+              <CardDescription>Resumen operativo del acceso y la actividad reciente de la cuenta.</CardDescription>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
@@ -334,12 +334,12 @@ export default function AdminUserDetailPage() {
                 <span className="font-semibold text-card-foreground dark:text-white">{detail.isManagedAccount ? "Sí" : "No"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Último sync</span>
-                <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.stats.lastSyncedAt ? new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(detail.stats.lastSyncedAt)) : "Sin sync"}</span>
+                <span className="text-muted-foreground">Última actividad</span>
+                <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.stats.lastSyncedAt ? new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(detail.stats.lastSyncedAt)) : "Sin registro"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Último guardado</span>
-                <span className="font-semibold text-card-foreground dark:text-white">{detail.stats.lastSaveReason || "sync"}</span>
+                <span className="text-muted-foreground">Estado reciente</span>
+                <span className="font-semibold text-card-foreground dark:text-white">{detail.stats.lastSaveReason || "actualizado"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">Creada</span>
@@ -473,7 +473,7 @@ export default function AdminUserDetailPage() {
         <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
           <div className="space-y-1">
             <CardTitle>Rutina actual</CardTitle>
-            <CardDescription>Hábitos remotos del usuario que hoy se guardan en su snapshot de cuenta.</CardDescription>
+            <CardDescription>Hábitos actuales del usuario cargados en su cuenta.</CardDescription>
           </div>
           {detail.habits.length ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -497,7 +497,7 @@ export default function AdminUserDetailPage() {
             </div>
           ) : (
             <div className="rounded-[22px] border border-dashed border-border bg-background/80 p-5 text-sm text-muted-foreground dark:bg-white/[0.04]">
-              Este usuario aún no tiene hábitos guardados en su cuenta remota.
+              Este usuario aún no tiene hábitos cargados en su cuenta.
             </div>
           )}
         </Card>
@@ -519,3 +519,8 @@ export default function AdminUserDetailPage() {
     </div>
   );
 }
+
+
+
+
+

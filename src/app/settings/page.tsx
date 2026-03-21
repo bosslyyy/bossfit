@@ -6,8 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BellRing,
   BriefcaseBusiness,
-  Cloud,
-  DatabaseZap,
   KeyRound,
   LogOut,
   MoonStar,
@@ -25,15 +23,16 @@ import { Input } from "@/components/ui/input";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
+import { APP_VERSION } from "@/lib/constants";
 import { getReminderPermissionLabel, getReminderSupport, requestReminderPermission } from "@/lib/reminders";
-import { getSupabaseStatusLabel } from "@/lib/supabase/client";
 import { fetchActiveCoachGymContext } from "@/lib/supabase/coach";
+import { getSupabaseStatusLabel } from "@/lib/supabase/client";
 import { resetAppDataAction, setThemeAction, updateReminderSettingsAction } from "@/lib/supabase/user-state-actions";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
 function formatSyncDate(value?: string) {
   if (!value) {
-    return "Aún no se ha sincronizado en este dispositivo.";
+    return "Aún no hay actividad reciente en este dispositivo.";
   }
 
   return new Intl.DateTimeFormat("es-CR", {
@@ -43,12 +42,7 @@ function formatSyncDate(value?: string) {
 }
 
 export default function SettingsPage() {
-  const {
-    theme,
-    reminderSettings,
-    cloudSync,
-    hasHydrated
-  } = useBossFitStore(
+  const { theme, reminderSettings, cloudSync, hasHydrated } = useBossFitStore(
     useShallow((state) => ({
       theme: state.theme,
       reminderSettings: state.reminderSettings,
@@ -205,9 +199,9 @@ export default function SettingsPage() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <CardTitle>Cuenta y sincronización</CardTitle>
+              <CardTitle>Cuenta</CardTitle>
               <CardDescription>
-                Tus hábitos, progreso, tema y recordatorios pueden mantenerse bajo tu cuenta de Supabase.
+                Gestiona tu acceso y revisa el estado actual de tu cuenta.
               </CardDescription>
             </div>
           </div>
@@ -221,7 +215,7 @@ export default function SettingsPage() {
               <p className="mt-1 text-sm text-muted-foreground">{getSupabaseStatusLabel()}</p>
             </div>
             <div className="rounded-[24px] border border-border bg-surface p-4">
-              <p className="text-sm font-semibold text-card-foreground">Última sincronización</p>
+              <p className="text-sm font-semibold text-card-foreground">Última actualización</p>
               <p className="mt-2 font-display text-xl font-semibold text-card-foreground">
                 {cloudSync.lastSyncedAt ? "Lista" : "Pendiente"}
               </p>
@@ -333,7 +327,9 @@ export default function SettingsPage() {
             <SunMedium className="h-4 w-4 text-muted-foreground" />
             <Switch
               checked={theme === "dark"}
-              onCheckedChange={(checked) => { void setThemeAction(checked ? "dark" : "light"); }}
+              onCheckedChange={(checked) => {
+                void setThemeAction(checked ? "dark" : "light");
+              }}
               ariaLabel="Cambiar tema"
             />
             <MoonStar className="h-4 w-4 text-muted-foreground" />
@@ -380,7 +376,9 @@ export default function SettingsPage() {
                 type="time"
                 className="mt-3"
                 value={reminderSettings.time}
-                onChange={(event) => { void updateReminderSettingsAction({ time: event.target.value }); }}
+                onChange={(event) => {
+                  void updateReminderSettingsAction({ time: event.target.value });
+                }}
               />
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
@@ -398,7 +396,9 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => { void updateReminderSettingsAction({ lastSentDate: undefined }); }}
+                  onClick={() => {
+                    void updateReminderSettingsAction({ lastSentDate: undefined });
+                  }}
                   disabled={!reminderSettings.enabled}
                 >
                   Rearmar recordatorio
@@ -408,7 +408,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="rounded-[22px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-            Los recordatorios funcionan sin backend y sin push remota. En especial en iPhone/iOS no pueden quedar garantizados con la app cerrada, así que BossFit los ejecuta de forma segura mientras está abierta o instalada en un entorno compatible.
+            Los recordatorios dependen del navegador y del sistema de tu dispositivo. En iPhone pueden variar según si la app está abierta o instalada.
           </div>
         </div>
       </Card>
@@ -419,12 +419,12 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
-              <DatabaseZap className="h-5 w-5" />
+              <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>Tu cuenta guarda</CardTitle>
+              <CardTitle>Tu cuenta incluye</CardTitle>
               <CardDescription>
-                Cuando inicias sesión, BossFit puede recuperar este progreso desde cualquier dispositivo.
+                Estos son algunos elementos personales que encontrarás al entrar a tu cuenta.
               </CardDescription>
             </div>
           </div>
@@ -435,6 +435,7 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+          <p className="text-center text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{APP_VERSION}</p>
         </div>
       </Card>
 
@@ -442,7 +443,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
-              <Cloud className="h-5 w-5" />
+              <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
               <CardTitle>Sácale más provecho</CardTitle>
@@ -472,7 +473,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div>
             <CardTitle>Reiniciar datos</CardTitle>
-            <CardDescription>Restablece hábitos y progreso en este dispositivo. Si tienes sesión activa, la próxima sincronización reflejará ese cambio.</CardDescription>
+            <CardDescription>Restablece tu rutina y tus avances actuales. Esta acción requiere confirmación.</CardDescription>
           </div>
           <Button
             variant="danger"
@@ -491,11 +492,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-

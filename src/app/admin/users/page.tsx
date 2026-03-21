@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex min-w-[11rem] flex-1 items-center gap-2 rounded-[20px] border border-border bg-background/80 px-4 py-3 text-sm text-muted-foreground dark:bg-white/[0.04]">
             <Search className="h-4 w-4" />
-            Lista conectada a Supabase
+            Lista conectada al gym
           </div>
           <div className="flex items-center gap-2">
             <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{members.length} miembros</Badge>
@@ -99,3 +99,4 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+

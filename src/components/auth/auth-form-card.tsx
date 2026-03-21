@@ -9,6 +9,7 @@ import { Loader2, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { APP_VERSION } from "@/lib/constants";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { hydrateStoreForUser } from "@/lib/supabase/hydrate-store";
 import { resolveLoginEmail } from "@/lib/supabase/resolve-login";
@@ -49,7 +50,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
     setMessage(null);
 
     if (!isConfigured) {
-      setError("Faltan variables de entorno de Supabase en .env.local.");
+      setError("Esta versión todavía no puede abrir cuentas.");
       return;
     }
 
@@ -75,7 +76,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
-      setError("No se pudo crear el cliente de Supabase.");
+      setError("No se pudo preparar tu acceso.");
       return;
     }
 
@@ -140,20 +141,20 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
           </h1>
           <p className="max-w-[26rem] text-sm text-muted-foreground">
             {isRegister
-              ? "Activa tu progreso en la nube y sincroniza tus hábitos, series y ajustes por usuario."
-              : "Entra con tu email o usuario para recuperar tu progreso y seguir entrenando sin perder continuidad."}
+              ? "Crea tu cuenta y empieza a construir tu rutina desde hoy."
+              : "Entra con tu email o usuario para seguir entrenando y continuar donde la dejaste."}
           </p>
         </div>
 
         <Card className="space-y-5">
           <div className="flex items-start gap-3 rounded-[24px] border border-border bg-surface p-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div className="space-y-1">
               <CardTitle>Acceso seguro y progreso por usuario</CardTitle>
               <CardDescription>
-                BossFit seguirá funcionando con su store actual, pero ahora tus datos también podrán sincronizarse con Supabase en tu misma cuenta.
+                Entra a tu cuenta y sigue con tu plan, tu progreso y tus ajustes personales.
               </CardDescription>
             </div>
           </div>
@@ -238,6 +239,8 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
               {isRegister ? "Entra aquí" : "Regístrate"}
             </Link>
           </div>
+
+          <p className="text-center text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{APP_VERSION}</p>
         </Card>
       </div>
     </div>

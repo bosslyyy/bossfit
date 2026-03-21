@@ -204,7 +204,7 @@ export default function AdminAssignmentsPage() {
         </div>
       </Card>
 
-      {loading ? <AdminDataState title="Cargando asignaciones" description="Estamos leyendo member_assignments y planes activos desde Supabase." /> : null}
+      {loading ? <AdminDataState title="Cargando asignaciones" description="Estamos reuniendo las asignaciones activas y sus detalles." /> : null}
       {!loading && error ? <AdminDataState title="No pudimos cargar las asignaciones" description={error} actionLabel="Reintentar" onAction={() => void loadAssignments()} tone="warning" /> : null}
       {!loading && !error && assignments.length === 0 ? <AdminDataState title="Aún no hay asignaciones en este gym" description="Cuando crees miembros en el gym, aparecerán aquí automáticamente para poder ubicarlos con un coach y un grupo." /> : null}
 
@@ -227,3 +227,4 @@ export default function AdminAssignmentsPage() {
     </div>
   );
 }
+

@@ -8,6 +8,7 @@ import { Loader2, MailQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { APP_VERSION } from "@/lib/constants";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { resolveLoginEmail } from "@/lib/supabase/resolve-login";
 
@@ -24,7 +25,7 @@ export function ForgotPasswordCard() {
     setMessage(null);
 
     if (!isConfigured) {
-      setError("Faltan variables de entorno de Supabase en .env.local.");
+      setError("Esta versión todavía no puede recuperar cuentas.");
       return;
     }
 
@@ -80,7 +81,7 @@ export function ForgotPasswordCard() {
             <div className="space-y-1">
               <CardTitle>Se me olvidó la contraseña</CardTitle>
               <CardDescription>
-                Si tu cuenta fue creada por un gym y no controlas el correo asignado, pide al owner o admin que te regenere el acceso desde el panel.
+                Si no recuerdas tu acceso, desde aquí puedes crear una contraseña nueva para tu cuenta.
               </CardDescription>
             </div>
           </div>
@@ -121,6 +122,8 @@ export function ForgotPasswordCard() {
               Volver al login
             </Link>
           </div>
+
+          <p className="text-center text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{APP_VERSION}</p>
         </Card>
       </div>
     </div>

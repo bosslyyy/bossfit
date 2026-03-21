@@ -1,15 +1,15 @@
 ﻿"use client";
 
-import type { PropsWithChildren } from "react";
-import { useEffect } from "react";
-
 import Link from "next/link";
+import { useEffect } from "react";
+import type { PropsWithChildren } from "react";
+
 import { usePathname, useRouter } from "next/navigation";
 
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 const PUBLIC_ROUTES = new Set(["/login", "/register", "/forgot-password", "/reset-password"]);
 const REDIRECT_IF_AUTH_ROUTES = new Set(["/login", "/register", "/forgot-password"]);
@@ -46,10 +46,10 @@ export function AuthGuard({ children }: PropsWithChildren) {
       <div className="flex min-h-[70vh] items-center">
         <Card className="w-full space-y-4">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">Supabase</p>
-            <CardTitle>Falta terminar la configuración de autenticación</CardTitle>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">BossFit Access</p>
+            <CardTitle>Falta terminar la configuración de acceso</CardTitle>
             <CardDescription>
-              Agrega `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `.env.local` para poder entrar a BossFit.
+              Esta versión todavía no puede abrir cuentas. Revisa la configuración del proyecto y vuelve a intentar.
             </CardDescription>
           </div>
           <Link href="/login" className={buttonVariants({ variant: "secondary" })}>
@@ -65,7 +65,7 @@ export function AuthGuard({ children }: PropsWithChildren) {
   }
 
   if (status === "unauthenticated" && !publicRoute) {
-    return <LoadingScreen title="Abriendo acceso seguro..." />;
+    return <LoadingScreen title="Abriendo acceso..." />;
   }
 
   if (status === "authenticated" && publicRoute && redirectIfAuth) {

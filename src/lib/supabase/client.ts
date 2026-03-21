@@ -47,6 +47,6 @@ export function createSupabaseBrowserClient() {
 
 export function getSupabaseStatusLabel() {
   return isSupabaseConfigured()
-    ? "Supabase conectado y listo para autenticar y sincronizar BossFit."
-    : "Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY en .env.local.";
+    ? "Tu cuenta está lista para entrar y continuar donde la dejaste."
+    : "Este entorno aún no está listo para abrir tu cuenta.";
 }

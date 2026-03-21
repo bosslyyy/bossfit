@@ -1,5 +1,7 @@
 ﻿import type { HabitColor, HabitIcon, WeekdayKey } from "@/types/habit";
 
+export const APP_VERSION = "BossFit v1.00";
+
 export const WEEK_DAYS: Array<{
   key: WeekdayKey;
   short: string;
@@ -146,5 +148,3 @@ export const LEVEL_TITLES = [
 
 export const STORAGE_KEY = "bossfit-store";
 export const STORAGE_VERSION = 5;
-
-

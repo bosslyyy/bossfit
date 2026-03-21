@@ -134,7 +134,7 @@ export default function AdminGroupDetailPage() {
   };
 
   if (loading) {
-    return <AdminDataState title="Cargando ficha del grupo" description="Estamos reuniendo entrenador, miembros y estado operativo desde Supabase." />;
+    return <AdminDataState title="Cargando ficha del grupo" description="Estamos reuniendo entrenador, miembros y estado operativo del grupo." />;
   }
 
   if (!detail) {
@@ -291,3 +291,4 @@ export default function AdminGroupDetailPage() {
     </div>
   );
 }
+

@@ -173,7 +173,7 @@ export default function AdminTrainersPage() {
         </Card>
       </div>
 
-      {loading ? <AdminDataState title="Cargando entrenadores" description="Estamos leyendo las memberships con rol trainer desde Supabase." /> : null}
+      {loading ? <AdminDataState title="Cargando entrenadores" description="Estamos reuniendo el staff activo del gimnasio." /> : null}
       {!loading && error ? <AdminDataState title="No pudimos cargar el staff" description={error} actionLabel="Reintentar" onAction={() => void loadTrainers()} tone="warning" /> : null}
       {!loading && !error && trainers.length === 0 ? <AdminDataState title="Aún no hay entrenadores en este gym" description="Cuando agregues memberships con rol trainer, aparecerán aquí automáticamente." /> : null}
 
@@ -202,3 +202,4 @@ export default function AdminTrainersPage() {
     </div>
   );
 }
+
