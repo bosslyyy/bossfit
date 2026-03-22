@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { HABIT_CATEGORIES, HABIT_COLORS, HABIT_ICONS, HABIT_LEVELS } from "@/lib/constants";
-import { cn, formatHabitTarget, formatSelectedDays, titleCase } from "@/lib/utils";
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { getCategoryLabel, getHabitCategories, getHabitColorLabel, getHabitIcons, getHabitLevels, getLevelLabel } from "@/lib/i18n";
+import { cn, formatHabitTarget, formatSelectedDays } from "@/lib/utils";
 import {
   habitSchema,
   normalizeHabitFormValues,
@@ -54,8 +55,110 @@ export function CoachHabitEditor({
   onUpdate: (habitId: string, values: HabitFormValues) => Promise<void>;
   onDelete: (habitId: string) => Promise<void>;
 }) {
+  const locale = useAppLocale();
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const copy =
+    locale === "en"
+      ? {
+          selectMemberTitle: "Select a member",
+          selectMemberDescription: "Here you can create, edit, pause, or remove the real training the member will see inside BossFit.",
+          saveError: "Could not save training.",
+          toggleError: "Could not change status.",
+          deleteConfirm: "Delete this training from the member?",
+          deleteError: "Could not delete training.",
+          memberPlan: "Member plan",
+          lastActivity: "Last activity",
+          level: "Level",
+          points: "Boss Points",
+          trainingTitle: "Active and scheduled training",
+          trainingDescription: "Manage what the member will see in the app. Changes are saved to the account and reflected on sign in.",
+          newTraining: "New training",
+          active: "Active",
+          paused: "Paused",
+          edit: "Edit",
+          pause: "Pause",
+          activate: "Activate",
+          delete: "Delete",
+          noTraining: "This member does not have any training yet. You can create the first one from the form below.",
+          editTraining: "Edit training",
+          createTraining: "Create training",
+          formDescription: "Configure name, blocks, and days. The member will log completed sets by reps or by time in the app.",
+          name: "Name",
+          namePlaceholder: "Ex. Rope or incline push-ups",
+          trackingMode: "Tracking mode",
+          reps: "Repetitions",
+          repsHelper: "Traditional sets",
+          timer: "Time",
+          timerHelper: "Timer-based sets",
+          sets: "Sets",
+          timePerSet: "Time per set (seconds)",
+          timeHelper: "Ex. 60 = 1 minute per set.",
+          repsPerSet: "Reps per set",
+          days: "Days",
+          category: "Category",
+          noCategory: "No category",
+          icon: "Icon",
+          color: "Color",
+          levelLabel: "Level",
+          noLevel: "No level",
+          activeHabit: "Habit active for the member",
+          saveChanges: "Save changes",
+          createAction: "Create training",
+          cancelEdit: "Cancel edit"
+        }
+      : {
+          selectMemberTitle: "Selecciona un alumno",
+          selectMemberDescription: "Aquí podrás crear, editar, pausar o eliminar los entrenamientos reales que verá dentro de BossFit.",
+          saveError: "No se pudo guardar el entrenamiento.",
+          toggleError: "No se pudo cambiar el estado.",
+          deleteConfirm: "¿Eliminar este entrenamiento del alumno?",
+          deleteError: "No se pudo eliminar el entrenamiento.",
+          memberPlan: "Plan del alumno",
+          lastActivity: "Última actividad",
+          level: "Nivel",
+          points: "Boss Points",
+          trainingTitle: "Entrenamientos activos y programados",
+          trainingDescription: "Gestiona lo que el alumno verá en su app. Los cambios se guardan en su cuenta y se reflejan al entrar.",
+          newTraining: "Nuevo entrenamiento",
+          active: "Activo",
+          paused: "Pausado",
+          edit: "Editar",
+          pause: "Pausar",
+          activate: "Activar",
+          delete: "Eliminar",
+          noTraining: "Este alumno aún no tiene entrenamientos cargados. Puedes crear el primero desde el formulario de abajo.",
+          editTraining: "Editar entrenamiento",
+          createTraining: "Crear entrenamiento",
+          formDescription: "Configura nombre, bloques y días. El alumno registrar� series completas por reps o por tiempo desde su app.",
+          name: "Nombre",
+          namePlaceholder: "Ej. Cuerda o lagartijas inclinadas",
+          trackingMode: "Modo de registro",
+          reps: "Repeticiones",
+          repsHelper: "Series tradicionales",
+          timer: "Tiempo",
+          timerHelper: "Series con contador",
+          sets: "Series",
+          timePerSet: "Tiempo por serie (segundos)",
+          timeHelper: "Ej. 60 = 1 minuto por serie.",
+          repsPerSet: "Reps por serie",
+          days: "D�as",
+          category: "Categoría",
+          noCategory: "Sin categoría",
+          icon: "Ícono",
+          color: "Color",
+          levelLabel: "Nivel",
+          noLevel: "Sin nivel",
+          activeHabit: "H�bito activo para el alumno",
+          saveChanges: "Guardar cambios",
+          createAction: "Crear entrenamiento",
+          cancelEdit: "Cancelar edici�n"
+        };
+
+  const categories = getHabitCategories(locale);
+  const iconOptions = getHabitIcons(locale);
+  const levelOptions = getHabitLevels(locale);
 
   const form = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
@@ -88,10 +191,8 @@ export function CoachHabitEditor({
   if (!member) {
     return (
       <Card className="rounded-[32px] border border-white/8 bg-[#111A24] p-6 text-white shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
-        <CardTitle className="text-white">Selecciona un alumno</CardTitle>
-        <CardDescription className="text-white/62">
-          Aquí podrás crear, editar, pausar o eliminar los entrenamientos reales que verá dentro de BossFit.
-        </CardDescription>
+        <CardTitle className="text-white">{copy.selectMemberTitle}</CardTitle>
+        <CardDescription className="text-white/62">{copy.selectMemberDescription}</CardDescription>
       </Card>
     );
   }
@@ -110,7 +211,7 @@ export function CoachHabitEditor({
       setEditingHabitId(null);
       form.reset(normalizeHabitFormValues());
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "No se pudo guardar el entrenamiento.");
+      setError(submitError instanceof Error ? submitError.message : copy.saveError);
     }
   });
 
@@ -128,12 +229,12 @@ export function CoachHabitEditor({
         form.setValue("active", !habit.active, { shouldDirty: true });
       }
     } catch (toggleError) {
-      setError(toggleError instanceof Error ? toggleError.message : "No se pudo cambiar el estado.");
+      setError(toggleError instanceof Error ? toggleError.message : copy.toggleError);
     }
   };
 
   const handleDelete = async (habitId: string) => {
-    const confirmed = window.confirm("¿Eliminar este entrenamiento del alumno?");
+    const confirmed = window.confirm(copy.deleteConfirm);
     if (!confirmed) {
       return;
     }
@@ -146,7 +247,7 @@ export function CoachHabitEditor({
         form.reset(normalizeHabitFormValues());
       }
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el entrenamiento.");
+      setError(deleteError instanceof Error ? deleteError.message : copy.deleteError);
     }
   };
 
@@ -155,19 +256,19 @@ export function CoachHabitEditor({
       <Card className="rounded-[32px] border border-white/8 bg-[#111A24] p-6 text-white shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">Plan del alumno</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">{copy.memberPlan}</p>
             <CardTitle className="mt-2 text-white">{member.name}</CardTitle>
             <CardDescription className="mt-1 text-white/62">
-              {member.groupName} · {member.planName} · Última actividad {member.lastActivityLabel}
+              {member.groupName} · {member.planName} · {copy.lastActivity} {member.lastActivityLabel}
             </CardDescription>
           </div>
           <div className="grid min-w-[14rem] grid-cols-2 gap-3 text-sm">
             <div className="rounded-[22px] border border-white/8 bg-white/5 p-3">
-              <p className="text-white/48">Nivel</p>
+              <p className="text-white/48">{copy.level}</p>
               <p className="mt-2 font-semibold text-white">{member.level}</p>
             </div>
             <div className="rounded-[22px] border border-white/8 bg-white/5 p-3">
-              <p className="text-white/48">Boss Points</p>
+              <p className="text-white/48">{copy.points}</p>
               <p className="mt-2 font-semibold text-white">{member.totalPoints}</p>
             </div>
           </div>
@@ -177,10 +278,8 @@ export function CoachHabitEditor({
       <Card className="rounded-[32px] border border-white/8 bg-[#111A24] p-6 text-white shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-white">Entrenamientos activos y programados</CardTitle>
-            <CardDescription className="mt-1 text-white/60">
-              Gestiona lo que el alumno verá en su app. Los cambios se guardan en su cuenta y se reflejan al entrar.
-            </CardDescription>
+            <CardTitle className="text-white">{copy.trainingTitle}</CardTitle>
+            <CardDescription className="mt-1 text-white/60">{copy.trainingDescription}</CardDescription>
           </div>
           <Button
             variant="secondary"
@@ -192,7 +291,7 @@ export function CoachHabitEditor({
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Nuevo entrenamiento
+            {copy.newTraining}
           </Button>
         </div>
 
@@ -207,13 +306,13 @@ export function CoachHabitEditor({
                   <div className="flex flex-wrap items-center gap-3">
                     <p className="font-display text-lg font-semibold text-white">{habit.name}</p>
                     <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", habit.active ? "bg-emerald-400/18 text-emerald-200" : "bg-white/10 text-white/65")}>
-                      {habit.active ? "Activo" : "Pausado"}
+                      {habit.active ? copy.active : copy.paused}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-white/62">
-                    {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays)}
-                    {habit.level ? ` · ${titleCase(habit.level)}` : ""}
-                    {habit.category ? ` · ${titleCase(habit.category)}` : ""}
+                    {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays, locale)}
+                    {habit.level ? ` · ${getLevelLabel(locale, habit.level)}` : ""}
+                    {habit.category ? ` · ${getCategoryLabel(locale, habit.category)}` : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -224,7 +323,7 @@ export function CoachHabitEditor({
                     disabled={busy}
                   >
                     <PencilLine className="mr-2 h-4 w-4" />
-                    Editar
+                    {copy.edit}
                   </Button>
                   <Button
                     variant="secondary"
@@ -233,18 +332,18 @@ export function CoachHabitEditor({
                     disabled={busy}
                   >
                     {habit.active ? <PauseCircle className="mr-2 h-4 w-4" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                    {habit.active ? "Pausar" : "Activar"}
+                    {habit.active ? copy.pause : copy.activate}
                   </Button>
                   <Button variant="danger" onClick={() => void handleDelete(habit.id)} disabled={busy}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar
+                    {copy.delete}
                   </Button>
                 </div>
               </div>
             ))
           ) : (
             <div className="rounded-[26px] border border-dashed border-white/12 bg-white/[0.03] p-5 text-sm text-white/62">
-              Este alumno aún no tiene entrenamientos cargados. Puedes crear el primero desde el formulario de abajo.
+              {copy.noTraining}
             </div>
           )}
         </div>
@@ -252,18 +351,16 @@ export function CoachHabitEditor({
 
       <Card className="rounded-[32px] border border-white/8 bg-[#111A24] p-6 text-white shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
         <div className="space-y-1">
-          <CardTitle className="text-white">{editingHabit ? "Editar entrenamiento" : "Crear entrenamiento"}</CardTitle>
-          <CardDescription className="text-white/60">
-            Configura nombre, bloques y días. El alumno registrará series completas por reps o por tiempo desde su app.
-          </CardDescription>
+          <CardTitle className="text-white">{editingHabit ? copy.editTraining : copy.createTraining}</CardTitle>
+          <CardDescription className="text-white/60">{copy.formDescription}</CardDescription>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-5">
           <div>
-            <Label htmlFor="coach-habit-name" className="text-white">Nombre</Label>
+            <Label htmlFor="coach-habit-name" className="text-white">{copy.name}</Label>
             <Input
               id="coach-habit-name"
-              placeholder="Ej. Cuerda o lagartijas inclinadas"
+              placeholder={copy.namePlaceholder}
               className="bg-white/6 text-white placeholder:text-white/35"
               {...form.register("name")}
             />
@@ -271,11 +368,11 @@ export function CoachHabitEditor({
           </div>
 
           <div>
-            <Label className="text-white">Modo de registro</Label>
+            <Label className="text-white">{copy.trackingMode}</Label>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
               {[
-                { value: "reps", label: "Repeticiones", helper: "Series tradicionales" },
-                { value: "timer", label: "Tiempo", helper: "Series con contador" }
+                { value: "reps", label: copy.reps, helper: copy.repsHelper },
+                { value: "timer", label: copy.timer, helper: copy.timerHelper }
               ].map((option) => {
                 const selected = trackingMode === option.value;
                 return (
@@ -305,7 +402,7 @@ export function CoachHabitEditor({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="coach-target-sets" className="text-white">Series</Label>
+              <Label htmlFor="coach-target-sets" className="text-white">{copy.sets}</Label>
               <Input id="coach-target-sets" type="number" min={1} max={999} className="bg-white/6 text-white" {...form.register("targetSets")} />
               {form.formState.errors.targetSets ? (
                 <p className="mt-2 text-sm text-rose-300">{form.formState.errors.targetSets.message}</p>
@@ -314,17 +411,17 @@ export function CoachHabitEditor({
             <div>
               {trackingMode === "timer" ? (
                 <>
-                  <Label htmlFor="coach-seconds" className="text-white">Tiempo por serie (segundos)</Label>
+                  <Label htmlFor="coach-seconds" className="text-white">{copy.timePerSet}</Label>
                   <Input id="coach-seconds" type="number" min={5} max={7200} className="bg-white/6 text-white" {...form.register("secondsPerSet")} />
                   {form.formState.errors.secondsPerSet ? (
                     <p className="mt-2 text-sm text-rose-300">{form.formState.errors.secondsPerSet.message}</p>
                   ) : (
-                    <p className="mt-2 text-xs text-white/45">Ej. 60 = 1 minuto por serie.</p>
+                    <p className="mt-2 text-xs text-white/45">{copy.timeHelper}</p>
                   )}
                 </>
               ) : (
                 <>
-                  <Label htmlFor="coach-reps" className="text-white">Reps por serie</Label>
+                  <Label htmlFor="coach-reps" className="text-white">{copy.repsPerSet}</Label>
                   <Input id="coach-reps" type="number" min={1} max={2500} className="bg-white/6 text-white" {...form.register("repsPerSet")} />
                   {form.formState.errors.repsPerSet ? (
                     <p className="mt-2 text-sm text-rose-300">{form.formState.errors.repsPerSet.message}</p>
@@ -335,7 +432,7 @@ export function CoachHabitEditor({
           </div>
 
           <div>
-            <Label className="text-white">Días</Label>
+            <Label className="text-white">{copy.days}</Label>
             <DaySelector
               value={values.selectedDays}
               onChange={(days) => form.setValue("selectedDays", days, { shouldDirty: true, shouldValidate: true })}
@@ -345,7 +442,7 @@ export function CoachHabitEditor({
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Label htmlFor="coach-category" className="text-white">Categoría</Label>
+              <Label htmlFor="coach-category" className="text-white">{copy.category}</Label>
               <select
                 id="coach-category"
                 value={values.category ?? ""}
@@ -357,8 +454,8 @@ export function CoachHabitEditor({
                 }
                 className={cn(selectClassName, "bg-white/6 text-white")}
               >
-                <option value="">Sin categoría</option>
-                {HABIT_CATEGORIES.map((category) => (
+                <option value="">{copy.noCategory}</option>
+                {categories.map((category) => (
                   <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
@@ -366,14 +463,14 @@ export function CoachHabitEditor({
               </select>
             </div>
             <div>
-              <Label htmlFor="coach-icon" className="text-white">Ícono</Label>
+              <Label htmlFor="coach-icon" className="text-white">{copy.icon}</Label>
               <select
                 id="coach-icon"
                 value={values.icon}
                 onChange={(event) => form.setValue("icon", event.target.value as HabitFormValues["icon"], { shouldDirty: true })}
                 className={cn(selectClassName, "bg-white/6 text-white")}
               >
-                {HABIT_ICONS.map((iconOption) => (
+                {iconOptions.map((iconOption) => (
                   <option key={iconOption.value} value={iconOption.value}>
                     {iconOption.label}
                   </option>
@@ -381,22 +478,22 @@ export function CoachHabitEditor({
               </select>
             </div>
             <div>
-              <Label htmlFor="coach-color" className="text-white">Color</Label>
+              <Label htmlFor="coach-color" className="text-white">{copy.color}</Label>
               <select
                 id="coach-color"
                 value={values.color}
                 onChange={(event) => form.setValue("color", event.target.value as HabitFormValues["color"], { shouldDirty: true })}
                 className={cn(selectClassName, "bg-white/6 text-white")}
               >
-                {HABIT_COLORS.map((colorOption) => (
-                  <option key={colorOption.value} value={colorOption.value}>
-                    {colorOption.label}
+                {(["ember", "emerald", "ocean", "sun", "rose", "graphite"] as const).map((colorValue) => (
+                  <option key={colorValue} value={colorValue}>
+                    {getHabitColorLabel(locale, colorValue)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <Label htmlFor="coach-level" className="text-white">Nivel</Label>
+              <Label htmlFor="coach-level" className="text-white">{copy.levelLabel}</Label>
               <select
                 id="coach-level"
                 value={values.level ?? ""}
@@ -408,8 +505,8 @@ export function CoachHabitEditor({
                 }
                 className={cn(selectClassName, "bg-white/6 text-white")}
               >
-                <option value="">Sin nivel</option>
-                {HABIT_LEVELS.map((levelOption) => (
+                <option value="">{copy.noLevel}</option>
+                {levelOptions.map((levelOption) => (
                   <option key={levelOption.value} value={levelOption.value}>
                     {levelOption.label}
                   </option>
@@ -425,14 +522,14 @@ export function CoachHabitEditor({
               onChange={(event) => form.setValue("active", event.target.checked, { shouldDirty: true })}
               className="h-4 w-4 rounded border-white/20 bg-transparent"
             />
-            Hábito activo para el alumno
+            {copy.activeHabit}
           </label>
 
           {error ? <div className="rounded-[22px] border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">{error}</div> : null}
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" disabled={busy}>
-              {editingHabit ? "Guardar cambios" : "Crear entrenamiento"}
+              {editingHabit ? copy.saveChanges : copy.createAction}
             </Button>
             {editingHabit ? (
               <Button
@@ -446,7 +543,7 @@ export function CoachHabitEditor({
                 }}
                 disabled={busy}
               >
-                Cancelar edición
+                {copy.cancelEdit}
               </Button>
             ) : null}
           </div>

@@ -8,14 +8,35 @@ import { HabitIcon } from "@/components/habits/habit-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { HABIT_COLOR_STYLES } from "@/lib/constants";
+import { getCategoryLabel, getLevelLabel } from "@/lib/i18n";
 import { toggleHabitActiveAction } from "@/lib/supabase/user-state-actions";
 import { formatHabitTarget, formatSelectedDays } from "@/lib/utils";
 import type { Habit } from "@/types/habit";
 
 export function HabitCard({ habit }: { habit: Habit }) {
+  const locale = useAppLocale();
   const [toggling, setToggling] = useState(false);
   const styles = HABIT_COLOR_STYLES[habit.color];
+
+  const copy = locale === "en"
+    ? {
+        active: "Active",
+        paused: "Paused",
+        saving: "Saving...",
+        pause: "Pause",
+        activate: "Activate",
+        edit: "Edit"
+      }
+    : {
+        active: "Activo",
+        paused: "Pausado",
+        saving: "Guardando...",
+        pause: "Pausar",
+        activate: "Activar",
+        edit: "Editar"
+      };
 
   const handleToggle = async () => {
     setToggling(true);
@@ -44,16 +65,16 @@ export function HabitCard({ habit }: { habit: Habit }) {
                       : "bg-muted text-slate-900 ring-1 ring-border dark:bg-surface dark:text-white/80 dark:ring-border"
                   }
                 >
-                  {habit.active ? "Activo" : "Pausado"}
+                  {habit.active ? copy.active : copy.paused}
                 </Badge>
               </div>
               <p className="text-sm text-white/70">
-                {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays)}
+                {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays, locale)}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
-              {habit.category ? <span>{habit.category}</span> : null}
-              {habit.level ? <span>· {habit.level}</span> : null}
+              {habit.category ? <span>{getCategoryLabel(locale, habit.category)}</span> : null}
+              {habit.level ? <span>· {getLevelLabel(locale, habit.level)}</span> : null}
             </div>
           </div>
         </div>
@@ -62,11 +83,11 @@ export function HabitCard({ habit }: { habit: Habit }) {
       <div className="mt-4 flex items-center gap-3">
         <Button variant="secondary" className="flex-1" onClick={() => void handleToggle()} disabled={toggling}>
           <Power className="mr-2 h-4 w-4" />
-          {toggling ? "Guardando..." : habit.active ? "Pausar" : "Activar"}
+          {toggling ? copy.saving : habit.active ? copy.pause : copy.activate}
         </Button>
         <Link href={`/habits/${habit.id}/edit`} className={buttonVariants({ variant: "outline", className: "flex-1" })}>
           <PencilLine className="mr-2 h-4 w-4" />
-          Editar
+          {copy.edit}
         </Link>
       </div>
     </Card>

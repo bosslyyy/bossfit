@@ -5,13 +5,15 @@ import { useEffect, useState } from "react";
 
 import { Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
 
+import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
+import { useAppLocale } from "@/hooks/use-app-locale";
 
 export function ResetPasswordCard() {
   const { supabase, session, status, isConfigured } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -29,27 +31,73 @@ export function ResetPasswordCard() {
     }
   }, [isConfigured, session?.user, status]);
 
+  const copy = locale === "en"
+    ? {
+        access: "BossFit Access",
+        title: "Create your new password",
+        subtitle: "If you opened the email link correctly, you can define a new password for your account here.",
+        cardTitle: "Secure reset",
+        cardDescription:
+          "The email link opens a temporary session so you can change your password without knowing the previous one.",
+        inactiveLink: "This link does not seem active yet. Open the recovery email again or request a new one.",
+        newPassword: "New password",
+        confirmPassword: "Confirm password",
+        minimum: "Minimum 6 characters",
+        repeat: "Repeat your new password",
+        notReady: "Open this form from the link sent to your email.",
+        fillFields: "Complete both fields.",
+        shortPassword: "The new password must be at least 6 characters long.",
+        mismatch: "Passwords do not match.",
+        success: "Your password was reset. You can now sign in to BossFit with your new password.",
+        fallbackError: "Could not reset the password.",
+        submit: "Save new password",
+        backQuestion: "Want to go back?",
+        backAction: "Go to login"
+      }
+    : {
+        access: "BossFit Access",
+        title: "Crea tu nueva contraseña",
+        subtitle: "Si abriste el enlace del correo correctamente, aquí podrás definir una contraseña nueva para tu cuenta.",
+        cardTitle: "Restablecimiento seguro",
+        cardDescription:
+          "El enlace del correo abre una sesión temporal para que puedas cambiar tu contraseña sin conocer la anterior.",
+        inactiveLink: "Este enlace no parece activo todavía. Abre de nuevo el correo de recuperación o solicita uno nuevo.",
+        newPassword: "Nueva contraseña",
+        confirmPassword: "Confirmar contraseña",
+        minimum: "Mínimo 6 caracteres",
+        repeat: "Repite tu nueva contraseña",
+        notReady: "Abre este formulario desde el enlace que llegó a tu correo.",
+        fillFields: "Completa ambos campos.",
+        shortPassword: "La nueva contraseña debe tener al menos 6 caracteres.",
+        mismatch: "Las contraseñas no coinciden.",
+        success: "Tu contraseña fue restablecida. Ya puedes entrar a BossFit con tu nueva clave.",
+        fallbackError: "No se pudo restablecer la contraseña.",
+        submit: "Guardar nueva contraseña",
+        backQuestion: "¿Quieres volver?",
+        backAction: "Ir al login"
+      };
+
   const handleSubmit = async () => {
     setError(null);
     setMessage(null);
 
     if (!supabase || !ready) {
-      setError("Abre este formulario desde el enlace que llegó a tu correo.");
+      setError(copy.notReady);
       return;
     }
 
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      setError("Completa ambos campos.");
+      setError(copy.fillFields);
       return;
     }
 
     if (newPassword.length < 6) {
-      setError("La nueva contraseña debe tener al menos 6 caracteres.");
+      setError(copy.shortPassword);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      setError(copy.mismatch);
       return;
     }
 
@@ -67,9 +115,9 @@ export function ResetPasswordCard() {
 
       setNewPassword("");
       setConfirmPassword("");
-      setMessage("Tu contraseña fue restablecida. Ya puedes entrar a BossFit con tu nueva clave.");
+      setMessage(copy.success);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "No se pudo restablecer la contraseña.");
+      setError(submitError instanceof Error ? submitError.message : copy.fallbackError);
     } finally {
       setSubmitting(false);
     }
@@ -79,13 +127,11 @@ export function ResetPasswordCard() {
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
       <div className="w-full space-y-5">
         <div className="space-y-3 px-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-accent">BossFit Access</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-accent">{copy.access}</p>
           <h1 className="font-display text-[clamp(2.2rem,10vw,3.6rem)] font-semibold leading-none text-foreground">
-            Crea tu nueva contraseña
+            {copy.title}
           </h1>
-          <p className="max-w-[28rem] text-sm text-muted-foreground">
-            Si abriste el enlace del correo correctamente, aquí podrás definir una contraseña nueva para tu cuenta.
-          </p>
+          <p className="max-w-[28rem] text-sm text-muted-foreground">{copy.subtitle}</p>
         </div>
 
         <Card className="space-y-5">
@@ -94,29 +140,27 @@ export function ResetPasswordCard() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <CardTitle>Restablecimiento seguro</CardTitle>
-              <CardDescription>
-                El enlace del correo abre una sesión temporal para que puedas cambiar tu contraseña sin conocer la anterior.
-              </CardDescription>
+              <CardTitle>{copy.cardTitle}</CardTitle>
+              <CardDescription>{copy.cardDescription}</CardDescription>
             </div>
           </div>
 
           {!ready && status !== "loading" ? (
             <div className="rounded-[20px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-              Este enlace no parece activo todavía. Abre de nuevo el correo de recuperación o solicita uno nuevo.
+              {copy.inactiveLink}
             </div>
           ) : null}
 
           <div className="space-y-4">
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-card-foreground">Nueva contraseña</span>
+              <span className="text-sm font-semibold text-card-foreground">{copy.newPassword}</span>
               <div className="relative">
                 <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="password"
                   autoComplete="new-password"
                   className="pl-11"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={copy.minimum}
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                 />
@@ -124,11 +168,11 @@ export function ResetPasswordCard() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-card-foreground">Confirmar contraseña</span>
+              <span className="text-sm font-semibold text-card-foreground">{copy.confirmPassword}</span>
               <Input
                 type="password"
                 autoComplete="new-password"
-                placeholder="Repite tu nueva contraseña"
+                placeholder={copy.repeat}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
               />
@@ -148,14 +192,14 @@ export function ResetPasswordCard() {
 
             <Button type="button" className="w-full" disabled={submitting || !ready || !isConfigured} onClick={handleSubmit}>
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Guardar nueva contraseña
+              {copy.submit}
             </Button>
           </div>
 
           <div className="rounded-[22px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-            ¿Quieres volver?{" "}
+            {copy.backQuestion}{" "}
             <Link href="/login" className="font-semibold text-accent">
-              Ir al login
+              {copy.backAction}
             </Link>
           </div>
         </Card>

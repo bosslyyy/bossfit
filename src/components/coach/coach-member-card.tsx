@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { Flame, Target, Trophy } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { cn } from "@/lib/utils";
 import type { CoachMemberOverview } from "@/lib/supabase/coach";
 
@@ -28,6 +29,26 @@ export function CoachMemberCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const locale = useAppLocale();
+  const copy =
+    locale === "en"
+      ? {
+          plan: "Plan",
+          streak: "Streak",
+          compliance: "Comp.",
+          days: "days",
+          today: "today",
+          activeHabits: "active habits"
+        }
+      : {
+          plan: "Plan",
+          streak: "Racha",
+          compliance: "Cumpl.",
+          days: "días",
+          today: "hoy",
+          activeHabits: "hábitos activos"
+        };
+
   return (
     <button type="button" onClick={onSelect} className="w-full text-left">
       <Card
@@ -50,21 +71,21 @@ export function CoachMemberCard({
           <div className="rounded-[22px] border border-white/8 bg-white/5 p-3">
             <div className="flex items-center gap-2 text-white/50">
               <Target className="h-4 w-4" />
-              Plan
+              {copy.plan}
             </div>
             <p className="mt-2 font-semibold text-white">{member.planName}</p>
           </div>
           <div className="rounded-[22px] border border-white/8 bg-white/5 p-3">
             <div className="flex items-center gap-2 text-white/50">
               <Flame className="h-4 w-4" />
-              Racha
+              {copy.streak}
             </div>
-            <p className="mt-2 font-semibold text-white">{member.currentStreak} días</p>
+            <p className="mt-2 font-semibold text-white">{member.currentStreak} {copy.days}</p>
           </div>
           <div className="rounded-[22px] border border-white/8 bg-white/5 p-3">
             <div className="flex items-center gap-2 text-white/50">
               <Trophy className="h-4 w-4" />
-              Cumpl.
+              {copy.compliance}
             </div>
             <p className="mt-2 font-semibold text-white">{member.weeklyCompliance}%</p>
           </div>
@@ -80,8 +101,8 @@ export function CoachMemberCard({
             ))}
           </div>
           <div className="text-right text-sm text-white/55">
-            <p>{member.completedToday}/{member.scheduledToday} hoy</p>
-            <p>{member.activeHabits} hábitos activos</p>
+            <p>{member.completedToday}/{member.scheduledToday} {copy.today}</p>
+            <p>{member.activeHabits} {copy.activeHabits}</p>
           </div>
         </div>
       </Card>

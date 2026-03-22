@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
@@ -8,6 +8,7 @@ import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { fetchActiveCoachGymContext, type CoachGymContext } from "@/lib/supabase/coach";
 
 interface CoachContextValue {
@@ -19,9 +20,29 @@ const CoachContext = createContext<CoachContextValue | null>(null);
 
 export function CoachAccessGate({ children }: PropsWithChildren) {
   const { user, status } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [context, setContext] = useState<CoachGymContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const copy =
+    locale === "en"
+      ? {
+          fallbackError: "Could not open the coach panel.",
+          loading: "Opening coach panel...",
+          loadTitle: "We could not load your access",
+          noAccessTitle: "Your account does not have coach access",
+          noAccessDescription: "You need an active trainer membership and assigned members to use this panel.",
+          back: "Back to BossFit"
+        }
+      : {
+          fallbackError: "No se pudo abrir el panel coach.",
+          loading: "Abriendo panel del entrenador...",
+          loadTitle: "No pudimos cargar tu acceso",
+          noAccessTitle: "Tu cuenta no tiene acceso como entrenador",
+          noAccessDescription: "Necesitas un membership activo con rol trainer y alumnos asignados para usar este panel.",
+          back: "Volver a BossFit"
+        };
 
   const loadContext = async (userId: string) => {
     setLoading(true);
@@ -31,7 +52,7 @@ export function CoachAccessGate({ children }: PropsWithChildren) {
       const nextContext = await fetchActiveCoachGymContext(userId);
       setContext(nextContext);
     } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : "No se pudo abrir el panel coach.";
+      const message = loadError instanceof Error ? loadError.message : copy.fallbackError;
       setError(message);
       setContext(null);
     } finally {
@@ -64,7 +85,7 @@ export function CoachAccessGate({ children }: PropsWithChildren) {
   }, [context]);
 
   if (status === "loading" || loading) {
-    return <LoadingScreen title="Abriendo panel del entrenador..." />;
+    return <LoadingScreen title={copy.loading} />;
   }
 
   if (error) {
@@ -73,11 +94,11 @@ export function CoachAccessGate({ children }: PropsWithChildren) {
         <Card className="w-full max-w-xl space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Coach</p>
-            <CardTitle>No pudimos cargar tu acceso</CardTitle>
+            <CardTitle>{copy.loadTitle}</CardTitle>
             <CardDescription>{error}</CardDescription>
           </div>
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>
-            Volver a BossFit
+            {copy.back}
           </Link>
         </Card>
       </div>
@@ -90,13 +111,11 @@ export function CoachAccessGate({ children }: PropsWithChildren) {
         <Card className="w-full max-w-xl space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Coach</p>
-            <CardTitle>Tu cuenta no tiene acceso como entrenador</CardTitle>
-            <CardDescription>
-              Necesitas un membership activo con rol trainer y alumnos asignados para usar este panel.
-            </CardDescription>
+            <CardTitle>{copy.noAccessTitle}</CardTitle>
+            <CardDescription>{copy.noAccessDescription}</CardDescription>
           </div>
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>
-            Volver a BossFit
+            {copy.back}
           </Link>
         </Card>
       </div>
@@ -110,7 +129,7 @@ export function useCoachContext() {
   const context = useContext(CoachContext);
 
   if (!context) {
-    throw new Error("useCoachContext debe usarse dentro de CoachAccessGate.");
+    throw new Error("useCoachContext must be used inside CoachAccessGate.");
   }
 
   return context;

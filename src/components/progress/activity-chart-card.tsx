@@ -3,7 +3,7 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn, safePercentage } from "@/lib/utils";
-import type { ProgressChartPoint } from "@/types/habit";
+import type { AppLocale, ProgressChartPoint } from "@/types/habit";
 
 function getBarClassName(status: ProgressChartPoint["status"]) {
   if (status === "complete") {
@@ -21,7 +21,7 @@ function getBarClassName(status: ProgressChartPoint["status"]) {
   return "bg-gradient-to-t from-border to-muted";
 }
 
-export function ActivityChartCard({ data }: { data: ProgressChartPoint[] }) {
+export function ActivityChartCard({ data, locale }: { data: ProgressChartPoint[]; locale: AppLocale }) {
   const maxPoints = Math.max(...data.map((entry) => entry.points), 10);
   const totalPoints = data.reduce((total, entry) => total + entry.points, 0);
   const totalCompletedHabits = data.reduce((total, entry) => total + entry.completedHabits, 0);
@@ -31,33 +31,51 @@ export function ActivityChartCard({ data }: { data: ProgressChartPoint[] }) {
     data.length * 100
   );
 
+  const copy = locale === "en"
+    ? {
+        title: "Last 7 days activity",
+        description: "Boss Points and daily compliance in a quick mobile view.",
+        points: "Points",
+        compliance: "Compliance",
+        habits: "Habits",
+        weeklyAverage: "Weekly average"
+      }
+    : {
+        title: "Actividad de los últimos 7 días",
+        description: "Boss Points y cumplimiento diario en una vista rápida y móvil.",
+        points: "Puntos",
+        compliance: "Cumplimiento",
+        habits: "Hábitos",
+        weeklyAverage: "Promedio semanal"
+      };
+
   return (
     <Card>
       <div className="space-y-5">
         <div>
-          <CardTitle>Actividad de los últimos 7 días</CardTitle>
-          <CardDescription>Boss Points y cumplimiento diario en una vista rápida y móvil.</CardDescription>
+          <CardTitle>{copy.title}</CardTitle>
+          <CardDescription>{copy.description}</CardDescription>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-[22px] border border-border bg-surface p-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="h-4 w-4" />
-              <span>Puntos</span>
+              <span>{copy.points}</span>
             </div>
             <p className="mt-3 font-display text-2xl font-semibold text-card-foreground">{totalPoints}</p>
           </div>
           <div className="rounded-[22px] border border-border bg-surface p-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
-              <span>Cumplimiento</span>
+              <span>{copy.compliance}</span>
             </div>
             <p className="mt-3 font-display text-2xl font-semibold text-card-foreground">{averageCompliance}%</p>
           </div>
           <div className="rounded-[22px] border border-border bg-surface p-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <BarChart3 className="h-4 w-4" />
-              <span>Hábitos</span>
+              <span>{copy.habits}</span>
             </div>
             <p className="mt-3 font-display text-2xl font-semibold text-card-foreground">
               {totalCompletedHabits}/{totalScheduledHabits || 0}
@@ -92,7 +110,7 @@ export function ActivityChartCard({ data }: { data: ProgressChartPoint[] }) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Promedio semanal</span>
+            <span>{copy.weeklyAverage}</span>
             <span>{averageCompliance}%</span>
           </div>
           <ProgressBar value={averageCompliance} />

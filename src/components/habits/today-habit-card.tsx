@@ -5,6 +5,7 @@ import { RotateCcw } from "lucide-react";
 
 import { HabitIcon } from "@/components/habits/habit-icon";
 import { Button } from "@/components/ui/button";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { HABIT_COLORS } from "@/lib/constants";
 import { completeSetAction, undoSetAction } from "@/lib/supabase/user-state-actions";
 import { playSeriesIncrementSound, playTimerTickSound, warmupAppSound } from "@/lib/sound";
@@ -22,6 +23,7 @@ export function TodayHabitCard({
   progress: HabitProgress;
   variant?: "active" | "completed";
 }) {
+  const locale = useAppLocale();
   const [celebrate, setCelebrate] = useState(false);
   const [timerDeadline, setTimerDeadline] = useState<number | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(habit.secondsPerSet ?? 60);
@@ -33,6 +35,34 @@ export function TodayHabitCard({
   const isTimerHabit = habit.trackingMode === "timer";
   const configuredSeconds = habit.secondsPerSet ?? 60;
   const timerRunning = timerDeadline !== null;
+
+  const copy = locale === "en"
+    ? {
+        setsCompleted: "sets completed",
+        runningSet: "Set in progress",
+        remaining: "left",
+        timedCardio: "Timed cardio",
+        perSet: "per set",
+        done: "Done",
+        startSet: "Start set",
+        cancel: "Cancel",
+        undo: "Undo",
+        cancelLabel: `Cancel set in ${habit.name}`,
+        undoLabel: `Undo one set in ${habit.name}`
+      }
+    : {
+        setsCompleted: "series completadas",
+        runningSet: "Serie en curso",
+        remaining: "restantes",
+        timedCardio: "Cardio por tiempo",
+        perSet: "por serie",
+        done: "Listo",
+        startSet: "Iniciar serie",
+        cancel: "Cancelar",
+        undo: "Deshacer",
+        cancelLabel: `Cancelar serie en ${habit.name}`,
+        undoLabel: `Deshacer una serie en ${habit.name}`
+      };
 
   useEffect(() => {
     if (!celebrate) {
@@ -197,13 +227,13 @@ export function TodayHabitCard({
             {habit.name} - {formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {progress.completedSets} / {habit.targetSets} series completadas
+            {progress.completedSets} / {habit.targetSets} {copy.setsCompleted}
           </p>
           {isTimerHabit ? (
             <p className="text-xs text-muted-foreground">
               {timerRunning
-                ? `Serie en curso · ${formatDurationShort(remainingSeconds)} restantes`
-                : `Cardio por tiempo · ${formatDurationShort(configuredSeconds)} por serie`}
+                ? `${copy.runningSet} · ${formatDurationShort(remainingSeconds)} ${copy.remaining}`
+                : `${copy.timedCardio} · ${formatDurationShort(configuredSeconds)} ${copy.perSet}`}
             </p>
           ) : null}
         </div>
@@ -222,11 +252,11 @@ export function TodayHabitCard({
             disabled={progress.isCompleted || submitting}
           >
             {isCompleted
-              ? "Listo"
+              ? copy.done
               : isTimerHabit
                 ? timerRunning
                   ? formatDurationShort(remainingSeconds)
-                  : "Iniciar serie"
+                  : copy.startSet
                 : "+ 1"}
           </Button>
 
@@ -237,10 +267,10 @@ export function TodayHabitCard({
               void handleSecondaryAction();
             }}
             disabled={timerRunning ? false : progress.completedSets === 0 || submitting}
-            aria-label={timerRunning ? `Cancelar serie en ${habit.name}` : `Deshacer una serie en ${habit.name}`}
+            aria-label={timerRunning ? copy.cancelLabel : copy.undoLabel}
           >
             <RotateCcw className="mr-2 h-4 w-4" />
-            {timerRunning ? "Cancelar" : "Deshacer"}
+            {timerRunning ? copy.cancel : copy.undo}
           </Button>
         </div>
       </div>

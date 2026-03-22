@@ -71,11 +71,12 @@ export async function POST(request: Request) {
       !Array.isArray(body.snapshot.habits) ||
       !Array.isArray(body.snapshot.completions) ||
       typeof body.snapshot.theme !== "string" ||
+      typeof body.snapshot.locale !== "string" ||
       typeof body.snapshot.reminderSettings !== "object" ||
       body.snapshot.reminderSettings === null
     ) {
       return NextResponse.json(
-        { error: "El snapshot remoto debe venir completo para evitar sobrescribir datos con vac?os." },
+        { error: "El snapshot remoto debe venir completo para evitar sobrescribir datos con vacios." },
         { status: 400, headers: noStoreHeaders }
       );
     }
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
         habits: body.snapshot.habits,
         completions: body.snapshot.completions,
         theme: body.snapshot.theme,
+        locale: body.snapshot.locale,
         reminderSettings: {
           ...DEFAULT_REMINDER_SETTINGS,
           ...body.snapshot.reminderSettings

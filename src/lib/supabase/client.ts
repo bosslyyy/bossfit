@@ -1,5 +1,7 @@
 ﻿import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import type { AppLocale } from "@/types/habit";
+
 const SUPABASE_AUTH_STORAGE_KEY = "bossfit-auth";
 
 export const supabaseConfig = {
@@ -45,8 +47,12 @@ export function createSupabaseBrowserClient() {
   return browserClient;
 }
 
-export function getSupabaseStatusLabel() {
+export function getSupabaseStatusLabel(locale: AppLocale = "es") {
   return isSupabaseConfigured()
-    ? "Tu cuenta está lista para entrar y continuar donde la dejaste."
-    : "Este entorno aún no está listo para abrir tu cuenta.";
+    ? locale === "en"
+      ? "Your account is ready to continue where you left off."
+      : "Tu cuenta está lista para entrar y continuar donde la dejaste."
+    : locale === "en"
+      ? "This environment is not ready to open your account yet."
+      : "Este entorno aún no está listo para abrir tu cuenta.";
 }

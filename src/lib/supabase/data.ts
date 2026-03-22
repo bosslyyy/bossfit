@@ -7,7 +7,7 @@ import {
   type BossFitPersistedState
 } from "@/lib/persistence";
 import { getBossProfile } from "@/lib/progress-analytics";
-import type { ReminderSettings, RemoteSaveReason, ThemeMode } from "@/types/habit";
+import type { AppLocale, ReminderSettings, RemoteSaveReason, ThemeMode } from "@/types/habit";
 
 const DEFAULT_LEVEL = 1;
 
@@ -17,6 +17,7 @@ export interface BossFitRemoteSnapshot {
   habits: BossFitPersistedState["habits"];
   completions: BossFitPersistedState["completions"];
   theme: ThemeMode;
+  locale: AppLocale;
   reminderSettings: ReminderSettings;
 }
 
@@ -102,7 +103,7 @@ export function getSupabaseErrorInfo(error: unknown): SupabaseErrorInfo {
             ? error.error
             : error instanceof Error
               ? error.message
-              : "Error desconocido de Supabase.",
+              : "Unknown Supabase error.",
       details: normalizeErrorField(error.details),
       hint: normalizeErrorField(error.hint),
       code: normalizeErrorField(error.code)
@@ -110,7 +111,7 @@ export function getSupabaseErrorInfo(error: unknown): SupabaseErrorInfo {
   }
 
   return {
-    message: error instanceof Error ? error.message : "Error desconocido de Supabase.",
+    message: error instanceof Error ? error.message : "Unknown Supabase error.",
     details: null,
     hint: null,
     code: null
@@ -148,7 +149,7 @@ export function normalizeSaveReason(value: unknown): RemoteSaveReason | undefine
 
 export function toRemoteSnapshot(
   value:
-    | Pick<BossFitPersistedState, "habits" | "completions" | "theme" | "reminderSettings">
+    | Pick<BossFitPersistedState, "habits" | "completions" | "theme" | "locale" | "reminderSettings">
     | BossFitPersistedState
 ): BossFitRemoteSnapshot {
   const migrated = migratePersistedState(value, STORAGE_VERSION);
@@ -156,6 +157,7 @@ export function toRemoteSnapshot(
     habits: migrated.habits,
     completions: migrated.completions,
     theme: migrated.theme,
+    locale: migrated.locale,
     reminderSettings: migrated.reminderSettings
   };
 }
@@ -169,6 +171,7 @@ export function hasMeaningfulSnapshotData(snapshot: BossFitRemoteSnapshot) {
     snapshot.habits.length > 0 ||
     snapshot.completions.length > 0 ||
     snapshot.theme !== "light" ||
+    snapshot.locale !== "es" ||
     snapshot.reminderSettings.enabled ||
     snapshot.reminderSettings.time !== DEFAULT_REMINDER_SETTINGS.time ||
     snapshot.reminderSettings.permission !== DEFAULT_REMINDER_SETTINGS.permission ||
@@ -177,7 +180,7 @@ export function hasMeaningfulSnapshotData(snapshot: BossFitRemoteSnapshot) {
 }
 
 export function buildRemoteMetrics(snapshot: BossFitRemoteSnapshot): BossFitRemoteMetrics {
-  const bossProfile = getBossProfile(snapshot.habits, snapshot.completions, new Date());
+  const bossProfile = getBossProfile(snapshot.habits, snapshot.completions, new Date(), snapshot.locale);
 
   return {
     habitsCount: snapshot.habits.length,
@@ -192,7 +195,7 @@ export function buildRemoteMetrics(snapshot: BossFitRemoteSnapshot): BossFitRemo
 async function getAccessToken() {
   const supabase = createSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase no esta configurado.");
+    throw new Error("Supabase is not configured.");
   }
 
   const { data, error } = await supabase.auth.getSession();
@@ -202,7 +205,7 @@ async function getAccessToken() {
 
   const accessToken = data.session?.access_token;
   if (!accessToken) {
-    throw new Error("No hay una sesion activa para sincronizar tu cuenta.");
+    throw new Error("There is no active session for this account.");
   }
 
   return accessToken;
@@ -225,7 +228,7 @@ async function requestUserStateApi<T>(init: RequestInit & { method?: string }) {
 
   if (!response.ok) {
     throw {
-      message: typeof payload.error === "string" ? payload.error : "No se pudo sincronizar con Supabase.",
+      message: typeof payload.error === "string" ? payload.error : "Could not sync with Supabase.",
       details: payload.details ?? null,
       hint: payload.hint ?? null,
       code: typeof payload.code === "string" ? payload.code : null,
@@ -260,6 +263,3 @@ export async function saveRemoteState(
 
   return payload.saved;
 }
-
-
-

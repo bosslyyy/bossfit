@@ -1,4 +1,5 @@
-﻿import { BOSS_POINT_RULES, LEVEL_TITLES, WEEK_DAYS } from "@/lib/constants";
+﻿import { BOSS_POINT_RULES } from "@/lib/constants";
+import { getLevelTitles, getWeekDays } from "@/lib/i18n";
 import {
   addDays,
   compareDateKeys,
@@ -15,6 +16,7 @@ import {
 import { getHabitProgress, getHabitsForDate } from "@/lib/habit-logic";
 import { safePercentage } from "@/lib/utils";
 import type {
+  AppLocale,
   BossProfile,
   CalendarDay,
   CompletionCalendarEntry,
@@ -40,11 +42,11 @@ function getTrackingStartDate(habits: Habit[], completions: DailyCompletion[], a
   return parseDateKey(earliest);
 }
 
-function getBaseDailyOverview(habits: Habit[], completions: DailyCompletion[], date: Date) {
+function getBaseDailyOverview(habits: Habit[], completions: DailyCompletion[], date: Date, locale: AppLocale) {
   const scheduledHabits = getHabitsForDate(habits, date);
   const progresses = scheduledHabits.map((habit) => ({
     habit,
-    progress: getHabitProgress(habit, completions, date)
+    progress: getHabitProgress(habit, completions, date, locale)
   }));
   const completedCount = progresses.filter((entry) => entry.progress.isCompleted).length;
   const completedSets = progresses.reduce((total, entry) => total + entry.progress.completedSets, 0);
@@ -86,7 +88,8 @@ function getBaseDailyOverview(habits: Habit[], completions: DailyCompletion[], d
 export function getDailyTimeline(
   habits: Habit[],
   completions: DailyCompletion[],
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ) {
   const end = parseDateKey(toDateKey(anchor));
   const start = getTrackingStartDate(habits, completions, end);
@@ -99,7 +102,7 @@ export function getDailyTimeline(
 
   for (let index = 0; index <= totalDays; index += 1) {
     const currentDate = addDays(start, index);
-    const overview = getBaseDailyOverview(habits, completions, currentDate);
+    const overview = getBaseDailyOverview(habits, completions, currentDate, locale);
 
     if (overview.status === "complete") {
       streak += 1;
@@ -139,7 +142,7 @@ export function getCurrentAndBestStreak(timeline: DailyOverview[]) {
   };
 }
 
-export function getLevelProgress(totalPoints: number): LevelProgress {
+export function getLevelProgress(totalPoints: number, locale: AppLocale = "es"): LevelProgress {
   let level = 1;
   let levelStartPoints = 0;
   let nextLevelPoints = 50;
@@ -152,7 +155,8 @@ export function getLevelProgress(totalPoints: number): LevelProgress {
 
   const pointsIntoLevel = totalPoints - levelStartPoints;
   const pointsRange = nextLevelPoints - levelStartPoints;
-  const title = LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)];
+  const titles = getLevelTitles(locale);
+  const title = titles[Math.min(level - 1, titles.length - 1)];
   const pointsToNextLevel = Math.max(nextLevelPoints - totalPoints, 0);
 
   return {
@@ -166,19 +170,26 @@ export function getLevelProgress(totalPoints: number): LevelProgress {
     progressPercentage: safePercentage(pointsIntoLevel, pointsRange),
     message:
       pointsToNextLevel === 0
-        ? "Nivel máximo por ahora. Sigue acumulando Boss Points."
+        ? locale === "en"
+          ? "Max level for now. Keep stacking Boss Points."
+          : "Nivel máximo por ahora. Sigue acumulando Boss Points."
         : pointsToNextLevel <= 20
-          ? `Te faltan ${pointsToNextLevel} puntos para subir de nivel.`
-          : "Mantén el ritmo y tu siguiente nivel llegará pronto."
+          ? locale === "en"
+            ? `${pointsToNextLevel} points left to level up.`
+            : `Te faltan ${pointsToNextLevel} puntos para subir de nivel.`
+          : locale === "en"
+            ? "Keep the rhythm and your next level will come soon."
+            : "Mantén el ritmo y tu siguiente nivel llegará pronto.",
   };
 }
 
 export function getBossProfile(
   habits: Habit[],
   completions: DailyCompletion[],
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ): BossProfile {
-  const timeline = getDailyTimeline(habits, completions, anchor);
+  const timeline = getDailyTimeline(habits, completions, anchor, locale);
   const todayKey = toDateKey(anchor);
   const streakSummary = getCurrentAndBestStreak(timeline);
   const totalPoints = timeline.reduce((total, entry) => total + entry.points, 0);
@@ -189,16 +200,17 @@ export function getBossProfile(
     todayPoints,
     currentStreak: streakSummary.currentStreak,
     bestStreak: streakSummary.bestStreak,
-    levelProgress: getLevelProgress(totalPoints)
+    levelProgress: getLevelProgress(totalPoints, locale)
   };
 }
 
 export function getWeeklySummaryFromTimeline(
   habits: Habit[],
   completions: DailyCompletion[],
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ): WeeklySummary {
-  const timeline = getDailyTimeline(habits, completions, anchor);
+  const timeline = getDailyTimeline(habits, completions, anchor, locale);
   const weekDateKeys = new Set(getWeekDates(anchor).map((date) => toDateKey(date)));
   const weekEntries = timeline.filter((entry) => weekDateKeys.has(entry.date));
   const streakSummary = getCurrentAndBestStreak(timeline);
@@ -221,37 +233,40 @@ export function getCompletionCalendarData(
   habits: Habit[],
   completions: DailyCompletion[],
   days = 7,
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ): CompletionCalendarEntry[] {
-  const timeline = getDailyTimeline(habits, completions, anchor);
+  const timeline = getDailyTimeline(habits, completions, anchor, locale);
   const fromDate = addDays(anchor, -(days - 1));
   const fromKey = toDateKey(fromDate);
-  const entries = timeline.filter((entry) => compareDateKeys(entry.date, fromKey) >= 0);
 
-  return entries.map((entry) => {
-    const date = parseDateKey(entry.date);
-    return {
-      date: entry.date,
-      shortLabel: WEEK_DAYS.find((day) => day.key === getWeekdayKey(date))?.short ?? "",
-      completed: entry.completedCount,
-      scheduled: entry.scheduledCount,
-      percentage: entry.completionPercentage,
-      points: entry.points,
-      status: entry.status
-    };
-  });
+  return timeline
+    .filter((entry) => compareDateKeys(entry.date, fromKey) >= 0)
+    .map((entry) => {
+      const date = parseDateKey(entry.date);
+      return {
+        date: entry.date,
+        shortLabel: getWeekDays(locale).find((day) => day.key === getWeekdayKey(date))?.short ?? "",
+        completed: entry.completedCount,
+        scheduled: entry.scheduledCount,
+        percentage: entry.completionPercentage,
+        points: entry.points,
+        status: entry.status
+      };
+    });
 }
 
 export function getMonthlyCalendarDays(
   habits: Habit[],
   completions: DailyCompletion[],
   monthAnchor: Date,
-  today: Date = new Date()
+  today: Date = new Date(),
+  locale: AppLocale = "es"
 ): CalendarDay[] {
   const monthGridDates = getMonthGridDates(monthAnchor);
   const monthEnd = endOfMonth(monthAnchor);
   const effectiveAnchor = compareDateKeys(toDateKey(monthEnd), toDateKey(today)) > 0 ? today : monthEnd;
-  const timeline = getDailyTimeline(habits, completions, effectiveAnchor);
+  const timeline = getDailyTimeline(habits, completions, effectiveAnchor, locale);
   const timelineMap = new Map(timeline.map((entry) => [entry.date, entry]));
   const todayKey = toDateKey(today);
 
@@ -279,9 +294,10 @@ export function getChartData(
   habits: Habit[],
   completions: DailyCompletion[],
   days = 7,
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ): ProgressChartPoint[] {
-  const timeline = getDailyTimeline(habits, completions, anchor);
+  const timeline = getDailyTimeline(habits, completions, anchor, locale);
   const fromDate = addDays(anchor, -(days - 1));
   const fromKey = toDateKey(fromDate);
 
@@ -291,8 +307,8 @@ export function getChartData(
       const date = parseDateKey(entry.date);
       return {
         date: entry.date,
-        label: formatDayMonth(date),
-        shortLabel: WEEK_DAYS.find((day) => day.key === getWeekdayKey(date))?.short ?? "",
+        label: formatDayMonth(date, locale),
+        shortLabel: getWeekDays(locale).find((day) => day.key === getWeekdayKey(date))?.short ?? "",
         completedHabits: entry.completedCount,
         scheduledHabits: entry.scheduledCount,
         percentage: entry.completionPercentage,
@@ -302,10 +318,12 @@ export function getChartData(
     });
 }
 
-export function getMonthlyHeadline(monthAnchor: Date) {
-  return new Intl.DateTimeFormat("es-CR", {
+export function getMonthlyHeadline(monthAnchor: Date, locale: AppLocale = "es") {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-CR", {
     month: "long",
     year: "numeric"
   }).format(startOfMonth(monthAnchor));
 }
+
+
 

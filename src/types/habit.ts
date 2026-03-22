@@ -18,6 +18,8 @@ export type HabitTrackingMode = "reps" | "timer";
 
 export type ThemeMode = "light" | "dark";
 
+export type AppLocale = "es" | "en";
+
 export type DayCompletionStatus = "complete" | "partial" | "missed" | "none";
 
 export type ReminderPermissionState = NotificationPermission | "unsupported";

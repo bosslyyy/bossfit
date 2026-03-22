@@ -22,49 +22,72 @@ import {
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
 export default function ProgressPage() {
-  const { habits, completions, hasHydrated } = useBossFitStore(
+  const { habits, completions, locale, hasHydrated } = useBossFitStore(
     useShallow((state) => ({
       habits: state.habits,
       completions: state.completions,
+      locale: state.locale,
       hasHydrated: state.hasHydrated
     }))
   );
   const [monthAnchor, setMonthAnchor] = useState(() => new Date());
 
   if (!hasHydrated) {
-    return <LoadingScreen title="Calculando tu progreso..." />;
+    return <LoadingScreen title={locale === "en" ? "Calculating your progress..." : "Calculando tu progreso..."} />;
   }
 
   const today = new Date();
-  const summary = getWeeklySummaryFromTimeline(habits, completions, today);
-  const bossProfile = getBossProfile(habits, completions, today);
-  const chartData = getChartData(habits, completions, 7, today);
-  const calendarDays = getMonthlyCalendarDays(habits, completions, monthAnchor, today);
-  const monthLabel = getMonthlyHeadline(monthAnchor);
+  const summary = getWeeklySummaryFromTimeline(habits, completions, today, locale);
+  const bossProfile = getBossProfile(habits, completions, today, locale);
+  const chartData = getChartData(habits, completions, 7, today, locale);
+  const calendarDays = getMonthlyCalendarDays(habits, completions, monthAnchor, today, locale);
+  const monthLabel = getMonthlyHeadline(monthAnchor, locale);
+
+  const copy = locale === "en"
+    ? {
+        title: "Progress",
+        description: "Real streaks, completion calendar, Boss Points, and recent activity to see your full consistency.",
+        emptyTitle: "Your progress will appear here",
+        emptyDescription: "Once you have habits and start completing sets, BossFit will build your stats.",
+        createHabit: "Create habit",
+        bossLevel: "Boss Level",
+        levelSubtitle: `Level ${bossProfile.levelProgress.level} · ${bossProfile.levelProgress.title}`,
+        totalPoints: "Total Boss Points",
+        historyTitle: "History by habit"
+      }
+    : {
+        title: "Progreso",
+        description: "Rachas reales, calendario de cumplimiento, Boss Points y actividad reciente para ver tu constancia completa.",
+        emptyTitle: "Tu progreso aparecerá aquí",
+        emptyDescription: "Cuando tengas hábitos y empieces a completar series, BossFit construirá tus estadísticas.",
+        createHabit: "Crear hábito",
+        bossLevel: "Boss Level",
+        levelSubtitle: `Nivel ${bossProfile.levelProgress.level} · ${bossProfile.levelProgress.title}`,
+        totalPoints: "Boss Points totales",
+        historyTitle: "Historial por hábito"
+      };
 
   return (
     <div className="space-y-6 animate-rise">
-      <PageHeader
-        title="Progreso"
-        description="Rachas reales, calendario de cumplimiento, Boss Points y actividad reciente para ver tu constancia completa."
-      />
+      <PageHeader title={copy.title} description={copy.description} />
 
       {!habits.length ? (
         <EmptyState
-          title="Tu progreso aparecerá aquí"
-          description="Cuando tengas hábitos y empieces a completar series, BossFit construirá tus estadísticas."
-          actionLabel="Crear hábito"
+          title={copy.emptyTitle}
+          description={copy.emptyDescription}
+          actionLabel={copy.createHabit}
           actionHref="/habits/new"
         />
       ) : (
         <>
-          <WeeklySummaryCard summary={summary} />
+          <WeeklySummaryCard summary={summary} locale={locale} />
 
-          <ActivityChartCard data={chartData} />
+          <ActivityChartCard data={chartData} locale={locale} />
 
           <MonthlyCalendar
             monthLabel={monthLabel}
             days={calendarDays}
+            locale={locale}
             onPreviousMonth={() =>
               setMonthAnchor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1, 12, 0, 0, 0))
             }
@@ -77,14 +100,12 @@ export default function ProgressPage() {
             <div className="space-y-4 rounded-[24px] border border-border bg-card px-4 py-4 shadow-soft">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-card-foreground">Boss Level</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Nivel {bossProfile.levelProgress.level} · {bossProfile.levelProgress.title}
-                  </p>
+                  <h2 className="font-display text-xl font-semibold text-card-foreground">{copy.bossLevel}</h2>
+                  <p className="text-sm text-muted-foreground">{copy.levelSubtitle}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-display text-2xl font-semibold text-card-foreground">{bossProfile.totalPoints}</p>
-                  <p className="text-sm text-muted-foreground">Boss Points totales</p>
+                  <p className="text-sm text-muted-foreground">{copy.totalPoints}</p>
                 </div>
               </div>
               <ProgressBar value={bossProfile.levelProgress.progressPercentage} />
@@ -92,10 +113,10 @@ export default function ProgressPage() {
             </div>
 
             <div className="space-y-3">
-              <h2 className="font-display text-xl font-semibold text-foreground">Historial por hábito</h2>
+              <h2 className="font-display text-xl font-semibold text-foreground">{copy.historyTitle}</h2>
               <div className="space-y-3">
                 {habits.map((habit) => (
-                  <HabitHistoryCard key={habit.id} habit={habit} history={getHabitHistory(habit, completions, 7, today)} />
+                  <HabitHistoryCard key={habit.id} habit={habit} history={getHabitHistory(habit, completions, 7, today, locale)} locale={locale} />
                 ))}
               </div>
             </div>

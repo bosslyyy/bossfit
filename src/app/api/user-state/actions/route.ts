@@ -9,6 +9,7 @@ import {
   archiveUserHabit,
   resetUserAppData,
   resetUserHabitCompletion,
+  setUserLocalePreference,
   setUserThemePreference,
   toggleUserHabitActive,
   undoUserHabitSet,
@@ -36,6 +37,7 @@ function mapActionSchemaErrorMessage(info: ReturnType<typeof getSupabaseErrorInf
     (source.includes("42703") || source.includes("42p01") || source.includes("pgrst")) &&
     (source.includes("rest_enabled") ||
       source.includes("rest_seconds") ||
+      source.includes("locale") ||
       source.includes("bossfit_habits") ||
       source.includes("bossfit_user_settings") ||
       source.includes("bossfit_habit_completions"))
@@ -57,6 +59,7 @@ const reminderSettingsPatchSchema = z
   .partial();
 
 const themeSchema = z.enum(["light", "dark"]);
+const localeSchema = z.enum(["es", "en"]);
 const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export async function POST(request: Request) {
@@ -85,14 +88,7 @@ export async function POST(request: Request) {
         }
 
         const outcome = await createUserHabit(supabase, requester.id, parsed.data);
-        return NextResponse.json(
-          {
-            userId: requester.id,
-            state: outcome.state,
-            result: outcome.result
-          },
-          { headers: noStoreHeaders }
-        );
+        return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
       }
 
       case "update_habit": {
@@ -185,6 +181,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
       }
 
+      case "set_locale": {
+        const parsed = localeSchema.safeParse(body.locale);
+        if (!parsed.success) {
+          return NextResponse.json({ error: "Idioma invalido." }, { status: 400, headers: noStoreHeaders });
+        }
+
+        const outcome = await setUserLocalePreference(supabase, requester.id, parsed.data);
+        return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
+      }
+
       case "update_reminder_settings": {
         const parsed = reminderSettingsPatchSchema.safeParse(body.values);
         if (!parsed.success) {
@@ -225,7 +231,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-
-
-

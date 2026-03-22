@@ -1,7 +1,8 @@
-﻿import { WEEK_DAYS } from "@/lib/constants";
+﻿import { getWeekDays } from "@/lib/i18n";
 import { addDays, getWeekDates, getWeekdayKey, parseDateKey, toDateKey } from "@/lib/date";
 import { calculatePoints, formatPendingSets, safePercentage } from "@/lib/utils";
 import type {
+  AppLocale,
   DailyCompletion,
   DashboardSnapshot,
   Habit,
@@ -29,7 +30,8 @@ export function getHabitsForDate(habits: Habit[], date: Date) {
 export function getHabitProgress(
   habit: Habit,
   completions: DailyCompletion[],
-  date: Date = new Date()
+  date: Date = new Date(),
+  locale: AppLocale = "es"
 ): HabitProgress {
   const dateKey = toDateKey(date);
   const completion = getCompletionRecord(completions, habit.id, dateKey);
@@ -43,14 +45,15 @@ export function getHabitProgress(
     remainingSets,
     isCompleted: remainingSets === 0,
     completionRatio: habit.targetSets ? completedSets / habit.targetSets : 0,
-    statusMessage: formatPendingSets(remainingSets)
+    statusMessage: formatPendingSets(remainingSets, locale)
   };
 }
 
 export function calculateCurrentStreak(
   habits: Habit[],
   completions: DailyCompletion[],
-  date: Date = new Date()
+  date: Date = new Date(),
+  locale: AppLocale = "es"
 ) {
   let streak = 0;
 
@@ -63,7 +66,7 @@ export function calculateCurrentStreak(
     }
 
     const allCompleted = scheduledHabits.every((habit) =>
-      getHabitProgress(habit, completions, currentDate).isCompleted
+      getHabitProgress(habit, completions, currentDate, locale).isCompleted
     );
 
     if (!allCompleted) {
@@ -79,14 +82,15 @@ export function calculateCurrentStreak(
 export function getDashboardSnapshot(
   habits: Habit[],
   completions: DailyCompletion[],
-  date: Date = new Date()
+  date: Date = new Date(),
+  locale: AppLocale = "es"
 ): DashboardSnapshot {
   const scheduledHabits = getHabitsForDate(habits, date);
-  const completedHabits = scheduledHabits.filter((habit) => getHabitProgress(habit, completions, date).isCompleted)
+  const completedHabits = scheduledHabits.filter((habit) => getHabitProgress(habit, completions, date, locale).isCompleted)
     .length;
   const pendingHabits = Math.max(scheduledHabits.length - completedHabits, 0);
   const totalPoints = scheduledHabits.reduce((total, habit) => {
-    const progress = getHabitProgress(habit, completions, date);
+    const progress = getHabitProgress(habit, completions, date, locale);
     return total + calculatePoints(progress.completedSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet);
   }, 0);
 
@@ -96,7 +100,7 @@ export function getDashboardSnapshot(
     pendingHabits,
     completionPercentage: safePercentage(completedHabits, scheduledHabits.length),
     totalPoints,
-    streak: calculateCurrentStreak(habits, completions, date),
+    streak: calculateCurrentStreak(habits, completions, date, locale),
     activeHabits: habits.filter((habit) => habit.active).length
   };
 }
@@ -104,7 +108,8 @@ export function getDashboardSnapshot(
 export function getWeeklySummary(
   habits: Habit[],
   completions: DailyCompletion[],
-  date: Date = new Date()
+  date: Date = new Date(),
+  locale: AppLocale = "es"
 ): WeeklySummary {
   const weekDates = getWeekDates(date);
   let scheduledHabitDays = 0;
@@ -117,7 +122,7 @@ export function getWeeklySummary(
     scheduledHabitDays += scheduledHabits.length;
 
     for (const habit of scheduledHabits) {
-      const progress = getHabitProgress(habit, completions, currentDate);
+      const progress = getHabitProgress(habit, completions, currentDate, locale);
       completedSets += progress.completedSets;
       totalPoints += calculatePoints(progress.completedSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet);
 
@@ -128,8 +133,8 @@ export function getWeeklySummary(
   }
 
   return {
-    streak: calculateCurrentStreak(habits, completions, date),
-    bestStreak: calculateCurrentStreak(habits, completions, date),
+    streak: calculateCurrentStreak(habits, completions, date, locale),
+    bestStreak: calculateCurrentStreak(habits, completions, date, locale),
     completedHabitDays,
     scheduledHabitDays,
     compliance: safePercentage(completedHabitDays, scheduledHabitDays),
@@ -142,13 +147,14 @@ export function getHabitHistory(
   habit: Habit,
   completions: DailyCompletion[],
   days = 7,
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ): HabitHistoryPoint[] {
   return Array.from({ length: days }, (_, index) => {
     const date = addDays(anchor, index - (days - 1));
     const dateKey = toDateKey(date);
-    const progress = getHabitProgress(habit, completions, date);
-    const shortLabel = WEEK_DAYS.find((day) => day.key === getWeekdayKey(date))?.short ?? "";
+    const progress = getHabitProgress(habit, completions, date, locale);
+    const shortLabel = getWeekDays(locale).find((day) => day.key === getWeekdayKey(date))?.short ?? "";
 
     return {
       date: dateKey,
@@ -165,14 +171,15 @@ export function getCompletionCalendar(
   habits: Habit[],
   completions: DailyCompletion[],
   days = 7,
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
+  locale: AppLocale = "es"
 ) {
   return Array.from({ length: days }, (_, index) => {
     const date = addDays(anchor, index - (days - 1));
-    const snapshot = getDashboardSnapshot(habits, completions, date);
+    const snapshot = getDashboardSnapshot(habits, completions, date, locale);
     return {
       date: toDateKey(date),
-      shortLabel: WEEK_DAYS.find((day) => day.key === getWeekdayKey(date))?.short ?? "",
+      shortLabel: getWeekDays(locale).find((day) => day.key === getWeekdayKey(date))?.short ?? "",
       completed: snapshot.completedHabits,
       scheduled: snapshot.scheduledHabits.length,
       percentage: snapshot.completionPercentage
@@ -180,9 +187,9 @@ export function getCompletionCalendar(
   });
 }
 
-export function getLastUpdatedLabel(dateKey: string) {
+export function getLastUpdatedLabel(dateKey: string, locale: AppLocale = "es") {
   const date = parseDateKey(dateKey);
-  return new Intl.DateTimeFormat("es-CR", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-CR", {
     day: "numeric",
     month: "short"
   }).format(date);

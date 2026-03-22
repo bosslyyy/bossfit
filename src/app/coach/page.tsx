@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -13,6 +13,7 @@ import { CoachMemberDetailPanel } from "@/components/coach/coach-member-detail-p
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import {
   createCoachAlert,
   createCoachHabit,
@@ -59,6 +60,7 @@ function SummaryMetric({ title, value, helper, tone }: { title: string; value: s
 export default function CoachPage() {
   const { context } = useCoachContext();
   const { session } = useSupabaseAuth();
+  const locale = useAppLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -72,6 +74,97 @@ export default function CoachPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const copy =
+    locale === "en"
+      ? {
+          loadPanelError: "Could not load the coach panel.",
+          loadMemberError: "Could not load the member profile.",
+          mutateError: "Could not complete the coach action.",
+          selectCreate: "Select a member before creating training.",
+          selectEdit: "Select a member before editing training.",
+          selectDelete: "Select a member before deleting training.",
+          loading: "Preparing coach panel...",
+          eyebrow: "Coach HQ",
+          heroTitle: "Live tracking, communication, and daily control of your members.",
+          heroDescription:
+            "Review live progress, calendar, active habits, private notes, alerts visible in the member account, and direct chat from the panel.",
+          refreshing: "Refreshing...",
+          refresh: "Refresh panel",
+          assigned: "Assigned",
+          assignedHelper: "members under your direct follow-up",
+          completedToday: "Completed today",
+          completedTodayHelper: "members who closed their day",
+          avgCompliance: "Average compliance",
+          avgComplianceHelper: "last 7 days of the group",
+          avgStreak: "Average streak",
+          avgStreakHelper: "consistency of your assigned members",
+          noMembersTitle: "You do not have assigned members yet",
+          noMembersDescription:
+            "When the gym admin assigns members to you, they will appear here with real progress and you will be able to manage training and follow-up.",
+          assignedMembers: "Assigned members",
+          assignedMembersDescription: "Select a member to open the full profile or edit the plan.",
+          quickAccess: "Quick access",
+          quickAccessDescription:
+            "Open the member profile to review live sets, history, alerts, and chat. Use training to modify real habits.",
+          openProfile: "Open member profile",
+          manageTraining: "Manage training",
+          membersDescription: "Choose a member to open the full profile and see real activity in near real time.",
+          selectMember: "Select a member",
+          trainingDescription: "The editor writes directly to the member's real habits in Supabase.",
+          todayTrainingDescription: (groupName: string, completedSets: number, totalSets: number) =>
+            `${groupName} · ${completedSets}/${totalSets} sets today`,
+          weeklyLabel: "weekly",
+          closed: "Closed",
+          pending: "pending",
+          noTrainingToday: "No training scheduled for today.",
+          noMemberSelected: "No selected member",
+          noMemberSelectedDescription: "Select a member on the left to manage their training."
+        }
+      : {
+          loadPanelError: "No se pudo cargar el panel del coach.",
+          loadMemberError: "No se pudo cargar la ficha del alumno.",
+          mutateError: "No se pudo completar la acci�n del coach.",
+          selectCreate: "Selecciona un alumno antes de crear un entrenamiento.",
+          selectEdit: "Selecciona un alumno antes de editar un entrenamiento.",
+          selectDelete: "Selecciona un alumno antes de eliminar un entrenamiento.",
+          loading: "Preparando panel del entrenador...",
+          eyebrow: "Coach HQ",
+          heroTitle: "Seguimiento real, comunicación y control diario de tus alumnos.",
+          heroDescription:
+            "Revisa progreso en vivo, calendario, hábitos activos, notas privadas, alertas visibles en la cuenta del alumno y chat directo desde el panel.",
+          refreshing: "Actualizando...",
+          refresh: "Actualizar panel",
+          assigned: "Asignados",
+          assignedHelper: "alumnos bajo tu seguimiento directo",
+          completedToday: "Completados hoy",
+          completedTodayHelper: "alumnos que cerraron su día",
+          avgCompliance: "Cumplimiento medio",
+          avgComplianceHelper: "Últimos 7 días del grupo",
+          avgStreak: "Racha media",
+          avgStreakHelper: "consistencia de tus asignados",
+          noMembersTitle: "No tienes alumnos asignados todavía",
+          noMembersDescription:
+            "Cuando el admin del gym te asigne miembros, aparecer�n aquí con su progreso real y podrás gestionar entrenamientos y seguimiento.",
+          assignedMembers: "Alumnos asignados",
+          assignedMembersDescription: "Selecciona un alumno para abrir su ficha completa o editar su plan.",
+          quickAccess: "Acceso rápido",
+          quickAccessDescription:
+            "Entra a la ficha del alumno para revisar series en vivo, historial, alertas y chat. Usa entrenamientos para modificar hábitos reales.",
+          openProfile: "Abrir ficha del alumno",
+          manageTraining: "Gestionar entrenamientos",
+          membersDescription: "Elige un alumno para abrir su ficha completa y ver actividad real en tiempo casi real.",
+          selectMember: "Selecciona un alumno",
+          trainingDescription: "El editor escribe directamente en los hábitos reales del alumno en Supabase.",
+          todayTrainingDescription: (groupName: string, completedSets: number, totalSets: number) =>
+            `${groupName} · ${completedSets}/${totalSets} series hoy`,
+          weeklyLabel: "semanal",
+          closed: "Cerrado",
+          pending: "pendientes",
+          noTrainingToday: "No hay entrenamiento programado para hoy.",
+          noMemberSelected: "Sin alumno seleccionado",
+          noMemberSelectedDescription: "Selecciona un alumno de la izquierda para gestionar su entrenamiento."
+        };
 
   const currentView = (searchParams.get("view") as "summary" | "members" | "training" | null) ?? "summary";
   const queryMemberId = searchParams.get("member");
@@ -96,7 +189,7 @@ export default function CoachPage() {
       setOverview(data);
       setSelectedMemberId((current) => queryMemberId ?? current ?? data.members[0]?.userId ?? null);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el panel del coach.");
+      setError(loadError instanceof Error ? loadError.message : copy.loadPanelError);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -117,7 +210,7 @@ export default function CoachPage() {
       const nextDetail = await fetchCoachMemberDetail(session.access_token, memberId, formatMonthParam(targetMonth));
       setDetail(nextDetail);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la ficha del alumno.");
+      setError(loadError instanceof Error ? loadError.message : copy.loadMemberError);
     } finally {
       if (showLoading) {
         setDetailLoading(false);
@@ -183,7 +276,7 @@ export default function CoachPage() {
     try {
       await callback();
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : "No se pudo completar la acción del coach.");
+      setError(mutationError instanceof Error ? mutationError.message : copy.mutateError);
     } finally {
       setMutating(false);
     }
@@ -195,7 +288,7 @@ export default function CoachPage() {
 
   const handleCreateHabit = async (values: HabitFormValues) => {
     if (!session?.access_token || !selectedMember) {
-      throw new Error("Selecciona un alumno antes de crear un entrenamiento.");
+      throw new Error(copy.selectCreate);
     }
 
     await runMutation(async () => {
@@ -206,7 +299,7 @@ export default function CoachPage() {
 
   const handleUpdateHabit = async (habitId: string, values: HabitFormValues) => {
     if (!session?.access_token || !selectedMember) {
-      throw new Error("Selecciona un alumno antes de editar un entrenamiento.");
+      throw new Error(copy.selectEdit);
     }
 
     await runMutation(async () => {
@@ -217,7 +310,7 @@ export default function CoachPage() {
 
   const handleDeleteHabit = async (habitId: string) => {
     if (!session?.access_token || !selectedMember) {
-      throw new Error("Selecciona un alumno antes de eliminar un entrenamiento.");
+      throw new Error(copy.selectDelete);
     }
 
     await runMutation(async () => {
@@ -293,37 +386,29 @@ export default function CoachPage() {
   };
 
   if (loading) {
-    return <LoadingScreen title="Preparando panel del entrenador..." />;
+    return <LoadingScreen title={copy.loading} />;
   }
 
   const hero = (
     <section className="space-y-4 rounded-[34px] border border-border bg-card p-6 shadow-soft">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-accent">Coach HQ</p>
-          <h1 className="font-display text-[clamp(2rem,4vw,3.5rem)] font-semibold text-card-foreground">
-            Seguimiento real, comunicación y control diario de tus alumnos.
-          </h1>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Revisa progreso en vivo, calendario, hábitos activos, notas privadas, alertas visibles en la cuenta del alumno y chat directo desde el panel.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-accent">{copy.eyebrow}</p>
+          <h1 className="font-display text-[clamp(2rem,4vw,3.5rem)] font-semibold text-card-foreground">{copy.heroTitle}</h1>
+          <p className="max-w-3xl text-sm text-muted-foreground">{copy.heroDescription}</p>
         </div>
         <Button variant="secondary" onClick={() => void Promise.all([loadOverview(false), refreshSelectedDetail()])} disabled={refreshing || mutating}>
-          {refreshing ? "Actualizando..." : "Actualizar panel"}
+          {refreshing ? copy.refreshing : copy.refresh}
         </Button>
       </div>
 
-      {error ? (
-        <div className="rounded-[24px] border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className="rounded-[24px] border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
       <div className="grid gap-4 xl:grid-cols-4 md:grid-cols-2">
-        <SummaryMetric title="Asignados" value={String(overview?.summary.assignedMembers ?? 0)} helper="alumnos bajo tu seguimiento directo" tone="#67e8f9" />
-        <SummaryMetric title="Completados hoy" value={String(overview?.summary.completedToday ?? 0)} helper="alumnos que cerraron su día" tone="#6ee7b7" />
-        <SummaryMetric title="Cumplimiento medio" value={`${overview?.summary.averageCompliance ?? 0}%`} helper="últimos 7 días del grupo" tone="#fcd34d" />
-        <SummaryMetric title="Racha media" value={String(overview?.summary.averageStreak ?? 0)} helper="consistencia de tus asignados" tone="#fda4af" />
+        <SummaryMetric title={copy.assigned} value={String(overview?.summary.assignedMembers ?? 0)} helper={copy.assignedHelper} tone="#67e8f9" />
+        <SummaryMetric title={copy.completedToday} value={String(overview?.summary.completedToday ?? 0)} helper={copy.completedTodayHelper} tone="#6ee7b7" />
+        <SummaryMetric title={copy.avgCompliance} value={`${overview?.summary.averageCompliance ?? 0}%`} helper={copy.avgComplianceHelper} tone="#fcd34d" />
+        <SummaryMetric title={copy.avgStreak} value={String(overview?.summary.averageStreak ?? 0)} helper={copy.avgStreakHelper} tone="#fda4af" />
       </div>
     </section>
   );
@@ -341,10 +426,8 @@ export default function CoachPage() {
     </div>
   ) : (
     <Card className="rounded-[30px] border border-dashed border-border bg-surface p-6">
-      <CardTitle>No tienes alumnos asignados todavía</CardTitle>
-      <CardDescription className="mt-2">
-        Cuando el admin del gym te asigne miembros, aparecerán aquí con su progreso real y podrás gestionar entrenamientos y seguimiento.
-      </CardDescription>
+      <CardTitle>{copy.noMembersTitle}</CardTitle>
+      <CardDescription className="mt-2">{copy.noMembersDescription}</CardDescription>
     </Card>
   );
 
@@ -354,25 +437,23 @@ export default function CoachPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr),minmax(0,1.08fr)]">
         <section className="space-y-4">
           <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground">Alumnos asignados</h2>
-            <p className="text-sm text-muted-foreground">Selecciona un alumno para abrir su ficha completa o editar su plan.</p>
+            <h2 className="font-display text-2xl font-semibold text-foreground">{copy.assignedMembers}</h2>
+            <p className="text-sm text-muted-foreground">{copy.assignedMembersDescription}</p>
           </div>
           {membersList}
         </section>
 
         <section className="space-y-5">
           <Card className="rounded-[32px] border border-white/8 bg-[#111A24] p-6 text-white shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
-            <CardTitle className="text-white">Acceso rápido</CardTitle>
-            <CardDescription className="mt-1 text-white/60">
-              Entra a la ficha del alumno para revisar series en vivo, historial, alertas y chat. Usa entrenamientos para modificar hábitos reales.
-            </CardDescription>
+            <CardTitle className="text-white">{copy.quickAccess}</CardTitle>
+            <CardDescription className="mt-1 text-white/60">{copy.quickAccessDescription}</CardDescription>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button onClick={() => updateView("members", selectedMember?.userId)}>
-                Abrir ficha del alumno
+                {copy.openProfile}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button variant="secondary" className="bg-white/8 text-white ring-white/10 hover:bg-white/12" onClick={() => updateView("training", selectedMember?.userId)}>
-                Gestionar entrenamientos
+                {copy.manageTraining}
               </Button>
             </div>
           </Card>
@@ -387,8 +468,8 @@ export default function CoachPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.86fr),minmax(0,1.14fr)]">
         <section className="space-y-4">
           <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground">Alumnos asignados</h2>
-            <p className="text-sm text-muted-foreground">Elige un alumno para abrir su ficha completa y ver actividad real en tiempo casi real.</p>
+            <h2 className="font-display text-2xl font-semibold text-foreground">{copy.assignedMembers}</h2>
+            <p className="text-sm text-muted-foreground">{copy.membersDescription}</p>
           </div>
           {membersList}
         </section>
@@ -427,8 +508,8 @@ export default function CoachPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.86fr),minmax(0,1.14fr)]">
         <section className="space-y-4">
           <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground">Selecciona un alumno</h2>
-            <p className="text-sm text-muted-foreground">El editor escribe directamente en los hábitos reales del alumno en Supabase.</p>
+            <h2 className="font-display text-2xl font-semibold text-foreground">{copy.selectMember}</h2>
+            <p className="text-sm text-muted-foreground">{copy.trainingDescription}</p>
           </div>
           {membersList}
         </section>
@@ -440,11 +521,11 @@ export default function CoachPage() {
                 <div>
                   <CardTitle className="text-white">{detail.member.name}</CardTitle>
                   <CardDescription className="text-white/60">
-                    {detail.member.groupName} · {detail.liveToday.completedSets}/{detail.liveToday.totalSets} series hoy
+                    {copy.todayTrainingDescription(detail.member.groupName, detail.liveToday.completedSets, detail.liveToday.totalSets)}
                   </CardDescription>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-                  {detail.member.weeklyCompliance}% semanal
+                  {detail.member.weeklyCompliance}% {copy.weeklyLabel}
                 </span>
               </div>
 
@@ -458,13 +539,13 @@ export default function CoachPage() {
                       </div>
                       <div className="text-right text-sm text-white/65">
                         <p>{habit.completedSets}/{habit.targetSets}</p>
-                        <p>{habit.isCompleted ? "Cerrado" : `${habit.remainingSets} pendientes`}</p>
+                        <p>{habit.isCompleted ? copy.closed : `${habit.remainingSets} ${copy.pending}`}</p>
                       </div>
                     </div>
                   </div>
                 )) : (
                   <div className="rounded-[22px] border border-white/8 bg-white/5 p-4 text-sm text-white/55">
-                    No hay entrenamiento programado para hoy.
+                    {copy.noTrainingToday}
                   </div>
                 )}
               </div>
@@ -481,10 +562,8 @@ export default function CoachPage() {
             />
           ) : (
             <Card className="rounded-[32px] border border-white/8 bg-[#111A24] p-6 text-white shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
-              <CardTitle className="text-white">Sin alumno seleccionado</CardTitle>
-              <CardDescription className="text-white/60">
-                Selecciona un alumno de la izquierda para gestionar su entrenamiento.
-              </CardDescription>
+              <CardTitle className="text-white">{copy.noMemberSelected}</CardTitle>
+              <CardDescription className="text-white/60">{copy.noMemberSelectedDescription}</CardDescription>
             </Card>
           )}
         </section>
@@ -502,4 +581,3 @@ export default function CoachPage() {
 
   return summaryView;
 }
-

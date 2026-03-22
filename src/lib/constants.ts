@@ -1,36 +1,13 @@
-﻿import type { HabitColor, HabitIcon, WeekdayKey } from "@/types/habit";
+﻿import type { HabitColor, HabitIcon } from "@/types/habit";
+import { getBottomNavItems, getHabitCategories, getHabitIcons, getHabitLevels, getWeekDays } from "@/lib/i18n";
 
 export const APP_VERSION = "BossFit v1.00";
 
-export const WEEK_DAYS: Array<{
-  key: WeekdayKey;
-  short: string;
-  label: string;
-  dayIndex: number;
-}> = [
-  { key: "mon", short: "L", label: "Lunes", dayIndex: 1 },
-  { key: "tue", short: "M", label: "Martes", dayIndex: 2 },
-  { key: "wed", short: "X", label: "Miércoles", dayIndex: 3 },
-  { key: "thu", short: "J", label: "Jueves", dayIndex: 4 },
-  { key: "fri", short: "V", label: "Viernes", dayIndex: 5 },
-  { key: "sat", short: "S", label: "Sábado", dayIndex: 6 },
-  { key: "sun", short: "D", label: "Domingo", dayIndex: 0 }
-];
-
-export const HABIT_CATEGORIES = [
-  { value: "fuerza", label: "Fuerza" },
-  { value: "cardio", label: "Cardio" },
-  { value: "movilidad", label: "Movilidad" },
-  { value: "abdomen", label: "Abdomen" },
-  { value: "piernas", label: "Piernas" },
-  { value: "recuperacion", label: "Recuperación" }
-] as const;
-
-export const HABIT_LEVELS = [
-  { value: "principiante", label: "Principiante" },
-  { value: "intermedio", label: "Intermedio" },
-  { value: "avanzado", label: "Avanzado" }
-] as const;
+export const WEEK_DAYS = getWeekDays("es");
+export const HABIT_CATEGORIES = getHabitCategories("es");
+export const HABIT_LEVELS = getHabitLevels("es");
+export const HABIT_ICONS = getHabitIcons("es");
+export const BOTTOM_NAV_ITEMS = getBottomNavItems("es");
 
 export const HABIT_COLORS: Array<{
   value: HabitColor;
@@ -113,22 +90,6 @@ export const HABIT_COLOR_STYLES: Record<
   }
 };
 
-export const HABIT_ICONS: Array<{ value: HabitIcon; label: string }> = [
-  { value: "flame", label: "Fuego" },
-  { value: "dumbbell", label: "Mancuerna" },
-  { value: "heart", label: "Pulso" },
-  { value: "mountain", label: "Cumbre" },
-  { value: "bolt", label: "Impacto" },
-  { value: "timer", label: "Ritmo" }
-];
-
-export const BOTTOM_NAV_ITEMS = [
-  { href: "/", label: "Inicio", icon: "home" },
-  { href: "/today", label: "Hoy", icon: "today" },
-  { href: "/progress", label: "Progreso", icon: "progress" },
-  { href: "/settings", label: "Ajustes", icon: "settings" }
-] as const;
-
 export const BOSS_POINT_RULES = {
   perSet: 5,
   habitCompletionBonus: 10,
@@ -137,14 +98,5 @@ export const BOSS_POINT_RULES = {
   streakMilestoneInterval: 7
 } as const;
 
-export const LEVEL_TITLES = [
-  "Base",
-  "Momentum",
-  "Disciplina",
-  "Enfoque",
-  "Dominio",
-  "Boss"
-] as const;
-
 export const STORAGE_KEY = "bossfit-store";
-export const STORAGE_VERSION = 5;
+export const STORAGE_VERSION = 6;

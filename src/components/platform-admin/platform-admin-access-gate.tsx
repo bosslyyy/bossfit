@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
@@ -8,6 +8,7 @@ import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { fetchPlatformAdminContext } from "@/lib/supabase/platform-admin";
 import type { PlatformAdminContext } from "@/types/platform-admin";
 
@@ -20,9 +21,29 @@ const PlatformAdminContextStore = createContext<PlatformAdminContextValue | null
 
 export function PlatformAdminAccessGate({ children }: PropsWithChildren) {
   const { user, session, status } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [context, setContext] = useState<PlatformAdminContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const copy =
+    locale === "en"
+      ? {
+          fallbackError: "Could not open the platform panel.",
+          loading: "Opening platform panel...",
+          loadTitle: "We could not load your platform access",
+          noAccessTitle: "Your account does not have platform panel access",
+          noAccessDescription: "This area is reserved for BossFit global operations: gyms, users, and central control.",
+          back: "Back to BossFit"
+        }
+      : {
+          fallbackError: "No se pudo abrir el panel de plataforma.",
+          loading: "Abriendo panel de plataforma...",
+          loadTitle: "No pudimos cargar tu acceso de plataforma",
+          noAccessTitle: "Tu cuenta no tiene acceso al panel de plataforma",
+          noAccessDescription: "Este espacio est� reservado para la operación global de BossFit: gyms, usuarios y control central.",
+          back: "Volver a BossFit"
+        };
 
   const loadContext = async (accessToken: string) => {
     setLoading(true);
@@ -33,7 +54,7 @@ export function PlatformAdminAccessGate({ children }: PropsWithChildren) {
       setContext(nextContext);
     } catch (loadError) {
       setContext(null);
-      setError(loadError instanceof Error ? loadError.message : "No se pudo abrir el panel de plataforma.");
+      setError(loadError instanceof Error ? loadError.message : copy.fallbackError);
     } finally {
       setLoading(false);
     }
@@ -64,7 +85,7 @@ export function PlatformAdminAccessGate({ children }: PropsWithChildren) {
   }, [context, session?.access_token]);
 
   if (status === "loading" || loading) {
-    return <LoadingScreen title="Abriendo panel de plataforma..." />;
+    return <LoadingScreen title={copy.loading} />;
   }
 
   if (error) {
@@ -73,11 +94,11 @@ export function PlatformAdminAccessGate({ children }: PropsWithChildren) {
         <Card className="w-full max-w-xl space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Platform</p>
-            <CardTitle>No pudimos cargar tu acceso de plataforma</CardTitle>
+            <CardTitle>{copy.loadTitle}</CardTitle>
             <CardDescription>{error}</CardDescription>
           </div>
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>
-            Volver a BossFit
+            {copy.back}
           </Link>
         </Card>
       </div>
@@ -90,13 +111,11 @@ export function PlatformAdminAccessGate({ children }: PropsWithChildren) {
         <Card className="w-full max-w-xl space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Platform</p>
-            <CardTitle>Tu cuenta no tiene acceso al panel de plataforma</CardTitle>
-            <CardDescription>
-              Este espacio está reservado para la operación global de BossFit: gyms, usuarios y control central.
-            </CardDescription>
+            <CardTitle>{copy.noAccessTitle}</CardTitle>
+            <CardDescription>{copy.noAccessDescription}</CardDescription>
           </div>
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>
-            Volver a BossFit
+            {copy.back}
           </Link>
         </Card>
       </div>
@@ -110,7 +129,7 @@ export function usePlatformAdminContext() {
   const context = useContext(PlatformAdminContextStore);
 
   if (!context) {
-    throw new Error("usePlatformAdminContext debe usarse dentro de PlatformAdminAccessGate.");
+    throw new Error("usePlatformAdminContext must be used inside PlatformAdminAccessGate.");
   }
 
   return context;

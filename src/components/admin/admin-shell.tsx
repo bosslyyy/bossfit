@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { PropsWithChildren } from "react";
 
@@ -9,13 +9,36 @@ import { usePathname } from "next/navigation";
 import { useAdminContext } from "@/components/admin/admin-access-gate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { ADMIN_NAV_ITEMS } from "@/lib/admin/mock-data";
 import { cn, titleCase } from "@/lib/utils";
 
 export function AdminShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const { context } = useAdminContext();
-  const currentItem = ADMIN_NAV_ITEMS.find((item) => item.href === pathname) ?? ADMIN_NAV_ITEMS[0];
+  const locale = useAppLocale();
+  const copy =
+    locale === "en"
+      ? {
+          back: "Back to BossFit",
+          badge: "Gym Panel",
+          eyebrow: "Gym Admin",
+          currentRole: "Current role",
+          nav: ["Overview", "Users", "Trainers", "Groups", "Assignments"],
+          accessTitle: "Panel access",
+          accessDescription:
+            "This area already reads from your real gym and is ready to connect user creation, permissions, and advanced assignments."
+        }
+      : {
+          back: "Volver a BossFit",
+          badge: "Panel Gym",
+          eyebrow: "Gym Admin",
+          currentRole: "Rol actual",
+          nav: ["Resumen", "Usuarios", "Entrenadores", "Grupos", "Asignaciones"],
+          accessTitle: "Acceso del panel",
+          accessDescription:
+            "Esta secci�n ya consulta tu gym real y queda lista para conectar creación de usuarios, permisos y asignaciones avanzadas."
+        };
 
   return (
     <div className="space-y-6 animate-rise">
@@ -25,9 +48,9 @@ export function AdminShell({ children }: PropsWithChildren) {
           className={buttonVariants({ variant: "ghost", className: "-ml-3 h-10 px-3 text-muted-foreground hover:text-card-foreground" })}
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Volver a BossFit
+          {copy.back}
         </Link>
-        <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">Panel Gym</Badge>
+        <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{copy.badge}</Badge>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[17rem,1fr] xl:items-start">
@@ -37,16 +60,16 @@ export function AdminShell({ children }: PropsWithChildren) {
               <Building2 className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">Gym Admin</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">{copy.eyebrow}</p>
               <h1 className="font-display text-2xl font-semibold leading-tight text-card-foreground dark:text-white">
                 {context.gymName}
               </h1>
-              <p className="text-sm text-muted-foreground">Rol actual: {titleCase(context.role)}</p>
+              <p className="text-sm text-muted-foreground">{copy.currentRole}: {titleCase(context.role)}</p>
             </div>
           </div>
 
           <nav className="grid gap-2">
-            {ADMIN_NAV_ITEMS.map((item) => {
+            {ADMIN_NAV_ITEMS.map((item, index) => {
               const active = item.href === "/gym" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
@@ -59,7 +82,7 @@ export function AdminShell({ children }: PropsWithChildren) {
                       : "text-muted-foreground ring-1 ring-transparent hover:bg-background hover:text-card-foreground dark:hover:bg-white/[0.04]"
                   )}
                 >
-                  {item.label}
+                  {copy.nav[index] ?? item.label}
                 </Link>
               );
             })}
@@ -68,11 +91,9 @@ export function AdminShell({ children }: PropsWithChildren) {
           <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
             <div className="flex items-center gap-2 text-sm font-semibold text-card-foreground dark:text-white">
               <ShieldCheck className="h-4 w-4 text-accent" />
-              Acceso del panel
+              {copy.accessTitle}
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Esta sección ya consulta tu gym real y queda lista para conectar creación de usuarios, permisos y asignaciones avanzadas.
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{copy.accessDescription}</p>
           </div>
         </aside>
 
@@ -81,4 +102,3 @@ export function AdminShell({ children }: PropsWithChildren) {
     </div>
   );
 }
-

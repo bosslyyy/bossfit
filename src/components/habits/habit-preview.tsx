@@ -1,14 +1,19 @@
-﻿import { Badge } from "@/components/ui/badge";
+﻿"use client";
+
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { HABIT_COLOR_STYLES, WEEK_DAYS } from "@/lib/constants";
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { HABIT_COLOR_STYLES } from "@/lib/constants";
+import { getLevelLabel, getWeekDays } from "@/lib/i18n";
 import { cn, formatHabitTarget } from "@/lib/utils";
 import type { HabitFormValues } from "@/lib/validation/habit";
 
 import { HabitIcon } from "./habit-icon";
 
 export function HabitPreview({ values }: { values: HabitFormValues }) {
+  const locale = useAppLocale();
   const styles = HABIT_COLOR_STYLES[values.color];
-  const selectedDays = WEEK_DAYS.filter((day) => values.selectedDays.includes(day.key)).map((day) => day.short);
+  const selectedDays = getWeekDays(locale).filter((day) => values.selectedDays.includes(day.key)).map((day) => day.short);
 
   return (
     <Card className={`border bg-card dark:!border-border dark:bg-[#121922] dark:shadow-[0_14px_32px_rgba(2,8,16,0.34)] ${styles.border}`}>
@@ -18,9 +23,11 @@ export function HabitPreview({ values }: { values: HabitFormValues }) {
             <HabitIcon icon={values.icon} />
           </div>
           <div className="space-y-1">
-            <h3 className="font-display text-lg font-semibold text-white">{values.name || "Tu nuevo hábito"}</h3>
+            <h3 className="font-display text-lg font-semibold text-white">
+              {values.name || (locale === "en" ? "Your new habit" : "Tu nuevo hábito")}
+            </h3>
             <p className="text-sm text-white/70">
-              {formatHabitTarget(values.targetSets, values.repsPerSet, values.trackingMode, values.secondsPerSet)} · {selectedDays.join(" · ") || "Selecciona días"}
+              {formatHabitTarget(values.targetSets, values.repsPerSet, values.trackingMode, values.secondsPerSet)} · {selectedDays.join(" · ") || (locale === "en" ? "Select days" : "Selecciona días")}
             </p>
           </div>
         </div>
@@ -30,7 +37,7 @@ export function HabitPreview({ values }: { values: HabitFormValues }) {
             "ring-1 ring-border/50 dark:bg-surface dark:text-card-foreground dark:ring-border"
           )}
         >
-          {values.level ?? "Personalizado"}
+          {getLevelLabel(locale, values.level)}
         </Badge>
       </div>
     </Card>

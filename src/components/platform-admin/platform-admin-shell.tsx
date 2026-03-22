@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { PropsWithChildren } from "react";
 
@@ -9,17 +9,45 @@ import { usePathname } from "next/navigation";
 import { usePlatformAdminContext } from "@/components/platform-admin/platform-admin-access-gate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/admin", label: "Resumen" },
-  { href: "/admin/gyms", label: "Gyms" },
-  { href: "/admin/users", label: "Usuarios" }
-] as const;
 
 export function PlatformAdminShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const { context } = usePlatformAdminContext();
+  const locale = useAppLocale();
+
+  const navItems =
+    locale === "en"
+      ? [
+          { href: "/admin", label: "Overview" },
+          { href: "/admin/gyms", label: "Gyms" },
+          { href: "/admin/users", label: "Users" }
+        ]
+      : [
+          { href: "/admin", label: "Resumen" },
+          { href: "/admin/gyms", label: "Gyms" },
+          { href: "/admin/users", label: "Usuarios" }
+        ];
+
+  const copy =
+    locale === "en"
+      ? {
+          back: "Back to BossFit",
+          badge: "Platform Admin",
+          eyebrow: "BossFit Core",
+          controlTitle: "Central control",
+          gyms: "Create and operate gyms",
+          users: "View global users"
+        }
+      : {
+          back: "Volver a BossFit",
+          badge: "Platform Admin",
+          eyebrow: "BossFit Core",
+          controlTitle: "Control central",
+          gyms: "Crear y operar gyms",
+          users: "Ver usuarios globales"
+        };
 
   return (
     <div className="space-y-6 animate-rise">
@@ -29,9 +57,9 @@ export function PlatformAdminShell({ children }: PropsWithChildren) {
           className={buttonVariants({ variant: "ghost", className: "-ml-3 h-10 px-3 text-muted-foreground hover:text-card-foreground" })}
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Volver a BossFit
+          {copy.back}
         </Link>
-        <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">Platform Admin</Badge>
+        <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{copy.badge}</Badge>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[17rem,1fr] xl:items-start">
@@ -41,7 +69,7 @@ export function PlatformAdminShell({ children }: PropsWithChildren) {
               <Crown className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">BossFit Core</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">{copy.eyebrow}</p>
               <h1 className="font-display text-2xl font-semibold leading-tight text-card-foreground dark:text-white">
                 {context.label}
               </h1>
@@ -72,16 +100,16 @@ export function PlatformAdminShell({ children }: PropsWithChildren) {
           <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04] space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-card-foreground dark:text-white">
               <ShieldCheck className="h-4 w-4 text-accent" />
-              Control central
+              {copy.controlTitle}
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-accent" />
-                Crear y operar gyms
+                {copy.gyms}
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-accent" />
-                Ver usuarios globales
+                {copy.users}
               </div>
             </div>
           </div>
@@ -92,4 +120,3 @@ export function PlatformAdminShell({ children }: PropsWithChildren) {
     </div>
   );
 }
-

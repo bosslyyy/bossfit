@@ -277,6 +277,7 @@ with check (auth.uid() = user_id);
 create table if not exists public.bossfit_user_settings (
   user_id uuid primary key references auth.users (id) on delete cascade,
   theme text not null default 'light',
+  locale text not null default 'es',
   reminder_enabled boolean not null default false,
   reminder_time text not null default '19:00',
   reminder_permission text not null default 'default',
@@ -287,6 +288,7 @@ create table if not exists public.bossfit_user_settings (
 
 alter table public.bossfit_user_settings
   add column if not exists theme text not null default 'light',
+  add column if not exists locale text not null default 'es',
   add column if not exists reminder_enabled boolean not null default false,
   add column if not exists reminder_time text not null default '19:00',
   add column if not exists reminder_permission text not null default 'default',
@@ -377,6 +379,19 @@ begin
     alter table public.bossfit_user_settings
       add constraint bossfit_user_settings_theme_check
       check (theme in ('light', 'dark'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'bossfit_user_settings_locale_check'
+      and conrelid = 'public.bossfit_user_settings'::regclass
+  ) then
+    alter table public.bossfit_user_settings
+      add constraint bossfit_user_settings_locale_check
+      check (locale in ('es', 'en'));
   end if;
 end $$;
 
@@ -566,6 +581,7 @@ for each row execute function public.bossfit_set_updated_at();
 insert into public.bossfit_user_settings (
   user_id,
   theme,
+  locale,
   reminder_enabled,
   reminder_time,
   reminder_permission,
@@ -576,6 +592,11 @@ insert into public.bossfit_user_settings (
 select
   s.user_id,
   coalesce(nullif(s.app_state ->> 'theme', ''), 'light'),
+  case
+    when coalesce(nullif(s.app_state ->> 'locale', ''), 'es') in ('es', 'en')
+      then coalesce(nullif(s.app_state ->> 'locale', ''), 'es')
+    else 'es'
+  end,
   coalesce((s.app_state #>> '{reminderSettings,enabled}')::boolean, false),
   coalesce(nullif(s.app_state #>> '{reminderSettings,time}', ''), '19:00'),
   case
@@ -1268,3 +1289,6 @@ with check (
       and gm.role in ('owner', 'admin')
   )
 );
+
+
+

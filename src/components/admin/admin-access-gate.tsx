@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
@@ -8,6 +8,7 @@ import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { fetchActiveAdminGymContext, type AdminGymContext } from "@/lib/supabase/admin";
 
 interface AdminContextValue {
@@ -19,9 +20,29 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminAccessGate({ children }: PropsWithChildren) {
   const { user, status } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [context, setContext] = useState<AdminGymContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const copy =
+    locale === "en"
+      ? {
+          fallbackError: "Could not open the gym panel.",
+          loading: "Opening gym panel...",
+          loadTitle: "We could not load your panel access",
+          noAccessTitle: "Your account does not have gym panel access",
+          noAccessDescription: "You need an active membership with owner or admin role inside a gym to enter here.",
+          back: "Back to BossFit"
+        }
+      : {
+          fallbackError: "No se pudo abrir el panel del gym.",
+          loading: "Abriendo panel del gym...",
+          loadTitle: "No pudimos cargar tu acceso al panel",
+          noAccessTitle: "Tu cuenta no tiene acceso al panel del gym",
+          noAccessDescription: "Necesitas un membership activo con rol owner o admin dentro de un gimnasio para entrar aquí.",
+          back: "Volver a BossFit"
+        };
 
   const loadContext = async (userId: string) => {
     setLoading(true);
@@ -31,7 +52,7 @@ export function AdminAccessGate({ children }: PropsWithChildren) {
       const nextContext = await fetchActiveAdminGymContext(userId);
       setContext(nextContext);
     } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : "No se pudo abrir el panel del gym.";
+      const message = loadError instanceof Error ? loadError.message : copy.fallbackError;
       setError(message);
       setContext(null);
     } finally {
@@ -64,7 +85,7 @@ export function AdminAccessGate({ children }: PropsWithChildren) {
   }, [context]);
 
   if (status === "loading" || loading) {
-    return <LoadingScreen title="Abriendo panel del gym..." />;
+    return <LoadingScreen title={copy.loading} />;
   }
 
   if (error) {
@@ -73,11 +94,11 @@ export function AdminAccessGate({ children }: PropsWithChildren) {
         <Card className="w-full max-w-xl space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Gym</p>
-            <CardTitle>No pudimos cargar tu acceso al panel</CardTitle>
+            <CardTitle>{copy.loadTitle}</CardTitle>
             <CardDescription>{error}</CardDescription>
           </div>
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>
-            Volver a BossFit
+            {copy.back}
           </Link>
         </Card>
       </div>
@@ -90,13 +111,11 @@ export function AdminAccessGate({ children }: PropsWithChildren) {
         <Card className="w-full max-w-xl space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Gym</p>
-            <CardTitle>Tu cuenta no tiene acceso al panel del gym</CardTitle>
-            <CardDescription>
-              Necesitas un membership activo con rol owner o admin dentro de un gimnasio para entrar aquí.
-            </CardDescription>
+            <CardTitle>{copy.noAccessTitle}</CardTitle>
+            <CardDescription>{copy.noAccessDescription}</CardDescription>
           </div>
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>
-            Volver a BossFit
+            {copy.back}
           </Link>
         </Card>
       </div>
@@ -110,10 +129,8 @@ export function useAdminContext() {
   const context = useContext(AdminContext);
 
   if (!context) {
-    throw new Error("useAdminContext debe usarse dentro de AdminAccessGate.");
+    throw new Error("useAdminContext must be used inside AdminAccessGate.");
   }
 
   return context;
 }
-
-

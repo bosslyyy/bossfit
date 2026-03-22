@@ -9,6 +9,7 @@ import { Loader2, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { APP_VERSION } from "@/lib/constants";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { hydrateStoreForUser } from "@/lib/supabase/hydrate-store";
@@ -24,6 +25,7 @@ function getSafeNextPath(candidate: string | null) {
 
 export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
+  const locale = useAppLocale();
   const isConfigured = isSupabaseConfigured();
   const isRegister = mode === "register";
 
@@ -44,39 +46,97 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
     setNextPath(getSafeNextPath(params.get("next")));
   }, []);
 
+  const copy = locale === "en"
+    ? {
+        access: "BossFit Access",
+        title: isRegister ? "Create your account" : "Welcome back to BossFit",
+        subtitle: isRegister
+          ? "Create your account and start building your routine today."
+          : "Sign in with your email or username and keep training where you left off.",
+        cardTitle: "Secure access and progress by user",
+        cardDescription: "Sign in to your account and continue with your plan, progress, and personal settings.",
+        identifierLabel: isRegister ? "Email" : "Email or Username",
+        identifierPlaceholder: isRegister ? "you@bossfit.app" : "Username or you@email",
+        passwordLabel: "Password",
+        passwordPlaceholder: "Minimum 6 characters",
+        forgotPassword: "I forgot my password",
+        confirmPasswordLabel: "Confirm password",
+        confirmPasswordPlaceholder: "Repeat your password",
+        submit: isRegister ? "Create account" : "Sign in",
+        footerQuestion: isRegister ? "Already have an account?" : "Don’t have an account yet?",
+        footerAction: isRegister ? "Sign in here" : "Sign up",
+        configError: "This build cannot open accounts yet.",
+        missingFields: isRegister ? "Enter your email and password." : "Enter your email or username and password.",
+        shortPassword: "Password must be at least 6 characters.",
+        invalidEmail: "Enter a valid email address to create your account.",
+        passwordMismatch: "Passwords do not match.",
+        accessPrepError: "Could not prepare your access.",
+        signUpConfirmation:
+          "Your account was created. If this project requires email confirmation, check your inbox and then sign in.",
+        sessionPrepError: "Could not prepare your session."
+      }
+    : {
+        access: "BossFit Access",
+        title: isRegister ? "Crea tu cuenta" : "Vuelve a BossFit",
+        subtitle: isRegister
+          ? "Crea tu cuenta y empieza a construir tu rutina desde hoy."
+          : "Entra con tu email o usuario para seguir entrenando y continuar donde la dejaste.",
+        cardTitle: "Acceso seguro y progreso por usuario",
+        cardDescription: "Entra a tu cuenta y sigue con tu plan, tu progreso y tus ajustes personales.",
+        identifierLabel: isRegister ? "Email" : "Email o Usuario",
+        identifierPlaceholder: isRegister ? "tu@bossfit.app" : "Usuario o tu@email",
+        passwordLabel: "Contraseña",
+        passwordPlaceholder: "Mínimo 6 caracteres",
+        forgotPassword: "Se me olvidó la contraseña",
+        confirmPasswordLabel: "Confirmar contraseña",
+        confirmPasswordPlaceholder: "Repite tu contraseña",
+        submit: isRegister ? "Crear cuenta" : "Iniciar sesión",
+        footerQuestion: isRegister ? "¿Ya tienes cuenta?" : "¿Todavía no tienes cuenta?",
+        footerAction: isRegister ? "Entra aquí" : "Regístrate",
+        configError: "Esta versión todavía no puede abrir cuentas.",
+        missingFields: isRegister ? "Completa tu email y contraseña." : "Completa tu email o usuario y contraseña.",
+        shortPassword: "La contraseña debe tener al menos 6 caracteres.",
+        invalidEmail: "Escribe un email válido para crear tu cuenta.",
+        passwordMismatch: "Las contraseñas no coinciden.",
+        accessPrepError: "No se pudo preparar tu acceso.",
+        signUpConfirmation:
+          "Tu cuenta fue creada. Si tu proyecto exige confirmación por email, revisa tu bandeja y luego inicia sesión.",
+        sessionPrepError: "No se pudo preparar tu sesión."
+      };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setMessage(null);
 
     if (!isConfigured) {
-      setError("Esta versión todavía no puede abrir cuentas.");
+      setError(copy.configError);
       return;
     }
 
     if (!identifier.trim() || !password.trim()) {
-      setError(isRegister ? "Completa tu email y contraseña." : "Completa tu email o usuario y contraseña.");
+      setError(copy.missingFields);
       return;
     }
 
     if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+      setError(copy.shortPassword);
       return;
     }
 
     if (isRegister && !identifier.includes("@")) {
-      setError("Escribe un email válido para crear tu cuenta.");
+      setError(copy.invalidEmail);
       return;
     }
 
     if (isRegister && password !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      setError(copy.passwordMismatch);
       return;
     }
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
-      setError("No se pudo preparar tu acceso.");
+      setError(copy.accessPrepError);
       return;
     }
 
@@ -95,7 +155,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
         }
 
         if (!data.session) {
-          setMessage("Tu cuenta fue creada. Si tu proyecto exige confirmación por email, revisa tu bandeja y luego inicia sesión.");
+          setMessage(copy.signUpConfirmation);
           return;
         }
 
@@ -124,8 +184,8 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
 
       router.replace(nextPath);
     } catch (authError) {
-      const message = authError instanceof Error ? authError.message : "No se pudo preparar tu sesión.";
-      setError(message);
+      const fallback = authError instanceof Error ? authError.message : copy.sessionPrepError;
+      setError(fallback);
     } finally {
       setSubmitting(false);
     }
@@ -135,15 +195,11 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
       <div className="w-full space-y-5">
         <div className="space-y-3 px-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-accent">BossFit Access</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-accent">{copy.access}</p>
           <h1 className="font-display text-[clamp(2.2rem,10vw,3.6rem)] font-semibold leading-none text-foreground">
-            {isRegister ? "Crea tu cuenta" : "Vuelve a BossFit"}
+            {copy.title}
           </h1>
-          <p className="max-w-[26rem] text-sm text-muted-foreground">
-            {isRegister
-              ? "Crea tu cuenta y empieza a construir tu rutina desde hoy."
-              : "Entra con tu email o usuario para seguir entrenando y continuar donde la dejaste."}
-          </p>
+          <p className="max-w-[26rem] text-sm text-muted-foreground">{copy.subtitle}</p>
         </div>
 
         <Card className="space-y-5">
@@ -152,16 +208,14 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <CardTitle>Acceso seguro y progreso por usuario</CardTitle>
-              <CardDescription>
-                Entra a tu cuenta y sigue con tu plan, tu progreso y tus ajustes personales.
-              </CardDescription>
+              <CardTitle>{copy.cardTitle}</CardTitle>
+              <CardDescription>{copy.cardDescription}</CardDescription>
             </div>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-card-foreground">{isRegister ? "Email" : "Email o Usuario"}</span>
+              <span className="text-sm font-semibold text-card-foreground">{copy.identifierLabel}</span>
               <div className="relative">
                 {isRegister ? (
                   <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -171,7 +225,7 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
                 <Input
                   type={isRegister ? "email" : "text"}
                   autoComplete={isRegister ? "email" : "username"}
-                  placeholder={isRegister ? "tu@bossfit.app" : "Usuario o tu@email"}
+                  placeholder={copy.identifierPlaceholder}
                   className="pl-11"
                   value={identifier}
                   onChange={(event) => setIdentifier(event.target.value)}
@@ -180,13 +234,13 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-card-foreground">Contraseña</span>
+              <span className="text-sm font-semibold text-card-foreground">{copy.passwordLabel}</span>
               <div className="relative">
                 <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="password"
                   autoComplete={isRegister ? "new-password" : "current-password"}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={copy.passwordPlaceholder}
                   className="pl-11"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -197,18 +251,18 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
             {!isRegister ? (
               <div className="flex justify-end">
                 <Link href="/forgot-password" className="text-sm font-semibold text-accent">
-                  Se me olvidó la contraseña
+                  {copy.forgotPassword}
                 </Link>
               </div>
             ) : null}
 
             {isRegister ? (
               <label className="block space-y-2">
-                <span className="text-sm font-semibold text-card-foreground">Confirmar contraseña</span>
+                <span className="text-sm font-semibold text-card-foreground">{copy.confirmPasswordLabel}</span>
                 <Input
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Repite tu contraseña"
+                  placeholder={copy.confirmPasswordPlaceholder}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                 />
@@ -229,14 +283,14 @@ export function AuthFormCard({ mode }: { mode: "login" | "register" }) {
 
             <Button type="submit" className="w-full" disabled={submitting || !isConfigured}>
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isRegister ? "Crear cuenta" : "Iniciar sesión"}
+              {copy.submit}
             </Button>
           </form>
 
           <div className="rounded-[22px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-            {isRegister ? "¿Ya tienes cuenta?" : "¿Todavía no tienes cuenta?"}{" "}
+            {copy.footerQuestion}{" "}
             <Link href={isRegister ? "/login" : "/register"} className="font-semibold text-accent">
-              {isRegister ? "Entra aquí" : "Regístrate"}
+              {copy.footerAction}
             </Link>
           </div>
 

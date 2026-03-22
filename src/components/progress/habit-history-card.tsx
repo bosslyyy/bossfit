@@ -2,15 +2,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { HABIT_COLOR_STYLES } from "@/lib/constants";
+import { getCategoryLabel } from "@/lib/i18n";
 import { cn, formatHabitTarget } from "@/lib/utils";
-import type { Habit, HabitHistoryPoint } from "@/types/habit";
+import type { AppLocale, Habit, HabitHistoryPoint } from "@/types/habit";
 
 export function HabitHistoryCard({
   habit,
-  history
+  history,
+  locale
 }: {
   habit: Habit;
   history: HabitHistoryPoint[];
+  locale: AppLocale;
 }) {
   const styles = HABIT_COLOR_STYLES[habit.color];
 
@@ -32,7 +35,7 @@ export function HabitHistoryCard({
             "ring-1 ring-border/50 dark:bg-surface dark:text-card-foreground dark:ring-border"
           )}
         >
-          {habit.category ?? "fitness"}
+          {getCategoryLabel(locale, habit.category)}
         </Badge>
       </div>
 
@@ -46,7 +49,7 @@ export function HabitHistoryCard({
                   ? "border-border/70 bg-surface text-muted-foreground dark:bg-surface"
                   : entry.isCompleted
                     ? `${styles.solid} border-transparent text-white ring-1 ring-black/5`
-                    : `border-border bg-muted text-card-foreground dark:bg-surface`
+                    : "border-border bg-muted text-card-foreground dark:bg-surface"
               }`}
             >
               {!entry.scheduled ? "-" : `${entry.completedSets}/${entry.targetSets}`}

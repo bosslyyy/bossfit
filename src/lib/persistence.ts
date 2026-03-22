@@ -1,6 +1,7 @@
 ﻿import { z } from "zod";
 
 import type {
+  AppLocale,
   CloudSyncState,
   DailyCompletion,
   Habit,
@@ -25,6 +26,7 @@ const habitColorSchema = z.enum(["ember", "emerald", "ocean", "sun", "rose", "gr
 const habitIconSchema = z.enum(["flame", "dumbbell", "heart", "mountain", "bolt", "timer"]);
 const habitTrackingModeSchema = z.enum(["reps", "timer"]);
 const themeSchema = z.enum(["light", "dark"]);
+const localeSchema = z.enum(["es", "en"]);
 const reminderPermissionSchema = z.enum(["default", "granted", "denied", "unsupported"]);
 const remoteSaveReasonSchema = z.enum(["sync", "reset", "signout", "pagehide", "bootstrap", "recovery"]);
 
@@ -101,6 +103,7 @@ export interface BossFitPersistedState {
   habits: Habit[];
   completions: DailyCompletion[];
   theme: ThemeMode;
+  locale: AppLocale;
   reminderSettings: ReminderSettings;
   cloudSync: CloudSyncState;
 }
@@ -118,6 +121,7 @@ export function createInitialPersistedState(): BossFitPersistedState {
     habits: [],
     completions: [],
     theme: "light",
+    locale: "es",
     reminderSettings: { ...DEFAULT_REMINDER_SETTINGS },
     cloudSync: { ...DEFAULT_CLOUD_SYNC_STATE }
   };
@@ -151,6 +155,11 @@ function normalizeTheme(value: unknown): ThemeMode {
   return parsed.success ? parsed.data : "light";
 }
 
+function normalizeLocaleValue(value: unknown): AppLocale {
+  const parsed = localeSchema.safeParse(value);
+  return parsed.success ? parsed.data : "es";
+}
+
 function normalizeCloudSync(value: unknown): CloudSyncState {
   const parsed = cloudSyncSchema.safeParse(value);
   return {
@@ -168,6 +177,7 @@ export function migratePersistedState(
     habits: parseCollection<Habit>(habitSchema, candidate.habits),
     completions: parseCollection(dailyCompletionSchema, candidate.completions),
     theme: normalizeTheme(candidate.theme),
+    locale: normalizeLocaleValue(candidate.locale),
     reminderSettings: normalizeReminderSettings(candidate.reminderSettings),
     cloudSync: normalizeCloudSync(candidate.cloudSync)
   };

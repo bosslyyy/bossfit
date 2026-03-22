@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -14,6 +14,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { fetchAdminGroups, fetchAdminTrainers, type AdminGroupListItem, type AdminTrainerListItem } from "@/lib/supabase/admin";
 import { adminCreateUserSchema, type AdminCreateUserInput } from "@/lib/validation/admin-user";
 
@@ -30,15 +31,10 @@ interface CreatedUserResult {
   gymName: string;
 }
 
-const roleLabels: Record<CreatedUserResult["role"], string> = {
-  admin: "Admin",
-  trainer: "Entrenador",
-  member: "Miembro"
-};
-
 export function AdminUserCreateForm() {
   const { context } = useAdminContext();
   const { session } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [trainers, setTrainers] = useState<AdminTrainerListItem[]>([]);
   const [groups, setGroups] = useState<AdminGroupListItem[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
@@ -46,6 +42,89 @@ export function AdminUserCreateForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [createdUser, setCreatedUser] = useState<CreatedUserResult | null>(null);
   const [copiedField, setCopiedField] = useState<"alias" | "email" | "password" | null>(null);
+
+  const copy =
+    locale === "en"
+      ? {
+          noSession: "Could not find a valid session to create the user.",
+          loadError: "Could not load form data.",
+          createError: "Could not create the user.",
+          loadingTitle: "Preparing form",
+          loadingDescription: "Loading active trainers and groups from the gym.",
+          title: "Create gym user",
+          description:
+            "BossFit will generate a short login and temporary password. If the role is member, you can assign it right now.",
+          fullName: "Full name",
+          fullNamePlaceholder: "Ex. Daniel Rojas",
+          role: "Role",
+          gym: "Gym",
+          member: "Member",
+          trainer: "Trainer",
+          admin: "Admin",
+          assignedTrainer: "Trainer",
+          unassignedTrainer: "Unassigned for now",
+          group: "Group",
+          unassignedGroup: "No group yet",
+          roleHelper:
+            "Admin and trainer roles are created already linked to the gym. Then you can assign groups, blocks, or finer permissions from the panel.",
+          creating: "Creating user...",
+          create: "Create user",
+          backToUsers: "Back to users",
+          readyTitle: "User ready",
+          readyDescription: "These temporary credentials can already sign in to BossFit and are linked to",
+          name: "Name",
+          createdRole: "Role",
+          username: "Username",
+          fullAccess: "Full access",
+          temporaryPassword: "Temporary password",
+          copied: "Copied",
+          createAnother: "Create another",
+          viewUsers: "View users",
+          reviewAssignments: "Review assignments"
+        }
+      : {
+          noSession: "No encontramos una sesión válida para crear el usuario.",
+          loadError: "No se pudieron cargar los datos del formulario.",
+          createError: "No se pudo crear el usuario.",
+          loadingTitle: "Preparando formulario",
+          loadingDescription: "Estamos cargando entrenadores y grupos activos del gym.",
+          title: "Crear usuario del gym",
+          description:
+            "BossFit generar� un acceso corto y una contraseña temporal. Si el rol es miembro, puedes dejarlo asignado desde ahora.",
+          fullName: "Nombre completo",
+          fullNamePlaceholder: "Ej. Daniel Rojas",
+          role: "Rol",
+          gym: "Gym",
+          member: "Miembro",
+          trainer: "Entrenador",
+          admin: "Admin",
+          assignedTrainer: "Entrenador",
+          unassignedTrainer: "Sin asignar aún",
+          group: "Grupo",
+          unassignedGroup: "Sin grupo aún",
+          roleHelper:
+            "Los roles admin y entrenador se crean ya vinculados al gym. Luego podrás asignar bloques, grupos o permisos más finos desde el panel.",
+          creating: "Creando usuario...",
+          create: "Crear usuario",
+          backToUsers: "Volver a usuarios",
+          readyTitle: "Usuario listo",
+          readyDescription: "Estas credenciales temporales ya pueden entrar a BossFit y quedaron vinculadas a",
+          name: "Nombre",
+          createdRole: "Rol",
+          username: "Usuario",
+          fullAccess: "Acceso completo",
+          temporaryPassword: "Contraseña temporal",
+          copied: "Copiado",
+          createAnother: "Crear otro",
+          viewUsers: "Ver usuarios",
+          reviewAssignments: "Revisar asignaciones"
+        };
+
+  const roleLabels: Record<CreatedUserResult["role"], string> = {
+    admin: copy.admin,
+    trainer: copy.trainer,
+    member: copy.member
+  };
 
   const form = useForm<AdminCreateUserInput>({
     resolver: zodResolver(adminCreateUserSchema),
@@ -63,14 +142,11 @@ export function AdminUserCreateForm() {
   const loadOptions = async () => {
     setLoadingOptions(true);
     try {
-      const [nextTrainers, nextGroups] = await Promise.all([
-        fetchAdminTrainers(context.gymId),
-        fetchAdminGroups(context.gymId)
-      ]);
+      const [nextTrainers, nextGroups] = await Promise.all([fetchAdminTrainers(context.gymId), fetchAdminGroups(context.gymId)]);
       setTrainers(nextTrainers);
       setGroups(nextGroups.filter((group) => group.active));
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "No se pudieron cargar los datos del formulario.");
+      setServerError(error instanceof Error ? error.message : copy.loadError);
     } finally {
       setLoadingOptions(false);
     }
@@ -100,7 +176,7 @@ export function AdminUserCreateForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!session?.access_token) {
-      setServerError("No encontramos una sesión válida para crear el usuario.");
+      setServerError(copy.noSession);
       return;
     }
 
@@ -126,7 +202,7 @@ export function AdminUserCreateForm() {
       const payload = (await response.json()) as { error?: string; user?: CreatedUserResult };
 
       if (!response.ok || !payload.user) {
-        setServerError(payload.error ?? "No se pudo crear el usuario.");
+        setServerError(payload.error ?? copy.createError);
         return;
       }
 
@@ -138,14 +214,14 @@ export function AdminUserCreateForm() {
       });
       void loadOptions();
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "No se pudo crear el usuario.");
+      setServerError(error instanceof Error ? error.message : copy.createError);
     } finally {
       setSubmitting(false);
     }
   });
 
   if (loadingOptions) {
-    return <AdminDataState title="Preparando formulario" description="Estamos cargando entrenadores y grupos activos del gym." />;
+    return <AdminDataState title={copy.loadingTitle} description={copy.loadingDescription} />;
   }
 
   return (
@@ -156,32 +232,30 @@ export function AdminUserCreateForm() {
             <ShieldPlus className="h-5 w-5" />
           </div>
           <div className="space-y-1">
-            <CardTitle>Crear usuario del gym</CardTitle>
-            <CardDescription>
-              BossFit generará un acceso corto y una contraseña temporal. Si el rol es miembro, puedes dejarlo asignado desde ahora.
-            </CardDescription>
+            <CardTitle>{copy.title}</CardTitle>
+            <CardDescription>{copy.description}</CardDescription>
           </div>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Label htmlFor="full-name">Nombre completo</Label>
-              <Input id="full-name" placeholder="Ej. Daniel Rojas" {...form.register("fullName")} />
+              <Label htmlFor="full-name">{copy.fullName}</Label>
+              <Input id="full-name" placeholder={copy.fullNamePlaceholder} {...form.register("fullName")} />
               {form.formState.errors.fullName ? <p className="mt-2 text-sm text-danger">{form.formState.errors.fullName.message}</p> : null}
             </div>
 
             <div>
-              <Label htmlFor="role">Rol</Label>
+              <Label htmlFor="role">{copy.role}</Label>
               <select id="role" className={selectClassName} {...form.register("role")}>
-                <option value="member">Miembro</option>
-                <option value="trainer">Entrenador</option>
-                <option value="admin">Admin</option>
+                <option value="member">{copy.member}</option>
+                <option value="trainer">{copy.trainer}</option>
+                <option value="admin">{copy.admin}</option>
               </select>
             </div>
 
             <div>
-              <Label htmlFor="gym-name">Gym</Label>
+              <Label htmlFor="gym-name">{copy.gym}</Label>
               <Input id="gym-name" value={context.gymName} readOnly />
             </div>
           </div>
@@ -189,9 +263,9 @@ export function AdminUserCreateForm() {
           {isMember ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="trainer-user-id">Entrenador</Label>
+                <Label htmlFor="trainer-user-id">{copy.assignedTrainer}</Label>
                 <select id="trainer-user-id" className={selectClassName} {...form.register("trainerUserId")}>
-                  <option value="">Sin asignar aún</option>
+                  <option value="">{copy.unassignedTrainer}</option>
                   {trainers.map((trainer) => (
                     <option key={trainer.userId} value={trainer.userId}>
                       {trainer.name}
@@ -200,9 +274,9 @@ export function AdminUserCreateForm() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="group-id">Grupo</Label>
+                <Label htmlFor="group-id">{copy.group}</Label>
                 <select id="group-id" className={selectClassName} {...form.register("groupId")}>
-                  <option value="">Sin grupo aún</option>
+                  <option value="">{copy.unassignedGroup}</option>
                   {groups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
@@ -213,20 +287,18 @@ export function AdminUserCreateForm() {
             </div>
           ) : (
             <div className="rounded-[22px] border border-border bg-background/80 p-4 text-sm text-muted-foreground dark:bg-white/[0.04]">
-              Los roles admin y entrenador se crean ya vinculados al gym. Luego podrás asignar bloques, grupos o permisos más finos desde el panel.
+              {copy.roleHelper}
             </div>
           )}
 
-          {serverError ? (
-            <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">{serverError}</div>
-          ) : null}
+          {serverError ? <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">{serverError}</div> : null}
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Creando usuario..." : "Crear usuario"}
+              {submitting ? copy.creating : copy.create}
             </Button>
             <Link href="/gym/users" className={buttonVariants({ variant: "outline" })}>
-              Volver a usuarios
+              {copy.backToUsers}
             </Link>
           </div>
         </form>
@@ -239,25 +311,25 @@ export function AdminUserCreateForm() {
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <CardTitle>Usuario listo</CardTitle>
+              <CardTitle>{copy.readyTitle}</CardTitle>
               <CardDescription>
-                Estas credenciales temporales ya pueden entrar a BossFit y quedaron vinculadas a {createdUser.gymName}.
+                {copy.readyDescription} {createdUser.gymName}.
               </CardDescription>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-              <p className="text-sm font-semibold text-card-foreground dark:text-white">Nombre</p>
+              <p className="text-sm font-semibold text-card-foreground dark:text-white">{copy.name}</p>
               <p className="mt-2 text-sm text-muted-foreground">{createdUser.fullName}</p>
             </div>
             <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-              <p className="text-sm font-semibold text-card-foreground dark:text-white">Rol</p>
+              <p className="text-sm font-semibold text-card-foreground dark:text-white">{copy.createdRole}</p>
               <p className="mt-2 text-sm text-muted-foreground">{roleLabels[createdUser.role]}</p>
             </div>
             <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-card-foreground dark:text-white">Usuario</p>
+                <p className="text-sm font-semibold text-card-foreground dark:text-white">{copy.username}</p>
                 <button type="button" onClick={() => void handleCopy(createdUser.alias, "alias")} className="text-sm font-semibold text-accent">
                   <Copy className="h-4 w-4" />
                 </button>
@@ -266,11 +338,11 @@ export function AdminUserCreateForm() {
                 <UserRound className="h-4 w-4" />
                 <span>{createdUser.alias}</span>
               </div>
-              {copiedField === "alias" ? <p className="mt-2 text-xs text-accent">Copiado</p> : null}
+              {copiedField === "alias" ? <p className="mt-2 text-xs text-accent">{copy.copied}</p> : null}
             </div>
             <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-card-foreground dark:text-white">Acceso completo</p>
+                <p className="text-sm font-semibold text-card-foreground dark:text-white">{copy.fullAccess}</p>
                 <button type="button" onClick={() => void handleCopy(createdUser.email, "email")} className="text-sm font-semibold text-accent">
                   <Copy className="h-4 w-4" />
                 </button>
@@ -279,11 +351,11 @@ export function AdminUserCreateForm() {
                 <Mail className="h-4 w-4" />
                 <span className="break-all">{createdUser.email}</span>
               </div>
-              {copiedField === "email" ? <p className="mt-2 text-xs text-accent">Copiado</p> : null}
+              {copiedField === "email" ? <p className="mt-2 text-xs text-accent">{copy.copied}</p> : null}
             </div>
             <div className="rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04] sm:col-span-2">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-card-foreground dark:text-white">Contraseña temporal</p>
+                <p className="text-sm font-semibold text-card-foreground dark:text-white">{copy.temporaryPassword}</p>
                 <button type="button" onClick={() => void handleCopy(createdUser.password, "password")} className="text-sm font-semibold text-accent">
                   <Copy className="h-4 w-4" />
                 </button>
@@ -292,19 +364,19 @@ export function AdminUserCreateForm() {
                 <KeyRound className="h-4 w-4" />
                 <span>{createdUser.password}</span>
               </div>
-              {copiedField === "password" ? <p className="mt-2 text-xs text-accent">Copiado</p> : null}
+              {copiedField === "password" ? <p className="mt-2 text-xs text-accent">{copy.copied}</p> : null}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
             <Button type="button" variant="secondary" onClick={() => setCreatedUser(null)}>
-              Crear otro
+              {copy.createAnother}
             </Button>
             <Link href="/gym/users" className={buttonVariants({ variant: "outline" })}>
-              Ver usuarios
+              {copy.viewUsers}
             </Link>
             <Link href="/gym/assignments" className={buttonVariants({ variant: "ghost" })}>
-              Revisar asignaciones
+              {copy.reviewAssignments}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </div>
@@ -313,7 +385,3 @@ export function AdminUserCreateForm() {
     </div>
   );
 }
-
-
-
-

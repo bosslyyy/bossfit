@@ -1,5 +1,5 @@
 ﻿import type { HabitFormValues } from "@/lib/validation/habit";
-import type { ReminderSettings, ThemeMode } from "@/types/habit";
+import type { AppLocale, ReminderSettings, ThemeMode } from "@/types/habit";
 import { toDateKey } from "@/lib/date";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { applyRemoteStateToStore } from "@/lib/supabase/hydrate-store";
@@ -14,7 +14,7 @@ interface ActionResponse<TResult> {
 async function getAccessToken() {
   const supabase = createSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase no esta configurado.");
+    throw new Error("Supabase is not configured.");
   }
 
   const { data, error } = await supabase.auth.getSession();
@@ -24,7 +24,7 @@ async function getAccessToken() {
 
   const accessToken = data.session?.access_token;
   if (!accessToken) {
-    throw new Error("No hay una sesion activa para actualizar tu cuenta.");
+    throw new Error("There is no active session for this account.");
   }
 
   return accessToken;
@@ -111,6 +111,13 @@ export function setThemeAction(theme: ThemeMode) {
   return runUserStateAction<{ theme: ThemeMode }>({
     type: "set_theme",
     theme
+  });
+}
+
+export function setLocaleAction(locale: AppLocale) {
+  return runUserStateAction<{ locale: AppLocale }>({
+    type: "set_locale",
+    locale
   });
 }
 

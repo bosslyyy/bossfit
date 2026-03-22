@@ -1,12 +1,16 @@
 ﻿import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { SnapshotMutationError, type CompletionMutationResult, type UndoMutationResult } from "@/lib/bossfit/snapshot-actions";
+import {
+  SnapshotMutationError,
+  type CompletionMutationResult,
+  type UndoMutationResult
+} from "@/lib/bossfit/snapshot-actions";
 import { DEFAULT_REMINDER_SETTINGS } from "@/lib/persistence";
 import type { BossFitRemoteState } from "@/lib/supabase/data";
 import { syncUserProjectionFromNormalizedState } from "@/lib/supabase/user-state-server";
 import { generateId } from "@/lib/utils";
 import type { HabitFormValues } from "@/lib/validation/habit";
-import type { Habit, ReminderSettings, ThemeMode } from "@/types/habit";
+import type { AppLocale, Habit, ReminderSettings, ThemeMode } from "@/types/habit";
 
 const SETTINGS_TABLE = "bossfit_user_settings";
 const HABITS_TABLE = "bossfit_habits";
@@ -34,6 +38,7 @@ interface HabitRow {
 
 interface ReminderSettingsRow {
   theme: ThemeMode;
+  locale: AppLocale | null;
   reminder_enabled: boolean;
   reminder_time: string;
   reminder_permission: ReminderSettings["permission"];
@@ -110,7 +115,7 @@ async function upsertReminderSettingsRow(
 ) {
   const { data: currentRow, error: currentError } = await supabase
     .from(SETTINGS_TABLE)
-    .select("theme, reminder_enabled, reminder_time, reminder_permission, reminder_last_sent_date")
+    .select("theme, locale, reminder_enabled, reminder_time, reminder_permission, reminder_last_sent_date")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -121,10 +126,12 @@ async function upsertReminderSettingsRow(
   const normalizedCurrentRow = (currentRow as ReminderSettingsRow | null) ?? null;
   const current = normalizeReminderSettings(normalizedCurrentRow);
   const currentTheme = normalizedCurrentRow?.theme ?? "light";
+  const currentLocale = normalizedCurrentRow?.locale ?? "es";
 
   const payload = {
     user_id: userId,
     theme: values.theme ?? currentTheme,
+    locale: values.locale ?? currentLocale,
     reminder_enabled: values.reminder_enabled ?? current.enabled,
     reminder_time: values.reminder_time ?? current.time,
     reminder_permission: values.reminder_permission ?? current.permission,
@@ -400,6 +407,16 @@ export async function setUserThemePreference(
   return { state, result: { theme } };
 }
 
+export async function setUserLocalePreference(
+  supabase: SupabaseClient,
+  userId: string,
+  locale: AppLocale
+): Promise<NormalizedActionResult<{ locale: AppLocale }>> {
+  await upsertReminderSettingsRow(supabase, userId, { locale });
+  const state = await syncState(supabase, userId, "sync");
+  return { state, result: { locale } };
+}
+
 export async function updateUserReminderSettingsPreference(
   supabase: SupabaseClient,
   userId: string,
@@ -457,8 +474,3 @@ export async function resetUserAppData(
   const state = await syncState(supabase, userId, "reset");
   return { state, result: { reset: true } };
 }
-
-
-
-
-

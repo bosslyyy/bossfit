@@ -1,5 +1,5 @@
-﻿import { WEEK_DAYS } from "@/lib/constants";
-import type { WeekdayKey } from "@/types/habit";
+﻿import { getIntlLocale, getWeekDays } from "@/lib/i18n";
+import type { AppLocale, WeekdayKey } from "@/types/habit";
 
 export function startOfDay(date: Date) {
   const next = new Date(date);
@@ -38,8 +38,8 @@ export function getWeekdayKey(date: Date): WeekdayKey {
   return keys[date.getDay()];
 }
 
-export function getWeekdayMeta(dayKey: WeekdayKey) {
-  return WEEK_DAYS.find((day) => day.key === dayKey) ?? WEEK_DAYS[0];
+export function getWeekdayMeta(dayKey: WeekdayKey, locale: AppLocale = "es") {
+  return getWeekDays(locale).find((day) => day.key === dayKey) ?? getWeekDays(locale)[0];
 }
 
 export function startOfWeek(date: Date = new Date()) {
@@ -77,38 +77,38 @@ export function getMonthGridDates(anchor: Date = new Date()) {
   return Array.from({ length: totalDays }, (_, index) => addDays(gridStart, index));
 }
 
-export function formatDayMonth(date: Date) {
-  return new Intl.DateTimeFormat("es-CR", {
+export function formatDayMonth(date: Date, locale: AppLocale = "es") {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     day: "numeric",
     month: "short"
   }).format(date);
 }
 
-export function formatMonthYear(date: Date) {
-  return new Intl.DateTimeFormat("es-CR", {
+export function formatMonthYear(date: Date, locale: AppLocale = "es") {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     month: "long",
     year: "numeric"
   }).format(date);
 }
 
-export function formatLongDate(date: Date) {
-  return new Intl.DateTimeFormat("es-CR", {
+export function formatLongDate(date: Date, locale: AppLocale = "es") {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     weekday: "long",
     day: "numeric",
     month: "long"
   }).format(date);
 }
 
-export function getGreeting(date: Date = new Date()) {
+export function getGreeting(date: Date = new Date(), locale: AppLocale = "es") {
   const hour = date.getHours();
 
   if (hour < 12) {
-    return "Buenos días";
+    return locale === "en" ? "Good morning" : "Buenos días";
   }
 
   if (hour < 19) {
-    return "Buenas tardes";
+    return locale === "en" ? "Good afternoon" : "Buenas tardes";
   }
 
-  return "Buenas noches";
+  return locale === "en" ? "Good evening" : "Buenas noches";
 }

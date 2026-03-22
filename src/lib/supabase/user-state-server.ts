@@ -1,4 +1,4 @@
-﻿import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { STORAGE_VERSION } from "@/lib/constants";
 import { DEFAULT_REMINDER_SETTINGS } from "@/lib/persistence";
@@ -16,7 +16,7 @@ import {
   type SaveRemoteStateOptions,
   type SaveRemoteStateResult
 } from "@/lib/supabase/data";
-import type { Habit, ReminderSettings } from "@/types/habit";
+import type { AppLocale, Habit, ReminderSettings } from "@/types/habit";
 
 const USER_STATE_TABLE = "bossfit_user_state";
 const USER_STATE_HISTORY_TABLE = "bossfit_user_state_history";
@@ -59,6 +59,7 @@ interface BossFitRemoteHistoryRow {
 interface BossFitUserSettingsRow {
   user_id: string;
   theme: BossFitRemoteSnapshot["theme"];
+  locale: AppLocale | null;
   reminder_enabled: boolean;
   reminder_time: string;
   reminder_permission: ReminderSettings["permission"];
@@ -147,7 +148,8 @@ function isNormalizedStateSchemaFallbackError(error: unknown) {
     source.includes("archived_at") ||
     source.includes("deleted_at") ||
     source.includes("rest_enabled") ||
-    source.includes("rest_seconds")
+    source.includes("rest_seconds") ||
+    source.includes("locale")
   );
 }
 
@@ -270,12 +272,17 @@ function buildSnapshotFromNormalizedRows(rows: NormalizedStateRows): BossFitRemo
       completedAt: row.completed_at ?? undefined
     })),
     theme: rowToTheme(rows.settingsRow),
+    locale: rowToLocale(rows.settingsRow),
     reminderSettings: normalizeReminderSettings(rows.settingsRow)
   };
 }
 
 function rowToTheme(row: BossFitUserSettingsRow | null): BossFitRemoteSnapshot["theme"] {
   return row?.theme ?? "light";
+}
+
+function rowToLocale(row: BossFitUserSettingsRow | null): BossFitRemoteSnapshot["locale"] {
+  return row?.locale === "en" ? "en" : "es";
 }
 
 function getLatestNormalizedTimestamp(rows: NormalizedStateRows) {
@@ -404,13 +411,13 @@ async function fetchNormalizedStateRows(
   const [settingsResult, habitsResult, completionsResult] = await Promise.all([
     supabase
       .from(USER_SETTINGS_TABLE)
-      .select("user_id, theme, reminder_enabled, reminder_time, reminder_permission, reminder_last_sent_date, updated_at")
+      .select("user_id, theme, locale, reminder_enabled, reminder_time, reminder_permission, reminder_last_sent_date, updated_at")
       .eq("user_id", userId)
       .maybeSingle(),
     supabase
       .from(USER_HABITS_TABLE)
       .select(
-        "user_id, habit_id, name, category, tracking_mode, target_sets, reps_per_set, seconds_per_set, selected_days, is_active, color, icon, level, created_at, updated_at, archived_at"
+        "user_id, habit_id, name, category, tracking_mode, target_sets, reps_per_set, seconds_per_set, rest_enabled, rest_seconds, selected_days, is_active, color, icon, level, created_at, updated_at, archived_at"
       )
       .eq("user_id", userId)
       .is("archived_at", null)
@@ -569,6 +576,7 @@ async function replaceNormalizedStateWithSnapshot(
     const settingsPayload = {
       user_id: userId,
       theme: normalizedSnapshot.theme,
+      locale: normalizedSnapshot.locale,
       reminder_enabled: normalizedSnapshot.reminderSettings.enabled,
       reminder_time: normalizedSnapshot.reminderSettings.time,
       reminder_permission: normalizedSnapshot.reminderSettings.permission,
@@ -852,6 +860,7 @@ export async function fetchUserRemoteStateOrEmpty(
     ...buildRemoteMetrics(snapshot)
   };
 }
+
 
 
 

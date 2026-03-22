@@ -1,5 +1,5 @@
 ﻿import { toDateKey } from "@/lib/date";
-import type { ReminderPermissionState, ReminderSettings } from "@/types/habit";
+import type { AppLocale, ReminderPermissionState, ReminderSettings } from "@/types/habit";
 
 export interface ReminderSupport {
   supported: boolean;
@@ -21,12 +21,15 @@ function isStandaloneMode() {
   return standaloneMatch || navigatorStandalone;
 }
 
-export function getReminderSupport(): ReminderSupport {
+export function getReminderSupport(locale: AppLocale = "es"): ReminderSupport {
   if (typeof window === "undefined" || typeof Notification === "undefined") {
     return {
       supported: false,
       permission: "unsupported",
-      platformHint: "Este navegador no expone la Notifications API para BossFit."
+      platformHint:
+        locale === "en"
+          ? "This browser does not expose the Notifications API for BossFit."
+          : "Este navegador no expone la Notifications API para BossFit."
     };
   }
 
@@ -38,7 +41,9 @@ export function getReminderSupport(): ReminderSupport {
       supported: true,
       permission: Notification.permission,
       platformHint:
-        "En iPhone y iPad los recordatorios son más fiables si BossFit está instalada en la pantalla de inicio."
+        locale === "en"
+          ? "On iPhone and iPad, reminders are more reliable if BossFit is installed on the home screen."
+          : "En iPhone y iPad los recordatorios son más fiables si BossFit está instalada en la pantalla de inicio."
     };
   }
 
@@ -46,7 +51,9 @@ export function getReminderSupport(): ReminderSupport {
     supported: true,
     permission: Notification.permission,
     platformHint:
-      "Los recordatorios funcionan mientras BossFit esté abierta. Sin backend ni push remoto no hay programación persistente garantizada."
+      locale === "en"
+        ? "Reminders work while BossFit is open. Without a backend or remote push there is no guaranteed persistent scheduling."
+        : "Los recordatorios funcionan mientras BossFit esté abierta. Sin backend ni push remoto no hay programación persistente garantizada."
   };
 }
 
@@ -75,19 +82,18 @@ export function isReminderDue(settings: ReminderSettings, now: Date = new Date()
   );
 }
 
-export function getReminderPermissionLabel(permission: ReminderPermissionState) {
+export function getReminderPermissionLabel(permission: ReminderPermissionState, locale: AppLocale = "es") {
   if (permission === "unsupported") {
-    return "No compatible";
+    return locale === "en" ? "Unsupported" : "No compatible";
   }
 
   if (permission === "granted") {
-    return "Permitidas";
+    return locale === "en" ? "Allowed" : "Permitidas";
   }
 
   if (permission === "denied") {
-    return "Bloqueadas";
+    return locale === "en" ? "Blocked" : "Bloqueadas";
   }
 
-  return "Sin configurar";
+  return locale === "en" ? "Not set" : "Sin configurar";
 }
-

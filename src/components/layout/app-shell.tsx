@@ -4,9 +4,10 @@ import type { PropsWithChildren } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { AuthGuard } from "@/components/auth/auth-guard";
 import { SupabaseAuthProvider } from "@/components/auth/supabase-auth-provider";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import { SupabaseSync } from "@/components/auth/supabase-sync";
+import { LocaleSync } from "@/components/i18n/locale-sync";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { FloatingCreateButton } from "@/components/layout/floating-create-button";
 import { ReminderRunner } from "@/components/pwa/reminder-runner";
@@ -27,6 +28,7 @@ export function AppShell({ children }: PropsWithChildren) {
 
   return (
     <SupabaseAuthProvider>
+      <LocaleSync />
       <ThemeSync />
       <ServiceWorkerRegister />
       <AuthGuard>

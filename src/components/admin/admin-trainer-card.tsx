@@ -1,7 +1,10 @@
-﻿import type { ReactNode } from "react";
+"use client";
+
+import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import type { AdminTrainerListItem } from "@/lib/supabase/admin";
 
 const statusStyles: Record<AdminTrainerListItem["status"], string> = {
@@ -11,19 +14,33 @@ const statusStyles: Record<AdminTrainerListItem["status"], string> = {
   suspended: "bg-[#FFF0F0] text-[#B44141] dark:bg-[#2B1515] dark:text-[#FF9A9A]"
 };
 
-function getLoadLabel(membersCount: number) {
+function getLoadLabel(membersCount: number, locale: "es" | "en") {
   if (membersCount >= 18) {
-    return "Carga alta";
+    return locale === "en" ? "High load" : "Carga alta";
   }
 
   if (membersCount >= 10) {
-    return "Carga media";
+    return locale === "en" ? "Medium load" : "Carga media";
   }
 
-  return "Con cupo";
+  return locale === "en" ? "Has room" : "Con cupo";
 }
 
 export function AdminTrainerCard({ trainer, action }: { trainer: AdminTrainerListItem; action?: ReactNode }) {
+  const locale = useAppLocale();
+  const copy =
+    locale === "en"
+      ? {
+          members: "Members",
+          groups: "Groups",
+          status: "Status"
+        }
+      : {
+          members: "Miembros",
+          groups: "Grupos",
+          status: "Estado"
+        };
+
   return (
     <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
       <div className="flex items-start justify-between gap-4">
@@ -33,21 +50,21 @@ export function AdminTrainerCard({ trainer, action }: { trainer: AdminTrainerLis
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Badge className={statusStyles[trainer.status]}>{trainer.status}</Badge>
-          <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{getLoadLabel(trainer.membersCount)}</Badge>
+          <Badge className="bg-accent/12 text-accent ring-1 ring-accent/20">{getLoadLabel(trainer.membersCount, locale)}</Badge>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04] sm:grid-cols-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Miembros</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.members}</p>
           <p className="mt-2 font-display text-2xl font-semibold text-card-foreground dark:text-white">{trainer.membersCount}</p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Grupos</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.groups}</p>
           <p className="mt-2 font-display text-2xl font-semibold text-card-foreground dark:text-white">{trainer.groupsCount}</p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Estado</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.status}</p>
           <p className="mt-2 text-sm font-semibold text-card-foreground dark:text-white">{trainer.status}</p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -14,6 +14,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { getIntlLocale } from "@/lib/i18n";
 import {
   addPlatformAdminUserToGym,
   fetchPlatformAdminGyms,
@@ -40,14 +42,6 @@ type MembershipDraft = {
   extraRoles: PlatformAdminGymRole[];
 };
 
-function formatDate(value?: string) {
-  if (!value) {
-    return "Sin fecha";
-  }
-
-  return new Intl.DateTimeFormat("es-CR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
-}
-
 function normalizeExtraRoles(primaryRole: PlatformAdminGymRole, extraRoles: PlatformAdminGymRole[] = []) {
   return [...new Set(extraRoles.filter((role) => role !== primaryRole))];
 }
@@ -64,18 +58,93 @@ function toggleRole(roles: PlatformAdminGymRole[], role: PlatformAdminGymRole) {
   return roles.includes(role) ? roles.filter((current) => current !== role) : [...roles, role];
 }
 
+function formatDate(value: string | undefined, locale: "es" | "en", withTime = true) {
+  if (!value) {
+    return locale === "en" ? "No date" : "Sin fecha";
+  }
+
+  return new Intl.DateTimeFormat(getIntlLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" }).format(new Date(value));
+}
+
+function translateRole(role: PlatformAdminGymRole, locale: "es" | "en") {
+  const labels: Record<PlatformAdminGymRole, string> =
+    locale === "en"
+      ? { owner: "Owner", admin: "Admin", trainer: "Trainer", member: "Member" }
+      : { owner: "Owner", admin: "Admin", trainer: "Entrenador", member: "Miembro" };
+
+  return labels[role];
+}
+
+function translateMembershipStatus(status: PlatformAdminMembershipStatus, locale: "es" | "en") {
+  const labels: Record<PlatformAdminMembershipStatus, string> =
+    locale === "en"
+      ? { active: "Active", invited: "Invited", paused: "Paused", suspended: "Suspended" }
+      : { active: "Activo", invited: "Invitado", paused: "Pausado", suspended: "Suspendido" };
+
+  return labels[status];
+}
+
+function translateAssignmentStatus(status: PlatformAdminUserMembershipItem["assignmentStatus"], locale: "es" | "en") {
+  const labels =
+    locale === "en"
+      ? { active: "Active", pending: "Pending", paused: "Paused" }
+      : { active: "Activa", pending: "Pendiente", paused: "Pausada" };
+
+  return status ? labels[status] : locale === "en" ? "No assignment" : "Sin asignación";
+}
+
+function translateSaveReason(value: string | undefined, locale: "es" | "en") {
+  if (!value) {
+    return locale === "en" ? "updated" : "actualizado";
+  }
+
+  const labels: Record<string, string> =
+    locale === "en"
+      ? {
+          sync: "sync",
+          reset: "reset",
+          signout: "sign out",
+          pagehide: "background",
+          bootstrap: "bootstrap",
+          recovery: "recovery"
+        }
+      : {
+          sync: "sync",
+          reset: "reinicio",
+          signout: "cierre de sesión",
+          pagehide: "segundo plano",
+          bootstrap: "bootstrap",
+          recovery: "recuperación"
+        };
+
+  return labels[value] ?? value;
+}
+
 function RoleCheckboxGroup({
   primaryRole,
   extraRoles,
-  onChange
+  onChange,
+  locale
 }: {
   primaryRole: PlatformAdminGymRole;
   extraRoles: PlatformAdminGymRole[];
   onChange: (nextRoles: PlatformAdminGymRole[]) => void;
+  locale: "es" | "en";
 }) {
+  const copy =
+    locale === "en"
+      ? {
+          title: "Additional roles",
+          primary: "primary"
+        }
+      : {
+          title: "Roles adicionales",
+          primary: "principal"
+        };
+
   return (
     <div className="space-y-2">
-      <Label>Roles adicionales</Label>
+      <Label>{copy.title}</Label>
       <div className="grid gap-2 sm:grid-cols-2">
         {membershipRoles.map((role) => {
           const disabled = role === primaryRole;
@@ -98,8 +167,8 @@ function RoleCheckboxGroup({
                   onChange(normalizeExtraRoles(primaryRole, toggleRole(extraRoles, role)));
                 }}
               />
-              <span className="capitalize">{role}</span>
-              {disabled ? <span className="text-xs text-muted-foreground">principal</span> : null}
+              <span>{translateRole(role, locale)}</span>
+              {disabled ? <span className="text-xs text-muted-foreground">{copy.primary}</span> : null}
             </label>
           );
         })}
@@ -112,6 +181,7 @@ export default function PlatformAdminUserDetailPage() {
   const params = useParams<{ userId: string }>();
   const userId = typeof params?.userId === "string" ? params.userId : "";
   const { session } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [detail, setDetail] = useState<PlatformAdminUserDetail | null>(null);
   const [gyms, setGyms] = useState<PlatformAdminGymListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +198,113 @@ export default function PlatformAdminUserDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState<PlatformAdminMembershipStatus>("active");
   const [selectedExtraRoles, setSelectedExtraRoles] = useState<PlatformAdminGymRole[]>([]);
   const [membershipDrafts, setMembershipDrafts] = useState<Record<string, MembershipDraft>>({});
+
+  const copy =
+    locale === "en"
+      ? {
+          notFound: "We could not find that account.",
+          loadError: "Could not load the technical profile.",
+          saveError: "Could not save the technical profile.",
+          addGymError: "Could not link the user to the gym.",
+          membershipError: "Could not update the membership.",
+          loadingTitle: "Loading technical profile",
+          loadingDescription: "Gathering identity, permissions, and gym memberships.",
+          retry: "Retry",
+          missingTitle: "We could not find that account",
+          missingDescription: "It may no longer exist or may not have synced its profile yet.",
+          titleDescription: "Global technical profile for identity, platform permissions, and gym memberships.",
+          backToUsers: "Back to users",
+          account: "Account",
+          gyms: "Gyms",
+          habits: "Habits",
+          sync: "Sync",
+          currentLevel: "current level",
+          linkedMemberships: "linked memberships",
+          completions: "completions",
+          globalIdentity: "Identity and global permissions",
+          platformLabel: "Platform label",
+          managedType: "Managed",
+          naturalType: "Natural",
+          email: "Email",
+          username: "Username",
+          fullName: "Full name",
+          platformLabelField: "Platform label",
+          fullPlatformAccess: "Grant full platform permissions (/admin)",
+          created: "Created",
+          lastAccess: "Last access",
+          emailConfirmed: "Email confirmed",
+          type: "Type",
+          saveProfile: "Save profile",
+          saving: "Saving...",
+          addToGym: "Add to a gym",
+          addToGymDescription: "Turn a natural or managed account into a member, trainer, admin, or owner of an existing gym.",
+          gym: "Gym",
+          primaryRole: "Primary role",
+          status: "Status",
+          noGymsAvailable: "No gyms available",
+          linking: "Linking...",
+          addToGymAction: "Add to gym",
+          gymPermissions: "Permissions by gym",
+          gymPermissionsDescription: "Manage primary role, secondary roles, and status without changing the account identity.",
+          noMembershipTitle: "This account does not belong to any gym",
+          noMembershipDescription: "Use the form above to link it to its first operation.",
+          assignment: "Assignment",
+          noTrainer: "No trainer",
+          noGroup: "No group",
+          saveMembership: "Save membership"
+        }
+      : {
+          notFound: "No encontramos esa cuenta.",
+          loadError: "No se pudo cargar la ficha técnica.",
+          saveError: "No se pudo guardar la ficha técnica.",
+          addGymError: "No se pudo vincular el usuario al gym.",
+          membershipError: "No se pudo actualizar la membership.",
+          loadingTitle: "Cargando ficha técnica",
+          loadingDescription: "Estamos reuniendo identidad, permisos y memberships del usuario.",
+          retry: "Reintentar",
+          missingTitle: "No encontramos esa cuenta",
+          missingDescription: "Puede que ya no exista o que no haya sincronizado su perfil.",
+          titleDescription: "Ficha técnica global para identidad, permisos de plataforma y memberships por gym.",
+          backToUsers: "Volver a usuarios",
+          account: "Cuenta",
+          gyms: "Gyms",
+          habits: "Hábitos",
+          sync: "Sync",
+          currentLevel: "nivel actual",
+          linkedMemberships: "memberships vinculadas",
+          completions: "completions",
+          globalIdentity: "Identidad y permisos globales",
+          platformLabel: "Etiqueta platform",
+          managedType: "Gestionada",
+          naturalType: "Natural",
+          email: "Email",
+          username: "Username",
+          fullName: "Nombre completo",
+          platformLabelField: "Etiqueta platform",
+          fullPlatformAccess: "Dar permisos de plataforma completos (/admin)",
+          created: "Creada",
+          lastAccess: "Último acceso",
+          emailConfirmed: "Email confirmado",
+          type: "Tipo",
+          saveProfile: "Guardar ficha",
+          saving: "Guardando...",
+          addToGym: "Agregar a un gym",
+          addToGymDescription: "Convierte una cuenta natural o gestionada en miembro, trainer, admin u owner de un gym existente.",
+          gym: "Gym",
+          primaryRole: "Rol principal",
+          status: "Estado",
+          noGymsAvailable: "Sin gyms disponibles",
+          linking: "Vinculando...",
+          addToGymAction: "Agregar al gym",
+          gymPermissions: "Permisos por gym",
+          gymPermissionsDescription: "Gestiona rol principal, roles adicionales y estado sin tocar la identidad global de la cuenta.",
+          noMembershipTitle: "Esta cuenta no pertenece a ning�n gym",
+          noMembershipDescription: "Usa el formulario superior para vincularla a su primera operación.",
+          assignment: "Asignaci�n",
+          noTrainer: "Sin entrenador",
+          noGroup: "Sin grupo",
+          saveMembership: "Guardar membership"
+        };
 
   const hydrateDetail = (nextDetail: PlatformAdminUserDetail) => {
     setDetail(nextDetail);
@@ -156,14 +333,14 @@ export default function PlatformAdminUserDetailPage() {
 
       if (!nextDetail) {
         setDetail(null);
-        setError("No encontramos esa cuenta.");
+        setError(copy.notFound);
         return;
       }
 
       hydrateDetail(nextDetail);
       setGyms(nextGyms);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la ficha técnica.");
+      setError(loadError instanceof Error ? loadError.message : copy.loadError);
       setDetail(null);
     } finally {
       setLoading(false);
@@ -213,7 +390,7 @@ export default function PlatformAdminUserDetailPage() {
         hydrateDetail(nextDetail);
       }
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar la ficha técnica.");
+      setError(saveError instanceof Error ? saveError.message : copy.saveError);
     } finally {
       setSavingProfile(false);
     }
@@ -240,7 +417,7 @@ export default function PlatformAdminUserDetailPage() {
         setSelectedExtraRoles([]);
       }
     } catch (membershipError) {
-      setError(membershipError instanceof Error ? membershipError.message : "No se pudo vincular el usuario al gym.");
+      setError(membershipError instanceof Error ? membershipError.message : copy.addGymError);
     } finally {
       setAddingMembership(false);
     }
@@ -265,145 +442,145 @@ export default function PlatformAdminUserDetailPage() {
         hydrateDetail(nextDetail);
       }
     } catch (membershipError) {
-      setError(membershipError instanceof Error ? membershipError.message : "No se pudo actualizar la membership.");
+      setError(membershipError instanceof Error ? membershipError.message : copy.membershipError);
     } finally {
       setMembershipSavingId(null);
     }
   };
 
   if (loading) {
-    return <AdminDataState title="Cargando ficha técnica" description="Estamos reuniendo identidad, permisos y memberships del usuario." />;
+    return <AdminDataState title={copy.loadingTitle} description={copy.loadingDescription} />;
   }
 
   if (error && !detail) {
-    return <AdminDataState title="No pudimos cargar la ficha" description={error} actionLabel="Reintentar" onAction={() => void loadDetail()} tone="warning" />;
+    return <AdminDataState title={copy.loadError} description={error} actionLabel={copy.retry} onAction={() => void loadDetail()} tone="warning" />;
   }
 
   if (!detail) {
-    return <AdminDataState title="No encontramos esa cuenta" description="Puede que ya no exista o que no haya sincronizado su perfil." tone="warning" />;
+    return <AdminDataState title={copy.missingTitle} description={copy.missingDescription} tone="warning" />;
   }
 
   return (
     <div className="space-y-6">
       <AdminSectionHeader
         title={detail.name}
-        description="Ficha técnica global para identidad, permisos de plataforma y memberships por gym."
-        action={<Link href="/admin/users" className={buttonVariants({ variant: "outline" })}>Volver a usuarios</Link>}
+        description={copy.titleDescription}
+        action={<Link href="/admin/users" className={buttonVariants({ variant: "outline" })}>{copy.backToUsers}</Link>}
       />
 
       {error ? <div className="rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
       <div className="grid gap-4 xl:grid-cols-4">
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <div className="flex items-center gap-2 text-muted-foreground"><UserRound className="h-4 w-4 text-accent" /> Cuenta</div>
+          <div className="flex items-center gap-2 text-muted-foreground"><UserRound className="h-4 w-4 text-accent" /> {copy.account}</div>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.technicalState.level}</p>
-          <p className="text-sm text-muted-foreground">nivel actual</p>
+          <p className="text-sm text-muted-foreground">{copy.currentLevel}</p>
         </Card>
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4 text-accent" /> Gyms</div>
+          <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4 text-accent" /> {copy.gyms}</div>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.memberships.length}</p>
-          <p className="text-sm text-muted-foreground">memberships vinculadas</p>
+          <p className="text-sm text-muted-foreground">{copy.linkedMemberships}</p>
         </Card>
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <div className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-accent" /> Hábitos</div>
+          <div className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-accent" /> {copy.habits}</div>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.technicalState.habitsCount}</p>
-          <p className="text-sm text-muted-foreground">completions: {detail.technicalState.completionsCount}</p>
+          <p className="text-sm text-muted-foreground">{copy.completions}: {detail.technicalState.completionsCount}</p>
         </Card>
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <div className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-accent" /> Sync</div>
+          <div className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-accent" /> {copy.sync}</div>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">r{detail.technicalState.revision}</p>
-          <p className="text-sm text-muted-foreground">{formatDate(detail.technicalState.updatedAt)}</p>
+          <p className="text-sm text-muted-foreground">{formatDate(detail.technicalState.updatedAt, locale)}</p>
         </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
         <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
           <div className="space-y-1">
-            <CardTitle>Identidad y permisos globales</CardTitle>
+            <CardTitle>{copy.globalIdentity}</CardTitle>
             <CardDescription>ID: {detail.userId}</CardDescription>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Email</Label>
+              <Label>{copy.email}</Label>
               <Input value={detail.email} disabled />
             </div>
             <div>
-              <Label>Username</Label>
-              <Input value={username} onChange={(event) => setUsername(event.target.value.toLowerCase())} placeholder="usuario" />
+              <Label>{copy.username}</Label>
+              <Input value={username} onChange={(event) => setUsername(event.target.value.toLowerCase())} placeholder="username" />
             </div>
             <div>
-              <Label>Nombre completo</Label>
-              <Input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Nombre real" />
+              <Label>{copy.fullName}</Label>
+              <Input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder={copy.fullName} />
             </div>
             <div>
-              <Label>Etiqueta platform</Label>
+              <Label>{copy.platformLabelField}</Label>
               <Input value={platformAdminLabel} onChange={(event) => setPlatformAdminLabel(event.target.value)} placeholder="BossFit Owners" />
             </div>
           </div>
 
           <label className="flex items-center gap-3 rounded-[20px] border border-border bg-background/80 px-4 py-3 text-sm dark:bg-white/[0.04]">
             <input type="checkbox" checked={platformAdminActive} onChange={(event) => setPlatformAdminActive(event.target.checked)} />
-            <span>Dar permisos de plataforma completos (/admin)</span>
+            <span>{copy.fullPlatformAccess}</span>
           </label>
 
           <div className="grid gap-3 sm:grid-cols-2 text-sm">
             <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-              <p className="text-muted-foreground">Creada</p>
-              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.createdAt)}</p>
+              <p className="text-muted-foreground">{copy.created}</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.createdAt, locale)}</p>
             </div>
             <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-              <p className="text-muted-foreground">Último acceso</p>
-              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.lastSignInAt)}</p>
+              <p className="text-muted-foreground">{copy.lastAccess}</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.lastSignInAt, locale)}</p>
             </div>
             <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-              <p className="text-muted-foreground">Email confirmado</p>
-              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.emailConfirmedAt)}</p>
+              <p className="text-muted-foreground">{copy.emailConfirmed}</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{formatDate(detail.emailConfirmedAt, locale)}</p>
             </div>
             <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-              <p className="text-muted-foreground">Tipo</p>
-              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{detail.isManagedAccount ? "Gestionada" : "Natural"}</p>
+              <p className="text-muted-foreground">{copy.type}</p>
+              <p className="mt-2 font-semibold text-card-foreground dark:text-white">{detail.isManagedAccount ? copy.managedType : copy.naturalType}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => void handleSaveProfile()} disabled={savingProfile}>{savingProfile ? "Guardando..." : "Guardar ficha"}</Button>
+            <Button onClick={() => void handleSaveProfile()} disabled={savingProfile}>{savingProfile ? copy.saving : copy.saveProfile}</Button>
           </div>
         </Card>
 
         <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
           <div className="space-y-1">
-            <CardTitle>Agregar a un gym</CardTitle>
-            <CardDescription>Convierte una cuenta natural o gestionada en miembro, trainer, admin u owner de un gym existente.</CardDescription>
+            <CardTitle>{copy.addToGym}</CardTitle>
+            <CardDescription>{copy.addToGymDescription}</CardDescription>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <Label>Gym</Label>
+              <Label>{copy.gym}</Label>
               <select className={selectClassName} value={selectedGymId} onChange={(event) => setSelectedGymId(event.target.value)}>
-                {availableGyms.length === 0 ? <option value="">Sin gyms disponibles</option> : null}
+                {availableGyms.length === 0 ? <option value="">{copy.noGymsAvailable}</option> : null}
                 {availableGyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}
               </select>
             </div>
             <div>
-              <Label>Rol principal</Label>
+              <Label>{copy.primaryRole}</Label>
               <select className={selectClassName} value={selectedRole} onChange={(event) => setSelectedRole(event.target.value as PlatformAdminGymRole)}>
-                {membershipRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+                {membershipRoles.map((role) => <option key={role} value={role}>{translateRole(role, locale)}</option>)}
               </select>
             </div>
             <div>
-              <Label>Estado</Label>
+              <Label>{copy.status}</Label>
               <select className={selectClassName} value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value as PlatformAdminMembershipStatus)}>
-                {membershipStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                {membershipStatuses.map((status) => <option key={status} value={status}>{translateMembershipStatus(status, locale)}</option>)}
               </select>
             </div>
           </div>
 
-          <RoleCheckboxGroup primaryRole={selectedRole} extraRoles={selectedExtraRoles} onChange={setSelectedExtraRoles} />
+          <RoleCheckboxGroup primaryRole={selectedRole} extraRoles={selectedExtraRoles} onChange={setSelectedExtraRoles} locale={locale} />
 
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => void handleAddMembership()} disabled={addingMembership || !selectedGymId || availableGyms.length === 0}>
-              {addingMembership ? "Vinculando..." : "Agregar al gym"}
+              {addingMembership ? copy.linking : copy.addToGymAction}
             </Button>
           </div>
         </Card>
@@ -411,12 +588,12 @@ export default function PlatformAdminUserDetailPage() {
 
       <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
         <div className="space-y-1">
-          <CardTitle>Permisos por gym</CardTitle>
-          <CardDescription>Gestiona rol principal, roles adicionales y estado sin tocar la identidad global de la cuenta.</CardDescription>
+          <CardTitle>{copy.gymPermissions}</CardTitle>
+          <CardDescription>{copy.gymPermissionsDescription}</CardDescription>
         </div>
 
         {detail.memberships.length === 0 ? (
-          <AdminDataState title="Esta cuenta no pertenece a ningún gym" description="Usa el formulario superior para vincularla a su primera operación." />
+          <AdminDataState title={copy.noMembershipTitle} description={copy.noMembershipDescription} />
         ) : (
           <div className="space-y-4">
             {detail.memberships.map((membership) => {
@@ -429,21 +606,21 @@ export default function PlatformAdminUserDetailPage() {
                       <p className="mt-1 text-sm text-muted-foreground">/{membership.gymSlug}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {membership.effectiveRoles.map((role) => (
-                          <Badge key={role} className="bg-surface text-card-foreground ring-1 ring-border">{role}</Badge>
+                          <Badge key={role} className="bg-surface text-card-foreground ring-1 ring-border">{translateRole(role, locale)}</Badge>
                         ))}
                       </div>
                       <p className="mt-3 text-sm text-muted-foreground">
-                        Asignación: {membership.assignmentStatus || "Sin asignación"}
-                        {membership.trainerName ? ` · trainer ${membership.trainerName}` : ""}
-                        {membership.groupName ? ` · grupo ${membership.groupName}` : ""}
+                        {copy.assignment}: {translateAssignmentStatus(membership.assignmentStatus, locale)}
+                        {membership.trainerName ? ` · ${locale === "en" ? "trainer" : "trainer"} ${membership.trainerName}` : ""}
+                        {membership.groupName ? ` · ${locale === "en" ? "group" : "grupo"} ${membership.groupName}` : ""}
                       </p>
                     </div>
-                    <Badge className="bg-surface text-card-foreground ring-1 ring-border">{membership.status}</Badge>
+                    <Badge className="bg-surface text-card-foreground ring-1 ring-border">{translateMembershipStatus(membership.status, locale)}</Badge>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label>Rol principal</Label>
+                      <Label>{copy.primaryRole}</Label>
                       <select
                         className={selectClassName}
                         value={draft.role}
@@ -459,17 +636,17 @@ export default function PlatformAdminUserDetailPage() {
                           }));
                         }}
                       >
-                        {membershipRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+                        {membershipRoles.map((role) => <option key={role} value={role}>{translateRole(role, locale)}</option>)}
                       </select>
                     </div>
                     <div>
-                      <Label>Estado</Label>
+                      <Label>{copy.status}</Label>
                       <select
                         className={selectClassName}
                         value={draft.status}
                         onChange={(event) => setMembershipDrafts((current) => ({ ...current, [membership.gymId]: { ...draft, status: event.target.value as PlatformAdminMembershipStatus } }))}
                       >
-                        {membershipStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                        {membershipStatuses.map((status) => <option key={status} value={status}>{translateMembershipStatus(status, locale)}</option>)}
                       </select>
                     </div>
                   </div>
@@ -483,11 +660,12 @@ export default function PlatformAdminUserDetailPage() {
                         [membership.gymId]: { ...draft, extraRoles: normalizeExtraRoles(draft.role, nextRoles) }
                       }))
                     }
+                    locale={locale}
                   />
 
                   <div className="flex items-end gap-3">
                     <Button onClick={() => void handleSaveMembership(membership.gymId)} disabled={membershipSavingId === membership.gymId}>
-                      {membershipSavingId === membership.gymId ? "Guardando..." : "Guardar membership"}
+                      {membershipSavingId === membership.gymId ? copy.saving : copy.saveMembership}
                     </Button>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -13,6 +13,7 @@ import { buttonVariants, Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { createPlatformAdminGym, fetchPlatformAdminGyms } from "@/lib/supabase/platform-admin";
 import type { PlatformAdminGymListItem } from "@/types/platform-admin";
 
@@ -27,6 +28,7 @@ function slugify(value: string) {
 
 export default function PlatformAdminGymsPage() {
   const { session } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [gyms, setGyms] = useState<PlatformAdminGymListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +38,71 @@ export default function PlatformAdminGymsPage() {
   const [contactEmail, setContactEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [ownerIdentifier, setOwnerIdentifier] = useState("");
+
+  const copy =
+    locale === "en"
+      ? {
+          loadError: "Could not load gyms.",
+          createError: "Could not create the gym.",
+          title: "Gyms",
+          description: "Create gyms, assign owners, and open the operational profile for each location.",
+          totalGyms: "Total gyms",
+          active: "Active",
+          totalMembers: "Total members",
+          createTitle: "Create gym",
+          createDescription: "Create a new gym and optionally assign an existing owner by email or username.",
+          name: "Name",
+          namePlaceholder: "Ex. BossFit Escazu",
+          slug: "Slug",
+          initialOwner: "Initial owner",
+          initialOwnerPlaceholder: "email or username",
+          contactEmail: "Contact email",
+          phone: "Phone",
+          creating: "Creating gym...",
+          create: "Create gym",
+          loadingTitle: "Loading gyms",
+          loadingDescription: "Consulting the full gym network.",
+          emptyTitle: "No gyms yet",
+          emptyDescription: "Create the first one above to start the platform operation.",
+          inactive: "Inactive",
+          owners: "Owners",
+          noOwner: "No owner",
+          activeMemberships: "Active memberships",
+          staff: "Staff",
+          linkedMembers: "Members",
+          openGym: "Open gym profile"
+        }
+      : {
+          loadError: "No se pudieron cargar los gyms.",
+          createError: "No se pudo crear el gym.",
+          title: "Gyms",
+          description: "Crea gyms, asigna owners y abre la ficha operativa de cada instalación.",
+          totalGyms: "Gyms totales",
+          active: "Activos",
+          totalMembers: "Miembros totales",
+          createTitle: "Crear gym",
+          createDescription: "Crea un gym nuevo y, si quieres, asígnale un owner existente por email o username.",
+          name: "Nombre",
+          namePlaceholder: "Ej. BossFit Escaz�",
+          slug: "Slug",
+          initialOwner: "Owner inicial",
+          initialOwnerPlaceholder: "email o username",
+          contactEmail: "Email de contacto",
+          phone: "Teléfono",
+          creating: "Creando gym...",
+          create: "Crear gym",
+          loadingTitle: "Cargando gyms",
+          loadingDescription: "Estamos consultando la red de gyms completa.",
+          emptyTitle: "Aún no hay gyms",
+          emptyDescription: "Crea el primero arriba para iniciar la operación de plataforma.",
+          inactive: "Inactivo",
+          owners: "Owners",
+          noOwner: "Sin owner",
+          activeMemberships: "Membresías activas",
+          staff: "Staff",
+          linkedMembers: "Miembros",
+          openGym: "Abrir ficha del gym"
+        };
 
   const stats = useMemo(
     () => ({
@@ -57,7 +124,7 @@ export default function PlatformAdminGymsPage() {
       const nextGyms = await fetchPlatformAdminGyms(session.access_token);
       setGyms(nextGyms);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los gyms.");
+      setError(loadError instanceof Error ? loadError.message : copy.loadError);
       setGyms([]);
     } finally {
       setLoading(false);
@@ -92,7 +159,7 @@ export default function PlatformAdminGymsPage() {
       setOwnerIdentifier("");
       await loadGyms();
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "No se pudo crear el gym.");
+      setError(createError instanceof Error ? createError.message : copy.createError);
     } finally {
       setSubmitting(false);
     }
@@ -100,32 +167,32 @@ export default function PlatformAdminGymsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminSectionHeader title="Gyms" description="Crea gyms, asigna owners y abre la ficha operativa de cada instalación." />
+      <AdminSectionHeader title={copy.title} description={copy.description} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <p className="text-sm text-muted-foreground">Gyms totales</p>
+          <p className="text-sm text-muted-foreground">{copy.totalGyms}</p>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{gyms.length}</p>
         </Card>
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <p className="text-sm text-muted-foreground">Activos</p>
+          <p className="text-sm text-muted-foreground">{copy.active}</p>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{stats.active}</p>
         </Card>
         <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
-          <p className="text-sm text-muted-foreground">Miembros totales</p>
+          <p className="text-sm text-muted-foreground">{copy.totalMembers}</p>
           <p className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{stats.members}</p>
         </Card>
       </div>
 
       <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
         <div className="space-y-1">
-          <CardTitle>Crear gym</CardTitle>
-          <CardDescription>Crea un gym nuevo y, si quieres, asígnale un owner existente por email o username.</CardDescription>
+          <CardTitle>{copy.createTitle}</CardTitle>
+          <CardDescription>{copy.createDescription}</CardDescription>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div>
-            <Label htmlFor="gym-name">Nombre</Label>
+            <Label htmlFor="gym-name">{copy.name}</Label>
             <Input
               id="gym-name"
               value={name}
@@ -136,23 +203,23 @@ export default function PlatformAdminGymsPage() {
                   setSlug(slugify(nextName));
                 }
               }}
-              placeholder="Ej. BossFit Escazú"
+              placeholder={copy.namePlaceholder}
             />
           </div>
           <div>
-            <Label htmlFor="gym-slug">Slug</Label>
+            <Label htmlFor="gym-slug">{copy.slug}</Label>
             <Input id="gym-slug" value={slug} onChange={(event) => setSlug(slugify(event.target.value))} placeholder="bossfit-escazu" />
           </div>
           <div>
-            <Label htmlFor="gym-owner">Owner inicial</Label>
-            <Input id="gym-owner" value={ownerIdentifier} onChange={(event) => setOwnerIdentifier(event.target.value)} placeholder="email o username" />
+            <Label htmlFor="gym-owner">{copy.initialOwner}</Label>
+            <Input id="gym-owner" value={ownerIdentifier} onChange={(event) => setOwnerIdentifier(event.target.value)} placeholder={copy.initialOwnerPlaceholder} />
           </div>
           <div>
-            <Label htmlFor="gym-contact-email">Email de contacto</Label>
+            <Label htmlFor="gym-contact-email">{copy.contactEmail}</Label>
             <Input id="gym-contact-email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="contacto@gym.com" />
           </div>
           <div>
-            <Label htmlFor="gym-phone">Teléfono</Label>
+            <Label htmlFor="gym-phone">{copy.phone}</Label>
             <Input id="gym-phone" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+506 ..." />
           </div>
         </div>
@@ -162,13 +229,13 @@ export default function PlatformAdminGymsPage() {
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => void handleCreateGym()} disabled={submitting}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            {submitting ? "Creando gym..." : "Crear gym"}
+            {submitting ? copy.creating : copy.create}
           </Button>
         </div>
       </Card>
 
-      {loading ? <AdminDataState title="Cargando gyms" description="Estamos consultando la red de gyms completa." /> : null}
-      {!loading && !error && gyms.length === 0 ? <AdminDataState title="Aún no hay gyms" description="Crea el primero arriba para iniciar la operación de plataforma." /> : null}
+      {loading ? <AdminDataState title={copy.loadingTitle} description={copy.loadingDescription} /> : null}
+      {!loading && !error && gyms.length === 0 ? <AdminDataState title={copy.emptyTitle} description={copy.emptyDescription} /> : null}
 
       {!loading && gyms.length ? (
         <div className="grid gap-4 xl:grid-cols-2">
@@ -183,30 +250,30 @@ export default function PlatformAdminGymsPage() {
                   <p className="mt-1 text-sm text-muted-foreground">/{gym.slug}</p>
                 </div>
                 <Badge className={gym.active ? "bg-accent/12 text-accent ring-1 ring-accent/20" : "bg-muted text-card-foreground ring-1 ring-border"}>
-                  {gym.active ? "Activo" : "Inactivo"}
+                  {gym.active ? copy.active : copy.inactive}
                 </Badge>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                  <p className="text-sm text-muted-foreground">Owners</p>
-                  <p className="mt-2 text-sm font-semibold text-card-foreground dark:text-white">{gym.ownerNames.length ? gym.ownerNames.join(", ") : "Sin owner"}</p>
+                  <p className="text-sm text-muted-foreground">{copy.owners}</p>
+                  <p className="mt-2 text-sm font-semibold text-card-foreground dark:text-white">{gym.ownerNames.length ? gym.ownerNames.join(", ") : copy.noOwner}</p>
                 </div>
                 <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                  <p className="text-sm text-muted-foreground">Membresías activas</p>
+                  <p className="text-sm text-muted-foreground">{copy.activeMemberships}</p>
                   <p className="mt-2 text-sm font-semibold text-card-foreground dark:text-white">{gym.totalMemberships}</p>
                 </div>
                 <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                  <p className="text-sm text-muted-foreground">Staff</p>
+                  <p className="text-sm text-muted-foreground">{copy.staff}</p>
                   <p className="mt-2 text-sm font-semibold text-card-foreground dark:text-white">{gym.adminsCount} admins · {gym.trainersCount} trainers</p>
                 </div>
                 <div className="rounded-[22px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
-                  <p className="text-sm text-muted-foreground">Miembros</p>
+                  <p className="text-sm text-muted-foreground">{copy.linkedMembers}</p>
                   <p className="mt-2 text-sm font-semibold text-card-foreground dark:text-white">{gym.membersCount}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link href={`/admin/gyms/${gym.id}`} className={buttonVariants({ variant: "outline" })}>
-                  Abrir ficha del gym
+                  {copy.openGym}
                 </Link>
               </div>
             </Card>

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { BarChart3, Home, Settings2, SunMedium } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-import { BOTTOM_NAV_ITEMS } from "@/lib/constants";
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { getBottomNavItems } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const icons = {
@@ -16,6 +17,8 @@ const icons = {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const locale = useAppLocale();
+  const items = getBottomNavItems(locale);
   const hasSideFab = pathname === "/today";
 
   return (
@@ -26,7 +29,7 @@ export function BottomNav() {
           hasSideFab && "mr-[5.5rem]"
         )}
       >
-        {BOTTOM_NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const Icon = icons[item.icon];
           const isActive = pathname === item.href;
 

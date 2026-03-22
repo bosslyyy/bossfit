@@ -8,23 +8,25 @@ import {
   DEFAULT_REMINDER_SETTINGS,
   type BossFitPersistedState
 } from "@/lib/persistence";
-import type { CloudSyncState } from "@/types/habit";
+import type { AppLocale, CloudSyncState } from "@/types/habit";
 
 interface BossFitState {
   habits: BossFitPersistedState["habits"];
   completions: BossFitPersistedState["completions"];
   theme: BossFitPersistedState["theme"];
+  locale: BossFitPersistedState["locale"];
   reminderSettings: BossFitPersistedState["reminderSettings"];
   cloudSync: CloudSyncState;
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   replacePersistedState: (values: BossFitPersistedState) => void;
   setCloudSyncState: (values: Partial<CloudSyncState>) => void;
+  setLocaleState: (locale: AppLocale) => void;
 }
 
 function createStoreState(): Pick<
   BossFitState,
-  "habits" | "completions" | "theme" | "reminderSettings" | "cloudSync" | "hasHydrated"
+  "habits" | "completions" | "theme" | "locale" | "reminderSettings" | "cloudSync" | "hasHydrated"
 > {
   const initialState = createInitialPersistedState();
 
@@ -42,6 +44,7 @@ export const useBossFitStore = create<BossFitState>()((set) => ({
       habits: values.habits,
       completions: values.completions,
       theme: values.theme,
+      locale: values.locale,
       reminderSettings: {
         ...DEFAULT_REMINDER_SETTINGS,
         ...values.reminderSettings
@@ -59,5 +62,6 @@ export const useBossFitStore = create<BossFitState>()((set) => ({
         ...state.cloudSync,
         ...values
       }
-    }))
+    })),
+  setLocaleState: (locale) => set({ locale })
 }));

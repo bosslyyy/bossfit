@@ -1,8 +1,13 @@
-﻿import { Download, Share2 } from "lucide-react";
+﻿"use client";
+
+import { Download, Share2 } from "lucide-react";
 
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { useAppLocale } from "@/hooks/use-app-locale";
 
 export function InstallHint() {
+  const locale = useAppLocale();
+
   return (
     <Card>
       <div className="space-y-3">
@@ -11,14 +16,20 @@ export function InstallHint() {
             <Download className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle>Instala BossFit</CardTitle>
-            <CardDescription>Se siente mejor como app real en iPhone y Android.</CardDescription>
+            <CardTitle>{locale === "en" ? "Install BossFit" : "Instala BossFit"}</CardTitle>
+            <CardDescription>
+              {locale === "en"
+                ? "It feels better as a real app on iPhone and Android."
+                : "Se siente mejor como app real en iPhone y Android."}
+            </CardDescription>
           </div>
         </div>
         <div className="rounded-[22px] bg-black/5 p-4 text-sm text-foreground/70 dark:bg-white/5">
           <p className="flex items-center gap-2 font-medium text-foreground">
             <Share2 className="h-4 w-4" />
-            En iPhone: abre Safari, toca Compartir y elige “Agregar a pantalla de inicio”.
+            {locale === "en"
+              ? 'On iPhone: open Safari, tap Share, then choose "Add to Home Screen".'
+              : 'En iPhone: abre Safari, toca Compartir y elige “Agregar a pantalla de inicio”.'}
           </p>
         </div>
       </div>

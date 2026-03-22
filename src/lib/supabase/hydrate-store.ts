@@ -24,9 +24,11 @@ export function applyRemoteStateToStore({ userId, state }: StoreStateInput) {
 
 export function applyEmptyStateToStore(userId?: string) {
   const freshState = createInitialPersistedState();
+  const currentLocale = useBossFitStore.getState().locale ?? freshState.locale;
 
   useBossFitStore.getState().replacePersistedState({
     ...freshState,
+    locale: currentLocale,
     cloudSync: {
       userId,
       revision: 0,

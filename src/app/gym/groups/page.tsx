@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -14,6 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAppLocale } from "@/hooks/use-app-locale";
 import { createAdminGroup } from "@/lib/supabase/admin-actions";
 import { fetchAdminGroups, fetchAdminTrainers, type AdminGroupListItem, type AdminTrainerListItem } from "@/lib/supabase/admin";
 
@@ -23,6 +24,7 @@ const selectClassName =
 export default function AdminGroupsPage() {
   const { context } = useAdminContext();
   const { session } = useSupabaseAuth();
+  const locale = useAppLocale();
   const [groups, setGroups] = useState<AdminGroupListItem[]>([]);
   const [trainers, setTrainers] = useState<AdminTrainerListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,19 +35,79 @@ export default function AdminGroupsPage() {
   const [scheduleText, setScheduleText] = useState("");
   const [trainerUserId, setTrainerUserId] = useState("");
 
+  const copy =
+    locale === "en"
+      ? {
+          loadError: "Could not load the group list.",
+          noSession: "Could not find a valid session to create groups.",
+          createError: "Could not create the group.",
+          title: "Groups",
+          description: "Real gym cohorts with coach, schedule, members, and direct access to their operational profile.",
+          createTitle: "Create group",
+          createDescription:
+            "Define a gym block and optionally assign it to a trainer now so it appears later in the coach panel.",
+          name: "Group name",
+          namePlaceholder: "Ex. Functional AM",
+          schedule: "Schedule",
+          schedulePlaceholder: "Ex. Mon / Wed / Fri · 6:00 a.m.",
+          groupDescription: "Description",
+          descriptionPlaceholder: "Goal or focus of the group",
+          responsibleTrainer: "Responsible trainer",
+          noTrainer: "No trainer yet",
+          creating: "Creating group...",
+          create: "Create group",
+          viewTitle: "Group view",
+          viewDescription:
+            "Each group profile lets you correct the trainer, pause the block, review members, and delete it safely.",
+          loadingTitle: "Loading groups",
+          loadingDescription: "Fetching the real groups of the gym.",
+          errorTitle: "We could not load groups",
+          retry: "Retry",
+          emptyTitle: "No groups in this gym yet",
+          emptyDescription: "Create the first one above and it will appear here automatically.",
+          manage: "Manage"
+        }
+      : {
+          loadError: "No se pudo cargar la lista de grupos.",
+          noSession: "No encontramos una sesión válida para crear grupos.",
+          createError: "No se pudo crear el grupo.",
+          title: "Grupos",
+          description: "Cohortes reales del gym con su coach, horario, miembros y acceso directo a su ficha operativa.",
+          createTitle: "Crear grupo",
+          createDescription:
+            "Define un bloque del gym y, si quieres, d�jalo ya asignado a un entrenador para que luego aparezca en el panel del coach.",
+          name: "Nombre del grupo",
+          namePlaceholder: "Ej. Functional AM",
+          schedule: "Horario",
+          schedulePlaceholder: "Ej. Lun / Mié / Vie · 6:00 a.m.",
+          groupDescription: "Descripción",
+          descriptionPlaceholder: "Objetivo o foco del grupo",
+          responsibleTrainer: "Entrenador responsable",
+          noTrainer: "Sin entrenador aún",
+          creating: "Creando grupo...",
+          create: "Crear grupo",
+          viewTitle: "Vista de grupos",
+          viewDescription:
+            "Cada ficha de grupo te permite corregir entrenador, pausar el bloque, revisar miembros y eliminarlo de forma segura.",
+          loadingTitle: "Cargando grupos",
+          loadingDescription: "Estamos consultando los grupos reales del gimnasio.",
+          errorTitle: "No pudimos cargar los grupos",
+          retry: "Reintentar",
+          emptyTitle: "Aún no hay grupos en este gym",
+          emptyDescription: "Crea el primero arriba y aparecer� aquí automáticamente.",
+          manage: "Gestionar"
+        };
+
   const loadGroups = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [nextGroups, nextTrainers] = await Promise.all([
-        fetchAdminGroups(context.gymId),
-        fetchAdminTrainers(context.gymId)
-      ]);
+      const [nextGroups, nextTrainers] = await Promise.all([fetchAdminGroups(context.gymId), fetchAdminTrainers(context.gymId)]);
       setGroups(nextGroups);
       setTrainers(nextTrainers);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la lista de grupos.");
+      setError(loadError instanceof Error ? loadError.message : copy.loadError);
       setGroups([]);
       setTrainers([]);
     } finally {
@@ -59,7 +121,7 @@ export default function AdminGroupsPage() {
 
   const handleCreateGroup = async () => {
     if (!session?.access_token) {
-      setError("No encontramos una sesión válida para crear grupos.");
+      setError(copy.noSession);
       return;
     }
 
@@ -82,7 +144,7 @@ export default function AdminGroupsPage() {
       setTrainerUserId("");
       await loadGroups();
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "No se pudo crear el grupo.");
+      setError(createError instanceof Error ? createError.message : copy.createError);
     } finally {
       setSubmitting(false);
     }
@@ -90,33 +152,31 @@ export default function AdminGroupsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminSectionHeader title="Grupos" description="Cohortes reales del gym con su coach, horario, miembros y acceso directo a su ficha operativa." />
+      <AdminSectionHeader title={copy.title} description={copy.description} />
 
       <Card className="space-y-5 border border-border bg-card dark:bg-[#121922] dark:text-white">
         <div className="space-y-1">
-          <CardTitle>Crear grupo</CardTitle>
-          <CardDescription>
-            Define un bloque del gym y, si quieres, déjalo ya asignado a un entrenador para que luego aparezca en el panel del coach.
-          </CardDescription>
+          <CardTitle>{copy.createTitle}</CardTitle>
+          <CardDescription>{copy.createDescription}</CardDescription>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <div>
-            <Label htmlFor="group-name">Nombre del grupo</Label>
-            <Input id="group-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ej. Functional AM" />
+            <Label htmlFor="group-name">{copy.name}</Label>
+            <Input id="group-name" value={name} onChange={(event) => setName(event.target.value)} placeholder={copy.namePlaceholder} />
           </div>
           <div>
-            <Label htmlFor="group-schedule">Horario</Label>
-            <Input id="group-schedule" value={scheduleText} onChange={(event) => setScheduleText(event.target.value)} placeholder="Ej. Lun / Mié / Vie · 6:00 a.m." />
+            <Label htmlFor="group-schedule">{copy.schedule}</Label>
+            <Input id="group-schedule" value={scheduleText} onChange={(event) => setScheduleText(event.target.value)} placeholder={copy.schedulePlaceholder} />
           </div>
           <div className="lg:col-span-2">
-            <Label htmlFor="group-description">Descripción</Label>
-            <Input id="group-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Objetivo o foco del grupo" />
+            <Label htmlFor="group-description">{copy.groupDescription}</Label>
+            <Input id="group-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder={copy.descriptionPlaceholder} />
           </div>
           <div>
-            <Label htmlFor="group-trainer">Entrenador responsable</Label>
+            <Label htmlFor="group-trainer">{copy.responsibleTrainer}</Label>
             <select id="group-trainer" className={selectClassName} value={trainerUserId} onChange={(event) => setTrainerUserId(event.target.value)}>
-              <option value="">Sin entrenador aún</option>
+              <option value="">{copy.noTrainer}</option>
               {trainers.map((trainer) => (
                 <option key={trainer.userId} value={trainer.userId}>
                   {trainer.name}
@@ -131,7 +191,7 @@ export default function AdminGroupsPage() {
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => void handleCreateGroup()} disabled={submitting}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            {submitting ? "Creando grupo..." : "Crear grupo"}
+            {submitting ? copy.creating : copy.create}
           </Button>
         </div>
       </Card>
@@ -139,16 +199,14 @@ export default function AdminGroupsPage() {
       <Card className="space-y-3 border border-border bg-card dark:bg-[#121922] dark:text-white">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Layers3 className="h-4 w-4 text-accent" />
-          <span className="text-sm">Vista de grupos</span>
+          <span className="text-sm">{copy.viewTitle}</span>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Cada ficha de grupo te permite corregir entrenador, pausar el bloque, revisar miembros y eliminarlo de forma segura.
-        </p>
+        <p className="text-sm text-muted-foreground">{copy.viewDescription}</p>
       </Card>
 
-      {loading ? <AdminDataState title="Cargando grupos" description="Estamos consultando los grupos reales del gimnasio." /> : null}
-      {!loading && error ? <AdminDataState title="No pudimos cargar los grupos" description={error} actionLabel="Reintentar" onAction={() => void loadGroups()} tone="warning" /> : null}
-      {!loading && !error && groups.length === 0 ? <AdminDataState title="Aún no hay grupos en este gym" description="Crea el primero arriba y aparecerá aquí automáticamente." /> : null}
+      {loading ? <AdminDataState title={copy.loadingTitle} description={copy.loadingDescription} /> : null}
+      {!loading && error ? <AdminDataState title={copy.errorTitle} description={error} actionLabel={copy.retry} onAction={() => void loadGroups()} tone="warning" /> : null}
+      {!loading && !error && groups.length === 0 ? <AdminDataState title={copy.emptyTitle} description={copy.emptyDescription} /> : null}
 
       {!loading && !error && groups.length ? (
         <div className="space-y-4">
@@ -159,7 +217,7 @@ export default function AdminGroupsPage() {
               action={
                 <Link href={`/gym/groups/${group.id}`} className={buttonVariants({ variant: "outline", className: "h-10 px-3 text-sm" })}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Gestionar
+                  {copy.manage}
                 </Link>
               }
             />
@@ -169,4 +227,3 @@ export default function AdminGroupsPage() {
     </div>
   );
 }
-

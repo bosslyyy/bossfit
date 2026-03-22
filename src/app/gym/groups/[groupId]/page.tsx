@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -16,17 +16,28 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { getIntlLocale } from "@/lib/i18n";
 import { deleteAdminGroup, fetchAdminGroupDetail, updateAdminGroup } from "@/lib/supabase/admin-actions";
 import { fetchAdminTrainers, type AdminGroupDetail, type AdminTrainerListItem } from "@/lib/supabase/admin";
 
 const selectClassName =
   "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm text-card-foreground shadow-sm outline-none transition focus:border-transparent focus:bg-card focus:ring-2 focus:ring-ring";
 
+function formatDate(value: string | undefined, locale: "es" | "en", withTime = false) {
+  if (!value) {
+    return locale === "en" ? "No date" : "Sin fecha";
+  }
+
+  return new Intl.DateTimeFormat(getIntlLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" }).format(new Date(value));
+}
+
 export default function AdminGroupDetailPage() {
   const params = useParams<{ groupId: string }>();
   const router = useRouter();
   const { context } = useAdminContext();
   const { session } = useSupabaseAuth();
+  const locale = useAppLocale();
 
   const [detail, setDetail] = useState<AdminGroupDetail | null>(null);
   const [trainers, setTrainers] = useState<AdminTrainerListItem[]>([]);
@@ -41,6 +52,91 @@ export default function AdminGroupDetailPage() {
   const [scheduleText, setScheduleText] = useState("");
   const [trainerUserId, setTrainerUserId] = useState("");
   const [active, setActive] = useState(true);
+
+  const copy =
+    locale === "en"
+      ? {
+          loadError: "Could not load the group profile.",
+          saveError: "Could not save the group.",
+          deleteError: "Could not delete the group.",
+          saveSuccess: "Group updated successfully.",
+          deleteConfirm: (name: string) => `Delete group ${name}? Members will remain without a primary group.`,
+          loadingTitle: "Loading group profile",
+          loadingDescription: "Gathering trainer, members, and the group's operating state.",
+          missingTitle: "We could not find the group",
+          missingDescription: "It may no longer exist or may have been removed.",
+          back: "Back",
+          description: "Edit the group, responsible trainer, status, and review its full roster from the gym panel.",
+          active: "Active",
+          paused: "Paused",
+          members: "members",
+          activeMembers: "active",
+          currentCoach: "Current coach",
+          deleting: "Deleting...",
+          deleteGroup: "Delete group",
+          configTitle: "Group settings",
+          configDescription: "Update name, focus, schedule, and responsible trainer.",
+          name: "Name",
+          groupDescription: "Description",
+          descriptionPlaceholder: "Group goal or focus",
+          schedule: "Schedule",
+          schedulePlaceholder: "Ex. Mon / Wed / Fri · 6:00 a.m.",
+          trainer: "Trainer",
+          noTrainer: "No trainer",
+          activeGroup: "Active group",
+          activeHelper: "If paused, it remains visible but will no longer be suggested as an active group.",
+          summaryTitle: "Group summary",
+          summaryDescription: "Quick info to validate the block and its composition.",
+          created: "Created",
+          memberListTitle: "Group members",
+          memberListDescription: "Direct access to profiles to fix assignments and edit their data.",
+          assignment: "Assignment",
+          openProfile: "Open profile",
+          noMembers: "This group does not have linked members yet.",
+          saving: "Saving changes...",
+          saveGroup: "Save group"
+        }
+      : {
+          loadError: "No se pudo cargar la ficha del grupo.",
+          saveError: "No se pudo guardar el grupo.",
+          deleteError: "No se pudo eliminar el grupo.",
+          saveSuccess: "Grupo actualizado correctamente.",
+          deleteConfirm: (name: string) => `¿Eliminar el grupo ${name}? Los miembros quedar�n sin grupo principal.`,
+          loadingTitle: "Cargando ficha del grupo",
+          loadingDescription: "Estamos reuniendo entrenador, miembros y estado operativo del grupo.",
+          missingTitle: "No encontramos el grupo",
+          missingDescription: "Puede que ya no exista o se haya eliminado.",
+          back: "Volver",
+          description: "Edita grupo, entrenador responsable, estado y revisa su roster completo de miembros desde el admin.",
+          active: "Activo",
+          paused: "Pausado",
+          members: "miembros",
+          activeMembers: "activos",
+          currentCoach: "Coach actual",
+          deleting: "Eliminando...",
+          deleteGroup: "Eliminar grupo",
+          configTitle: "Configuraci�n del grupo",
+          configDescription: "Actualiza nombre, foco operativo, horario y entrenador responsable.",
+          name: "Nombre",
+          groupDescription: "Descripción",
+          descriptionPlaceholder: "Objetivo o foco del grupo",
+          schedule: "Horario",
+          schedulePlaceholder: "Ej. Lun / Mié / Vie · 6:00 a.m.",
+          trainer: "Entrenador",
+          noTrainer: "Sin entrenador",
+          activeGroup: "Grupo activo",
+          activeHelper: "Si lo pausas, seguirá visible pero ya no se propondrá como grupo operativo.",
+          summaryTitle: "Resumen del grupo",
+          summaryDescription: "Información rápida para validar carga y composición del bloque.",
+          created: "Creado",
+          memberListTitle: "Miembros del grupo",
+          memberListDescription: "Acceso directo a las fichas para corregir asignaciones y editar sus datos.",
+          assignment: "Asignaci�n",
+          openProfile: "Abrir ficha",
+          noMembers: "Este grupo todavía no tiene miembros vinculados.",
+          saving: "Guardando cambios...",
+          saveGroup: "Guardar grupo"
+        };
 
   const groupId = params.groupId;
   const activeMembers = useMemo(() => detail?.members.filter((member) => member.status === "active") ?? [], [detail?.members]);
@@ -67,7 +163,7 @@ export default function AdminGroupDetailPage() {
       setTrainerUserId(nextDetail.trainerUserId ?? "");
       setActive(nextDetail.active);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la ficha del grupo.");
+      setError(loadError instanceof Error ? loadError.message : copy.loadError);
       setDetail(null);
       setTrainers([]);
     } finally {
@@ -100,10 +196,10 @@ export default function AdminGroupDetailPage() {
       if (response.detail) {
         setDetail(response.detail);
       }
-      setSuccessMessage("Grupo actualizado correctamente.");
+      setSuccessMessage(copy.saveSuccess);
       await loadDetail();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el grupo.");
+      setError(saveError instanceof Error ? saveError.message : copy.saveError);
     } finally {
       setSaving(false);
     }
@@ -114,7 +210,7 @@ export default function AdminGroupDetailPage() {
       return;
     }
 
-    const confirmed = window.confirm(`¿Eliminar el grupo ${detail.name}? Los miembros quedarán sin grupo principal.`);
+    const confirmed = window.confirm(copy.deleteConfirm(detail.name));
     if (!confirmed) {
       return;
     }
@@ -127,29 +223,29 @@ export default function AdminGroupDetailPage() {
       router.push("/gym/groups");
       router.refresh();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el grupo.");
+      setError(deleteError instanceof Error ? deleteError.message : copy.deleteError);
     } finally {
       setDeleting(false);
     }
   };
 
   if (loading) {
-    return <AdminDataState title="Cargando ficha del grupo" description="Estamos reuniendo entrenador, miembros y estado operativo del grupo." />;
+    return <AdminDataState title={copy.loadingTitle} description={copy.loadingDescription} />;
   }
 
   if (!detail) {
-    return <AdminDataState title="No encontramos el grupo" description={error ?? "Puede que ya no exista o se haya eliminado."} actionLabel="Volver" onAction={() => router.push("/gym/groups")} tone="warning" />;
+    return <AdminDataState title={copy.missingTitle} description={error ?? copy.missingDescription} actionLabel={copy.back} onAction={() => router.push("/gym/groups")} tone="warning" />;
   }
 
   return (
     <div className="space-y-6">
       <AdminSectionHeader
         title={detail.name}
-        description="Edita grupo, entrenador responsable, estado y revisa su roster completo de miembros desde el admin."
+        description={copy.description}
         action={
           <Link href="/gym/groups" className={buttonVariants({ variant: "outline" })}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
+            {copy.back}
           </Link>
         }
       />
@@ -159,46 +255,46 @@ export default function AdminGroupDetailPage() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className={detail.active ? "bg-accent/12 text-accent ring-1 ring-accent/20" : "bg-muted text-card-foreground ring-1 ring-border dark:bg-white/[0.08] dark:text-white/80"}>
-                {detail.active ? "Activo" : "Pausado"}
+                {detail.active ? copy.active : copy.paused}
               </Badge>
-              <Badge className="bg-surface text-card-foreground ring-1 ring-border">{detail.membersCount} miembros</Badge>
-              <Badge className="bg-surface text-card-foreground ring-1 ring-border">{activeMembers.length} activos</Badge>
+              <Badge className="bg-surface text-card-foreground ring-1 ring-border">{detail.membersCount} {copy.members}</Badge>
+              <Badge className="bg-surface text-card-foreground ring-1 ring-border">{activeMembers.length} {copy.activeMembers}</Badge>
             </div>
             <div>
               <h2 className="font-display text-3xl font-semibold text-card-foreground dark:text-white">{detail.name}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Coach actual: {detail.trainerName}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{copy.currentCoach}: {detail.trainerName}</p>
             </div>
           </div>
 
           <Button variant="danger" onClick={() => void handleDelete()} disabled={deleting}>
             <Trash2 className="mr-2 h-4 w-4" />
-            {deleting ? "Eliminando..." : "Eliminar grupo"}
+            {deleting ? copy.deleting : copy.deleteGroup}
           </Button>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.05fr,0.95fr]">
           <div className="space-y-4 rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
             <div className="space-y-1">
-              <CardTitle>Configuración del grupo</CardTitle>
-              <CardDescription>Actualiza nombre, foco operativo, horario y entrenador responsable.</CardDescription>
+              <CardTitle>{copy.configTitle}</CardTitle>
+              <CardDescription>{copy.configDescription}</CardDescription>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
-                <Label htmlFor="group-name">Nombre</Label>
+                <Label htmlFor="group-name">{copy.name}</Label>
                 <Input id="group-name" value={name} onChange={(event) => setName(event.target.value)} />
               </div>
               <div className="md:col-span-2">
-                <Label htmlFor="group-description">Descripción</Label>
-                <Input id="group-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Objetivo o foco del grupo" />
+                <Label htmlFor="group-description">{copy.groupDescription}</Label>
+                <Input id="group-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder={copy.descriptionPlaceholder} />
               </div>
               <div>
-                <Label htmlFor="group-schedule">Horario</Label>
-                <Input id="group-schedule" value={scheduleText} onChange={(event) => setScheduleText(event.target.value)} placeholder="Ej. Lun / Mié / Vie · 6:00 a.m." />
+                <Label htmlFor="group-schedule">{copy.schedule}</Label>
+                <Input id="group-schedule" value={scheduleText} onChange={(event) => setScheduleText(event.target.value)} placeholder={copy.schedulePlaceholder} />
               </div>
               <div>
-                <Label htmlFor="group-trainer">Entrenador</Label>
+                <Label htmlFor="group-trainer">{copy.trainer}</Label>
                 <select id="group-trainer" className={selectClassName} value={trainerUserId} onChange={(event) => setTrainerUserId(event.target.value)}>
-                  <option value="">Sin entrenador</option>
+                  <option value="">{copy.noTrainer}</option>
                   {trainers.map((trainer) => (
                     <option key={trainer.userId} value={trainer.userId}>
                       {trainer.name}
@@ -209,34 +305,34 @@ export default function AdminGroupDetailPage() {
             </div>
             <div className="flex items-center justify-between rounded-[20px] border border-border bg-card px-4 py-3 dark:bg-[#121922]">
               <div>
-                <p className="text-sm font-semibold text-card-foreground dark:text-white">Grupo activo</p>
-                <p className="text-sm text-muted-foreground">Si lo pausas, seguirá visible pero ya no se propondrá como grupo operativo.</p>
+                <p className="text-sm font-semibold text-card-foreground dark:text-white">{copy.activeGroup}</p>
+                <p className="text-sm text-muted-foreground">{copy.activeHelper}</p>
               </div>
-              <Switch checked={active} onCheckedChange={setActive} ariaLabel="Activar o pausar grupo" />
+              <Switch checked={active} onCheckedChange={setActive} ariaLabel={copy.activeGroup} />
             </div>
           </div>
 
           <div className="space-y-4 rounded-[24px] border border-border bg-background/80 p-4 dark:bg-white/[0.04]">
             <div className="space-y-1">
-              <CardTitle>Resumen del grupo</CardTitle>
-              <CardDescription>Información rápida para validar carga y composición del bloque.</CardDescription>
+              <CardTitle>{copy.summaryTitle}</CardTitle>
+              <CardDescription>{copy.summaryDescription}</CardDescription>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Miembros</span>
+                <span className="text-muted-foreground">{copy.members}</span>
                 <span className="font-semibold text-card-foreground dark:text-white">{detail.membersCount}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Miembros activos</span>
+                <span className="text-muted-foreground">{copy.activeMembers}</span>
                 <span className="font-semibold text-card-foreground dark:text-white">{activeMembers.length}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Entrenador</span>
+                <span className="text-muted-foreground">{copy.trainer}</span>
                 <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.trainerName}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Creado</span>
-                <span className="text-right font-semibold text-card-foreground dark:text-white">{detail.createdAt ? new Intl.DateTimeFormat("es-CR", { dateStyle: "medium" }).format(new Date(detail.createdAt)) : "Sin fecha"}</span>
+                <span className="text-muted-foreground">{copy.created}</span>
+                <span className="text-right font-semibold text-card-foreground dark:text-white">{formatDate(detail.createdAt, locale)}</span>
               </div>
             </div>
           </div>
@@ -244,8 +340,8 @@ export default function AdminGroupDetailPage() {
 
         <Card className="space-y-4 border border-border bg-card dark:bg-[#121922] dark:text-white">
           <div className="space-y-1">
-            <CardTitle>Miembros del grupo</CardTitle>
-            <CardDescription>Acceso directo a las fichas para corregir asignaciones y editar sus datos.</CardDescription>
+            <CardTitle>{copy.memberListTitle}</CardTitle>
+            <CardDescription>{copy.memberListDescription}</CardDescription>
           </div>
           {detail.members.length ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -257,23 +353,23 @@ export default function AdminGroupDetailPage() {
                       <p className="mt-1 text-sm text-muted-foreground">{member.email}</p>
                     </div>
                     <Badge className={member.status === "active" ? "bg-accent/12 text-accent ring-1 ring-accent/20" : "bg-muted text-card-foreground ring-1 ring-border"}>
-                      {member.status}
+                      {member.status === "active" ? copy.active : copy.paused}
                     </Badge>
                   </div>
                   <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">Asignación</span>
+                    <span className="text-muted-foreground">{copy.assignment}</span>
                     <span className="font-semibold text-card-foreground dark:text-white">{member.assignmentStatus}</span>
                   </div>
                   <Link href={`/gym/users/${member.userId}`} className={buttonVariants({ variant: "outline", className: "mt-4 h-10 w-full" })}>
                     <Users className="mr-2 h-4 w-4" />
-                    Abrir ficha
+                    {copy.openProfile}
                   </Link>
                 </div>
               ))}
             </div>
           ) : (
             <div className="rounded-[22px] border border-dashed border-border bg-background/80 p-5 text-sm text-muted-foreground dark:bg-white/[0.04]">
-              Este grupo todavía no tiene miembros vinculados.
+              {copy.noMembers}
             </div>
           )}
         </Card>
@@ -284,14 +380,10 @@ export default function AdminGroupDetailPage() {
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => void handleSave()} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
-            {saving ? "Guardando cambios..." : "Guardar grupo"}
+            {saving ? copy.saving : copy.saveGroup}
           </Button>
         </div>
       </Card>
     </div>
   );
 }
-
-
-
-

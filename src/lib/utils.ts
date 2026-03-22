@@ -1,8 +1,8 @@
-﻿import { clsx, type ClassValue } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-import { WEEK_DAYS } from "@/lib/constants";
-import type { HabitTrackingMode, WeekdayKey } from "@/types/habit";
+import { getWeekDays } from "@/lib/i18n";
+import type { AppLocale, HabitTrackingMode, WeekdayKey } from "@/types/habit";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,20 +28,22 @@ export function safePercentage(value: number, total: number) {
   return Math.round((value / total) * 100);
 }
 
-export function formatPendingSets(remainingSets: number) {
+export function formatPendingSets(remainingSets: number, locale: AppLocale = "es") {
   if (remainingSets <= 0) {
-    return "Hábito completado";
+    return locale === "en" ? "Habit completed" : "Hábito completado";
   }
 
   if (remainingSets === 1) {
-    return "Queda 1 serie pendiente";
+    return locale === "en" ? "1 set left" : "Queda 1 serie pendiente";
   }
 
-  return `Quedan ${remainingSets} series pendientes`;
+  return locale === "en" ? `${remainingSets} sets left` : `Quedan ${remainingSets} series pendientes`;
 }
 
-export function formatSeriesProgress(completedSets: number, targetSets: number) {
-  return `${completedSets}/${targetSets} series completadas`;
+export function formatSeriesProgress(completedSets: number, targetSets: number, locale: AppLocale = "es") {
+  return locale === "en"
+    ? `${completedSets}/${targetSets} sets completed`
+    : `${completedSets}/${targetSets} series completadas`;
 }
 
 export function formatDurationShort(totalSeconds: number) {
@@ -57,8 +59,10 @@ export function formatDurationShort(totalSeconds: number) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function formatRestLabel(restSeconds?: number) {
-  return `Descanso ${formatDurationShort(restSeconds ?? 60)}`;
+export function formatRestLabel(restSeconds?: number, locale: AppLocale = "es") {
+  return locale === "en"
+    ? `Rest ${formatDurationShort(restSeconds ?? 60)}`
+    : `Descanso ${formatDurationShort(restSeconds ?? 60)}`;
 }
 
 export function formatHabitTarget(
@@ -86,8 +90,8 @@ export function calculatePoints(
   return completedSets * unitValue;
 }
 
-export function formatSelectedDays(selectedDays: WeekdayKey[]) {
-  const labels = WEEK_DAYS.filter((day) => selectedDays.includes(day.key)).map((day) => day.short);
+export function formatSelectedDays(selectedDays: WeekdayKey[], locale: AppLocale = "es") {
+  const labels = getWeekDays(locale).filter((day) => selectedDays.includes(day.key)).map((day) => day.short);
   return labels.join(" · ");
 }
 

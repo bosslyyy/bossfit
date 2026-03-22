@@ -1,4 +1,7 @@
-﻿import { WEEK_DAYS } from "@/lib/constants";
+﻿"use client";
+
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { getWeekDays } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { WeekdayKey } from "@/types/habit";
 
@@ -11,17 +14,20 @@ export function DaySelector({
   onChange: (days: WeekdayKey[]) => void;
   error?: string;
 }) {
+  const locale = useAppLocale();
+  const weekDays = getWeekDays(locale);
+
   const toggleDay = (dayKey: WeekdayKey) => {
     const hasDay = value.includes(dayKey);
     const nextDays = hasDay ? value.filter((entry) => entry !== dayKey) : [...value, dayKey];
-    const orderedDays = WEEK_DAYS.filter((day) => nextDays.includes(day.key)).map((day) => day.key);
+    const orderedDays = weekDays.filter((day) => nextDays.includes(day.key)).map((day) => day.key);
     onChange(orderedDays);
   };
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-7 gap-2">
-        {WEEK_DAYS.map((day) => {
+        {weekDays.map((day) => {
           const selected = value.includes(day.key);
           return (
             <button

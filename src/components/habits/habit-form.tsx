@@ -14,13 +14,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  HABIT_CATEGORIES,
-  HABIT_COLORS,
-  HABIT_COLOR_STYLES,
-  HABIT_ICONS,
-  HABIT_LEVELS
-} from "@/lib/constants";
+import { useAppLocale } from "@/hooks/use-app-locale";
+import { HABIT_COLORS, HABIT_COLOR_STYLES } from "@/lib/constants";
+import { getHabitCategories, getHabitIcons, getHabitLevels } from "@/lib/i18n";
 import {
   createHabitAction,
   deleteHabitAction,
@@ -46,7 +42,87 @@ export function HabitForm({
   initialValues?: HabitFormValues;
 }) {
   const router = useRouter();
+  const locale = useAppLocale();
   const [isPending, startTransition] = useTransition();
+  const categories = getHabitCategories(locale);
+  const icons = getHabitIcons(locale);
+  const levels = getHabitLevels(locale);
+
+  const copy = locale === "en"
+    ? {
+        defineTitle: mode === "create" ? "Define your habit" : "Adjust your habit",
+        defineDescription: "Clear name, simple goal, and exact days make it easier to complete.",
+        active: "Active",
+        paused: "Paused",
+        habitName: "Habit name",
+        habitPlaceholder: "Ex. Push-ups or rope",
+        category: "Category",
+        categoryPlaceholder: "Select a category",
+        dailyGoal: "Daily goal",
+        dailyGoalDescription: "You track complete blocks by set. You can measure them by reps or by time.",
+        trackingMode: "Tracking mode",
+        reps: "Repetitions",
+        repsHelper: "Sets with reps per block",
+        timer: "Time",
+        timerHelper: "Timed sets",
+        sets: "Sets",
+        timerPerSet: "Time per set (seconds)",
+        repsPerSet: "Reps per set",
+        timerExample: "Ex. 60 = 1 minute per set.",
+        longRoutineHint: "You can schedule long cardio routines or large circuits.",
+        scheduledDays: "Scheduled days",
+        scheduledDaysDescription: "Tap the days when this habit repeats.",
+        visualStyle: "Visual style",
+        visualDescription: "Choose an icon and color so it is easy to spot from today’s view.",
+        icon: "Icon",
+        color: "Color",
+        level: "Level",
+        saving: "Saving...",
+        createHabit: "Create habit",
+        saveChanges: "Save changes",
+        cancel: "Cancel",
+        deleteHabit: "Delete habit",
+        deleteConfirm: "Delete this habit? This action cannot be undone.",
+        saveError: "Could not save the habit.",
+        deleteError: "Could not delete the habit."
+      }
+    : {
+        defineTitle: mode === "create" ? "Define tu hábito" : "Ajusta tu hábito",
+        defineDescription: "Nombre claro, objetivo simple y días exactos para hacerlo más fácil de cumplir.",
+        active: "Activo",
+        paused: "Pausado",
+        habitName: "Nombre del hábito",
+        habitPlaceholder: "Ej. Lagartijas o cuerda",
+        category: "Categoría",
+        categoryPlaceholder: "Selecciona una categoría",
+        dailyGoal: "Objetivo diario",
+        dailyGoalDescription: "Registras bloques completos por serie. Puedes medirlos por repeticiones o por tiempo.",
+        trackingMode: "Modo de registro",
+        reps: "Repeticiones",
+        repsHelper: "Series con reps por bloque",
+        timer: "Tiempo",
+        timerHelper: "Series cronometradas",
+        sets: "Series",
+        timerPerSet: "Tiempo por serie (segundos)",
+        repsPerSet: "Reps por serie",
+        timerExample: "Ej. 60 = 1 minuto por serie.",
+        longRoutineHint: "Puedes programar rutinas largas de cardio o circuitos grandes.",
+        scheduledDays: "Días programados",
+        scheduledDaysDescription: "Toca los días en los que se repetirá el hábito.",
+        visualStyle: "Estilo visual",
+        visualDescription: "Elige un ícono y un color para reconocerlo rápido desde la vista de hoy.",
+        icon: "Ícono",
+        color: "Color",
+        level: "Nivel",
+        saving: "Guardando...",
+        createHabit: "Crear hábito",
+        saveChanges: "Guardar cambios",
+        cancel: "Cancelar",
+        deleteHabit: "Eliminar hábito",
+        deleteConfirm: "¿Eliminar este hábito? Esta acción no se puede deshacer.",
+        saveError: "No se pudo guardar el hábito.",
+        deleteError: "No se pudo eliminar el hábito."
+      };
 
   const form = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
@@ -80,7 +156,7 @@ export function HabitForm({
       }
     } catch (error) {
       form.setError("root", {
-        message: error instanceof Error ? error.message : "No se pudo guardar el hábito."
+        message: error instanceof Error ? error.message : copy.saveError
       });
     }
   });
@@ -90,7 +166,7 @@ export function HabitForm({
       return;
     }
 
-    const confirmed = window.confirm("¿Eliminar este hábito? Esta acción no se puede deshacer.");
+    const confirmed = window.confirm(copy.deleteConfirm);
     if (!confirmed) {
       return;
     }
@@ -100,7 +176,7 @@ export function HabitForm({
       startTransition(() => router.push("/"));
     } catch (error) {
       form.setError("root", {
-        message: error instanceof Error ? error.message : "No se pudo eliminar el hábito."
+        message: error instanceof Error ? error.message : copy.deleteError
       });
     }
   };
@@ -110,10 +186,8 @@ export function HabitForm({
       <Card>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <CardTitle>{mode === "create" ? "Define tu hábito" : "Ajusta tu hábito"}</CardTitle>
-            <CardDescription>
-              Nombre claro, objetivo simple y días exactos para hacerlo más fácil de cumplir.
-            </CardDescription>
+            <CardTitle>{copy.defineTitle}</CardTitle>
+            <CardDescription>{copy.defineDescription}</CardDescription>
           </div>
           <button
             type="button"
@@ -125,21 +199,21 @@ export function HabitForm({
                 : "bg-muted text-card-foreground ring-border"
             )}
           >
-            {active ? "Activo" : "Pausado"}
+            {active ? copy.active : copy.paused}
           </button>
         </div>
 
         <div className="mt-5 space-y-4">
           <div>
-            <Label htmlFor="name">Nombre del hábito</Label>
-            <Input id="name" placeholder="Ej. Lagartijas o cuerda" {...form.register("name")} />
+            <Label htmlFor="name">{copy.habitName}</Label>
+            <Input id="name" placeholder={copy.habitPlaceholder} {...form.register("name")} />
             {form.formState.errors.name ? (
               <p className="mt-2 text-sm text-danger">{form.formState.errors.name.message}</p>
             ) : null}
           </div>
 
           <div>
-            <Label htmlFor="category">Categoría</Label>
+            <Label htmlFor="category">{copy.category}</Label>
             <select
               id="category"
               value={values.category ?? ""}
@@ -151,8 +225,8 @@ export function HabitForm({
               }
               className={selectClassName}
             >
-              <option value="">Selecciona una categoría</option>
-              {HABIT_CATEGORIES.map((category) => (
+              <option value="">{copy.categoryPlaceholder}</option>
+              {categories.map((category) => (
                 <option key={category.value} value={category.value}>
                   {category.label}
                 </option>
@@ -164,19 +238,17 @@ export function HabitForm({
 
       <Card>
         <div className="space-y-1">
-          <CardTitle>Objetivo diario</CardTitle>
-          <CardDescription>
-            Registras bloques completos por serie. Puedes medirlos por repeticiones o por tiempo.
-          </CardDescription>
+          <CardTitle>{copy.dailyGoal}</CardTitle>
+          <CardDescription>{copy.dailyGoalDescription}</CardDescription>
         </div>
 
         <div className="mt-5 space-y-4">
           <div>
-            <Label>Modo de registro</Label>
+            <Label>{copy.trackingMode}</Label>
             <div className="mt-2 grid grid-cols-2 gap-3">
               {[
-                { value: "reps", label: "Repeticiones", helper: "Series con reps por bloque" },
-                { value: "timer", label: "Tiempo", helper: "Series cronometradas" }
+                { value: "reps", label: copy.reps, helper: copy.repsHelper },
+                { value: "timer", label: copy.timer, helper: copy.timerHelper }
               ].map((option) => {
                 const selected = trackingMode === option.value;
                 return (
@@ -206,18 +278,18 @@ export function HabitForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="targetSets">Series</Label>
+              <Label htmlFor="targetSets">{copy.sets}</Label>
               <Input id="targetSets" type="number" min={1} max={999} inputMode="numeric" {...form.register("targetSets")} />
               {form.formState.errors.targetSets ? (
                 <p className="mt-2 text-sm text-danger">{form.formState.errors.targetSets.message}</p>
               ) : (
-                <p className="mt-2 text-xs text-muted-foreground">Puedes programar rutinas largas de cardio o circuitos grandes.</p>
+                <p className="mt-2 text-xs text-muted-foreground">{copy.longRoutineHint}</p>
               )}
             </div>
             <div>
               {trackingMode === "timer" ? (
                 <>
-                  <Label htmlFor="secondsPerSet">Tiempo por serie (segundos)</Label>
+                  <Label htmlFor="secondsPerSet">{copy.timerPerSet}</Label>
                   <Input
                     id="secondsPerSet"
                     type="number"
@@ -230,12 +302,12 @@ export function HabitForm({
                   {form.formState.errors.secondsPerSet ? (
                     <p className="mt-2 text-sm text-danger">{form.formState.errors.secondsPerSet.message}</p>
                   ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">Ej. 60 = 1 minuto por serie.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{copy.timerExample}</p>
                   )}
                 </>
               ) : (
                 <>
-                  <Label htmlFor="repsPerSet">Reps por serie</Label>
+                  <Label htmlFor="repsPerSet">{copy.repsPerSet}</Label>
                   <Input id="repsPerSet" type="number" min={1} max={2500} inputMode="numeric" {...form.register("repsPerSet")} />
                   {form.formState.errors.repsPerSet ? (
                     <p className="mt-2 text-sm text-danger">{form.formState.errors.repsPerSet.message}</p>
@@ -249,8 +321,8 @@ export function HabitForm({
 
       <Card>
         <div className="space-y-1">
-          <CardTitle>Días programados</CardTitle>
-          <CardDescription>Toca los días en los que se repetirá el hábito.</CardDescription>
+          <CardTitle>{copy.scheduledDays}</CardTitle>
+          <CardDescription>{copy.scheduledDaysDescription}</CardDescription>
         </div>
         <div className="mt-5">
           <DaySelector
@@ -263,15 +335,15 @@ export function HabitForm({
 
       <Card>
         <div className="space-y-1">
-          <CardTitle>Estilo visual</CardTitle>
-          <CardDescription>Elige un ícono y un color para reconocerlo rápido desde la vista de hoy.</CardDescription>
+          <CardTitle>{copy.visualStyle}</CardTitle>
+          <CardDescription>{copy.visualDescription}</CardDescription>
         </div>
 
         <div className="mt-5 space-y-5">
           <div>
-            <Label>Ícono</Label>
+            <Label>{copy.icon}</Label>
             <div className="grid grid-cols-3 gap-3">
-              {HABIT_ICONS.map((iconOption) => {
+              {icons.map((iconOption) => {
                 const selected = values.icon === iconOption.value;
                 return (
                   <button
@@ -294,7 +366,7 @@ export function HabitForm({
           </div>
 
           <div>
-            <Label>Color</Label>
+            <Label>{copy.color}</Label>
             <div className="grid grid-cols-2 gap-3">
               {HABIT_COLORS.map((colorOption) => {
                 const selected = values.color === colorOption.value;
@@ -323,9 +395,9 @@ export function HabitForm({
           </div>
 
           <div>
-            <Label>Nivel</Label>
+            <Label>{copy.level}</Label>
             <div className="grid grid-cols-3 gap-3">
-              {HABIT_LEVELS.map((levelOption) => {
+              {levels.map((levelOption) => {
                 const selected = values.level === levelOption.value;
                 return (
                   <button
@@ -358,14 +430,14 @@ export function HabitForm({
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "Guardando..." : mode === "create" ? "Crear hábito" : "Guardar cambios"}
+          {submitting ? copy.saving : mode === "create" ? copy.createHabit : copy.saveChanges}
         </Button>
         <Link href={mode === "create" ? "/today" : "/"} className={buttonVariants({ variant: "secondary" })}>
-          Cancelar
+          {copy.cancel}
         </Link>
         {mode === "edit" && habitId ? (
           <Button type="button" variant="danger" onClick={() => void handleDelete()} disabled={submitting}>
-            Eliminar hábito
+            {copy.deleteHabit}
           </Button>
         ) : null}
       </div>
