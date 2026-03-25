@@ -1,0 +1,12 @@
+﻿[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bossfit.app",
+      "sha256_cert_fingerprints": [
+        "74:99:BC:54:07:E0:CE:99:B7:80:F7:CB:2E:72:52:C3:3E:01:36:92:DC:B2:3F:A9:8B:49:47:A1:AF:15:3D:AA"
+      ]
+    }
+  }
+]

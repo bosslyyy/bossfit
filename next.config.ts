@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -19,6 +19,19 @@ const nextConfig: NextConfig = {
           {
             key: "Cache-Control",
             value: "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, must-revalidate"
+          },
+          {
+            key: "Content-Type",
+            value: "application/json; charset=utf-8"
           }
         ]
       }
