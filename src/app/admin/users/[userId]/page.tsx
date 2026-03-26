@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -90,7 +90,7 @@ function translateAssignmentStatus(status: PlatformAdminUserMembershipItem["assi
       ? { active: "Active", pending: "Pending", paused: "Paused" }
       : { active: "Activa", pending: "Pendiente", paused: "Pausada" };
 
-  return status ? labels[status] : locale === "en" ? "No assignment" : "Sin asignación";
+  return status ? labels[status] : locale === "en" ? "No assignment" : "Sin asignaciÃ³n";
 }
 
 function translateSaveReason(value: string | undefined, locale: "es" | "en") {
@@ -111,10 +111,10 @@ function translateSaveReason(value: string | undefined, locale: "es" | "en") {
       : {
           sync: "sync",
           reset: "reinicio",
-          signout: "cierre de sesión",
+          signout: "cierre de sesiÃ³n",
           pagehide: "segundo plano",
           bootstrap: "bootstrap",
-          recovery: "recuperación"
+          recovery: "recuperaciÃ³n"
         };
 
   return labels[value] ?? value;
@@ -255,20 +255,20 @@ export default function PlatformAdminUserDetailPage() {
         }
       : {
           notFound: "No encontramos esa cuenta.",
-          loadError: "No se pudo cargar la ficha técnica.",
-          saveError: "No se pudo guardar la ficha técnica.",
+          loadError: "No se pudo cargar la ficha tÃ©cnica.",
+          saveError: "No se pudo guardar la ficha tÃ©cnica.",
           addGymError: "No se pudo vincular el usuario al gym.",
           membershipError: "No se pudo actualizar la membership.",
-          loadingTitle: "Cargando ficha técnica",
+          loadingTitle: "Cargando ficha tÃ©cnica",
           loadingDescription: "Estamos reuniendo identidad, permisos y memberships del usuario.",
           retry: "Reintentar",
           missingTitle: "No encontramos esa cuenta",
           missingDescription: "Puede que ya no exista o que no haya sincronizado su perfil.",
-          titleDescription: "Ficha técnica global para identidad, permisos de plataforma y memberships por gym.",
+          titleDescription: "Ficha tÃ©cnica global para identidad, permisos de plataforma y memberships por gym.",
           backToUsers: "Volver a usuarios",
           account: "Cuenta",
           gyms: "Gyms",
-          habits: "Hábitos",
+          habits: "Ejercicios",
           sync: "Sync",
           currentLevel: "nivel actual",
           linkedMemberships: "memberships vinculadas",
@@ -283,7 +283,7 @@ export default function PlatformAdminUserDetailPage() {
           platformLabelField: "Etiqueta platform",
           fullPlatformAccess: "Dar permisos de plataforma completos (/admin)",
           created: "Creada",
-          lastAccess: "Último acceso",
+          lastAccess: "Ãšltimo acceso",
           emailConfirmed: "Email confirmado",
           type: "Tipo",
           saveProfile: "Guardar ficha",
@@ -298,9 +298,9 @@ export default function PlatformAdminUserDetailPage() {
           addToGymAction: "Agregar al gym",
           gymPermissions: "Permisos por gym",
           gymPermissionsDescription: "Gestiona rol principal, roles adicionales y estado sin tocar la identidad global de la cuenta.",
-          noMembershipTitle: "Esta cuenta no pertenece a ning�n gym",
-          noMembershipDescription: "Usa el formulario superior para vincularla a su primera operación.",
-          assignment: "Asignaci�n",
+          noMembershipTitle: "Esta cuenta no pertenece a ningï¿½n gym",
+          noMembershipDescription: "Usa el formulario superior para vincularla a su primera operaciÃ³n.",
+          assignment: "Asignaciï¿½n",
           noTrainer: "Sin entrenador",
           noGroup: "Sin grupo",
           saveMembership: "Guardar membership"
@@ -611,8 +611,8 @@ export default function PlatformAdminUserDetailPage() {
                       </div>
                       <p className="mt-3 text-sm text-muted-foreground">
                         {copy.assignment}: {translateAssignmentStatus(membership.assignmentStatus, locale)}
-                        {membership.trainerName ? ` · ${locale === "en" ? "trainer" : "trainer"} ${membership.trainerName}` : ""}
-                        {membership.groupName ? ` · ${locale === "en" ? "group" : "grupo"} ${membership.groupName}` : ""}
+                        {membership.trainerName ? ` Â· ${locale === "en" ? "trainer" : "trainer"} ${membership.trainerName}` : ""}
+                        {membership.groupName ? ` Â· ${locale === "en" ? "group" : "grupo"} ${membership.groupName}` : ""}
                       </p>
                     </div>
                     <Badge className="bg-surface text-card-foreground ring-1 ring-border">{translateMembershipStatus(membership.status, locale)}</Badge>
@@ -677,3 +677,4 @@ export default function PlatformAdminUserDetailPage() {
     </div>
   );
 }
+

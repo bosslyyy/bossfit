@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+﻿import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 import { getWeekDays } from "@/lib/i18n";
@@ -30,7 +30,7 @@ export function safePercentage(value: number, total: number) {
 
 export function formatPendingSets(remainingSets: number, locale: AppLocale = "es") {
   if (remainingSets <= 0) {
-    return locale === "en" ? "Habit completed" : "Hábito completado";
+    return locale === "en" ? "Habit completed" : "Ejercicio completado";
   }
 
   if (remainingSets === 1) {
@@ -92,7 +92,7 @@ export function calculatePoints(
 
 export function formatSelectedDays(selectedDays: WeekdayKey[], locale: AppLocale = "es") {
   const labels = getWeekDays(locale).filter((day) => selectedDays.includes(day.key)).map((day) => day.short);
-  return labels.join(" · ");
+  return labels.join(" Â· ");
 }
 
 export function titleCase(value: string) {
@@ -102,3 +102,4 @@ export function titleCase(value: string) {
 
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
+

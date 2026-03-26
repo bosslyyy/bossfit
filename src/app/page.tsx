@@ -63,23 +63,23 @@ export default function DashboardPage() {
       }
     : {
         title: "BossFit",
-        description: "Tu tablero premium para entrenar con intención y sostener hábitos sin fricción.",
-        createHabit: "Crear hábito",
-        firstHabitTitle: "Empieza con tu primer hábito",
+        description: "Tu tablero premium para entrenar con intención y sostener ejercicios sin fricción.",
+        createHabit: "Crear ejercicio",
+        firstHabitTitle: "Empieza con tu primer ejercicio",
         firstHabitDescription:
           "Crea una rutina simple y BossFit empezará a seguir tus series, progreso diario y consistencia.",
         todayPlan: "Plan de hoy",
-        scheduledHabits: "hábitos programados",
-        openToday: "Abrir hábitos de hoy",
+        scheduledHabits: "ejercicios programados",
+        openToday: "Abrir ejercicios de hoy",
         currentLevel: "Nivel actual",
         pointsToLevel: `${bossProfile.levelProgress.pointsToNextLevel} pts para subir`,
         seeProgress: "Ver progreso y gráficas",
         focusToday: "En foco hoy",
         seeAll: "Ver todo",
-        noHabitsToday: "No tienes hábitos hoy",
+        noHabitsToday: "No tienes ejercicios hoy",
         noHabitsTodayDescription: "Aprovecha para crear uno nuevo o reprogramar tus rutinas para este día.",
-        yourHabits: "Tus hábitos",
-        newHabit: "Nuevo hábito"
+        yourHabits: "Tus ejercicios",
+        newHabit: "Nuevo ejercicio"
       };
 
   return (
@@ -190,3 +190,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

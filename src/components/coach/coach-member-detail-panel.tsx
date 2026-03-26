@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 
@@ -154,11 +154,11 @@ export function CoachMemberDetailPanel({
           noDate: "Sin fecha",
           loading: "Cargando ficha del alumno...",
           selectTitle: "Selecciona un alumno",
-          selectDescription: "Elige un alumno de la lista para abrir su ficha completa, revisar progreso real y comunicarte con él.",
+          selectDescription: "Elige un alumno de la lista para abrir su ficha completa, revisar progreso real y comunicarte con Ã©l.",
           memberProfile: "Ficha del alumno",
           noUsername: "sin-username",
           joined: "Alta",
-          lastActivity: "Última actividad",
+          lastActivity: "Ãšltima actividad",
           editTraining: "Editar entrenamientos",
           weeklyCompliance: "Cumplimiento semanal",
           currentStreak: "Racha actual",
@@ -170,18 +170,18 @@ export function CoachMemberDetailPanel({
           todayBlock: "Bloque de hoy",
           closed: "Cerrado",
           pending: "pendientes",
-          noHabitsToday: "No hay hábitos programados hoy para este alumno.",
-          historyTitle: "Historial por h�bito",
-          historyDescription: "Últimos 7 días por h�bito activo para revisar adherencia real.",
+          noHabitsToday: "No hay ejercicios programados hoy para este alumno.",
+          historyTitle: "Historial por ejercicio",
+          historyDescription: "Ãšltimos 7 dÃ­as por ejercicio activo para revisar adherencia real.",
           notesTitle: "Notas del coach",
-          notesDescription: "Notas privadas sobre técnica, seguimiento y contexto del alumno.",
-          noteTitlePlaceholder: "Título de la nota",
+          notesDescription: "Notas privadas sobre tÃ©cnica, seguimiento y contexto del alumno.",
+          noteTitlePlaceholder: "TÃ­tulo de la nota",
           noteBodyPlaceholder: "Escribe la nota del alumno...",
           noteTypes: {
             general: "General",
             performance: "Performance",
-            injury: "Lesión",
-            nutrition: "Nutrición",
+            injury: "LesiÃ³n",
+            nutrition: "NutriciÃ³n",
             mindset: "Mentalidad",
             followup: "Seguimiento"
           },
@@ -190,11 +190,11 @@ export function CoachMemberDetailPanel({
           pin: "Fijar",
           archive: "Archivar",
           updated: "Actualizada",
-          noNotes: "Aún no hay notas para este alumno.",
+          noNotes: "AÃºn no hay notas para este alumno.",
           alertsTitle: "Alertas para el alumno",
           alertsDescription: "Mensajes accionables que aparecen en la cuenta real del alumno.",
-          alertTitlePlaceholder: "Título de la alerta",
-          alertBodyPlaceholder: "Describe la alerta que verá el alumno...",
+          alertTitlePlaceholder: "TÃ­tulo de la alerta",
+          alertBodyPlaceholder: "Describe la alerta que verÃ¡ el alumno...",
           severities: {
             info: "Info",
             warning: "Warning",
@@ -202,7 +202,7 @@ export function CoachMemberDetailPanel({
             urgent: "Urgente"
           },
           sendAlert: "Enviar alerta",
-          read: "Leída",
+          read: "LeÃ­da",
           pendingAlert: "Pendiente",
           dismissed: "Descartada",
           active: "Activa",
@@ -211,8 +211,8 @@ export function CoachMemberDetailPanel({
           chatDescription: "Canal directo para seguimiento diario y feedback.",
           coach: "Coach",
           member: "Alumno",
-          noMessages: "Todavía no hay mensajes en este chat.",
-          messagePlaceholder: "Escribe una instrucción o feedback para el alumno...",
+          noMessages: "TodavÃ­a no hay mensajes en este chat.",
+          messagePlaceholder: "Escribe una instrucciÃ³n o feedback para el alumno...",
           sendMessage: "Enviar mensaje"
         };
 
@@ -249,10 +249,10 @@ export function CoachMemberDetailPanel({
             <div className="space-y-1 text-sm text-white/60">
               <p>{detail.member.email}</p>
               <p>
-                @{detail.member.username ?? copy.noUsername} · {detail.member.groupName} · {detail.member.planName}
+                @{detail.member.username ?? copy.noUsername} Â· {detail.member.groupName} Â· {detail.member.planName}
               </p>
               <p>
-                {copy.joined}: {formatDateTime(detail.member.joinedAt, locale, copy.noDate)} · {copy.lastActivity}: {detail.member.lastActivityLabel}
+                {copy.joined}: {formatDateTime(detail.member.joinedAt, locale, copy.noDate)} Â· {copy.lastActivity}: {detail.member.lastActivityLabel}
               </p>
             </div>
           </div>
@@ -532,3 +532,4 @@ export function CoachMemberDetailPanel({
     </div>
   );
 }
+

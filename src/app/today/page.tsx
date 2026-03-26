@@ -105,7 +105,7 @@ export default function TodayPage() {
         { key: "completed", label: "Completed", count: completedEntries.length }
       ]
     : [
-        { key: "all", label: "Todos los hábitos", count: scheduledEntries.length },
+        { key: "all", label: "Todos los ejercicios", count: scheduledEntries.length },
         { key: "pending", label: "En curso", count: pendingEntries.length },
         { key: "completed", label: "Completados", count: completedEntries.length }
       ];
@@ -137,14 +137,14 @@ export default function TodayPage() {
         pointsToday: `${bossProfile.todayPoints} Boss Points hoy`,
         completed: `${snapshot.completedHabits} completados`,
         streak: `racha ${bossProfile.currentStreak}`,
-        createFirstTitle: "Crea tu primer hábito",
+        createFirstTitle: "Crea tu primer ejercicio",
         createFirstDescription: "Define un bloque simple y BossFit convertirá esta vista en tu sesión diaria principal.",
-        createHabit: "Crear hábito",
-        noneScheduledTitle: "No hay hábitos programados",
-        noneScheduledDescription: "Puedes dejar el día liviano o crear un hábito flexible para mantener el ritmo durante la semana.",
-        emptyFilter: "No hay hábitos activos en este filtro.",
+        createHabit: "Crear ejercicio",
+        noneScheduledTitle: "No hay ejercicios programados",
+        noneScheduledDescription: "Puedes dejar el día liviano o crear un ejercicio flexible para mantener el ritmo durante la semana.",
+        emptyFilter: "No hay ejercicios activos en este filtro.",
         completedTitle: `${completedEntries.length} completados`,
-        noCompleted: "Todavía no tienes hábitos completados en esta vista."
+        noCompleted: "Todavía no tienes ejercicios completados en esta vista."
       };
 
   return (
@@ -314,3 +314,4 @@ const actionCircleClass =
   "flex h-12 w-12 items-center justify-center rounded-full border border-border/80 bg-card/94 text-card-foreground shadow-[0_14px_30px_rgba(2,8,16,0.12)] transition hover:border-[#4E7DFF]/32 hover:text-[#4E7DFF] active:scale-[0.98]";
 const listPanelClass =
   "overflow-hidden rounded-[30px] border border-border/70 bg-card/96 shadow-[0_26px_60px_rgba(2,8,16,0.16)]";
+

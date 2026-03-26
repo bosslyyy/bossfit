@@ -87,11 +87,11 @@ export function HabitForm({
         deleteError: "Could not delete the habit."
       }
     : {
-        defineTitle: mode === "create" ? "Define tu hábito" : "Ajusta tu hábito",
+        defineTitle: mode === "create" ? "Define tu ejercicio" : "Ajusta tu ejercicio",
         defineDescription: "Nombre claro, objetivo simple y días exactos para hacerlo más fácil de cumplir.",
         active: "Activo",
         paused: "Pausado",
-        habitName: "Nombre del hábito",
+        habitName: "Nombre del ejercicio",
         habitPlaceholder: "Ej. Lagartijas o cuerda",
         category: "Categoría",
         categoryPlaceholder: "Selecciona una categoría",
@@ -108,20 +108,20 @@ export function HabitForm({
         timerExample: "Ej. 60 = 1 minuto por serie.",
         longRoutineHint: "Puedes programar rutinas largas de cardio o circuitos grandes.",
         scheduledDays: "Días programados",
-        scheduledDaysDescription: "Toca los días en los que se repetirá el hábito.",
+        scheduledDaysDescription: "Toca los días en los que se repetirá el ejercicio.",
         visualStyle: "Estilo visual",
         visualDescription: "Elige un ícono y un color para reconocerlo rápido desde la vista de hoy.",
         icon: "Ícono",
         color: "Color",
         level: "Nivel",
         saving: "Guardando...",
-        createHabit: "Crear hábito",
+        createHabit: "Crear ejercicio",
         saveChanges: "Guardar cambios",
         cancel: "Cancelar",
-        deleteHabit: "Eliminar hábito",
-        deleteConfirm: "¿Eliminar este hábito? Esta acción no se puede deshacer.",
-        saveError: "No se pudo guardar el hábito.",
-        deleteError: "No se pudo eliminar el hábito."
+        deleteHabit: "Eliminar ejercicio",
+        deleteConfirm: "¿Eliminar este ejercicio? Esta acción no se puede deshacer.",
+        saveError: "No se pudo guardar el ejercicio.",
+        deleteError: "No se pudo eliminar el ejercicio."
       };
 
   const form = useForm<HabitFormValues>({
@@ -444,3 +444,4 @@ export function HabitForm({
     </form>
   );
 }
+

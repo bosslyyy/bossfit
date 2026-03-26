@@ -27,7 +27,7 @@ export const habitSchema = z
       .number()
       .int()
       .min(1, "Debes definir al menos 1 serie.")
-      .max(999, "Puedes programar hasta 999 series por hábito."),
+      .max(999, "Puedes programar hasta 999 series por ejercicio."),
     repsPerSet: z.coerce
       .number()
       .int()
@@ -130,3 +130,4 @@ export function normalizeHabitFormValues(
     active: values.active ?? habitDefaultValues.active
   };
 }
+

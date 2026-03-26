@@ -53,12 +53,12 @@ export function MonthlyCalendar({
         complete: "Completo",
         partial: "Parcial",
         missed: "Incompleto",
-        habits: "hábitos",
+        habits: "ejercicios",
         closed: "Cerrado",
         inProgress: "En curso",
         pending: "Pendiente",
         upcoming: "Próximo",
-        none: "Sin hábitos"
+        none: "Sin ejercicios"
       };
 
   return (
@@ -149,3 +149,4 @@ export function MonthlyCalendar({
     </Card>
   );
 }
+

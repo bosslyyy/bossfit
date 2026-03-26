@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -38,7 +38,7 @@ const membershipStatusStyles: Record<AdminUserDetail["status"], string> = {
 };
 
 function formatSelectedDays(selectedDays: string[], locale: "es" | "en") {
-  return getWeekDays(locale).filter((day) => selectedDays.includes(day.key)).map((day) => day.short).join(" · ");
+  return getWeekDays(locale).filter((day) => selectedDays.includes(day.key)).map((day) => day.short).join(" Â· ");
 }
 
 function formatDate(value: string | undefined, locale: "es" | "en", withTime = true) {
@@ -124,24 +124,24 @@ export default function AdminUserDetailPage() {
     : {
         loadError: "No se pudo cargar la ficha del usuario.", saveError: "No se pudo guardar la ficha.", deleteError: "No se pudo eliminar el usuario.",
         resetError: "No se pudieron regenerar las credenciales.", saved: "Ficha actualizada correctamente.",
-        deleteConfirm: (name: string) => `¿Eliminar a ${name} del sistema del gym?`, resetConfirm: (name: string) => `¿Regenerar acceso temporal para ${name}?`,
+        deleteConfirm: (name: string) => `Â¿Eliminar a ${name} del sistema del gym?`, resetConfirm: (name: string) => `Â¿Regenerar acceso temporal para ${name}?`,
         loadingTitle: "Cargando ficha del usuario", loadingDescription: "Estamos reuniendo perfil, estado del gym y progreso actual del usuario.",
         missingTitle: "No encontramos al usuario", missingDescription: "Puede que ya no pertenezca a este gym.",
         back: "Volver", description: "Ficha completa para editar cuenta, corregir asignaciones, revisar progreso y operar accesos desde el panel admin.",
         username: "Usuario", noUsername: "Sin username", regenerateAccess: "Regenerar acceso", regenerating: "Regenerando acceso...",
-        delete: "Eliminar", deleting: "Eliminando...", habits: "Hábitos", activeHabits: "activos", currentStreak: "Racha actual", best: "Mejor",
+        delete: "Eliminar", deleting: "Eliminando...", habits: "Ejercicios", activeHabits: "activos", currentStreak: "Racha actual", best: "Mejor",
         points: "Boss Points", level: "Nivel", today: "Hoy", todayHelper: "completados / programados", accountTitle: "Cuenta y perfil",
         accountDescription: "Edita el nombre visible, username, rol y estado operativo de la cuenta dentro del gym.", fullName: "Nombre completo",
         role: "Rol", member: "Miembro", trainer: "Entrenador", admin: "Admin", status: "Estado", security: "Seguridad y cuenta",
         securityDescription: "Resumen operativo del acceso y la actividad reciente de la cuenta.", alias: "Alias", managedAccount: "Cuenta gestionada",
-        yes: "S�", no: "No", lastActivity: "Última actividad", recentState: "Estado reciente", created: "Creada", lastAccess: "Último acceso",
-        assignedMembers: "Alumnos asignados", groupsInCharge: "Grupos a cargo", assignmentTitle: "Asignaci�n principal",
+        yes: "Sï¿½", no: "No", lastActivity: "Ãšltima actividad", recentState: "Estado reciente", created: "Creada", lastAccess: "Ãšltimo acceso",
+        assignedMembers: "Alumnos asignados", groupsInCharge: "Grupos a cargo", assignmentTitle: "Asignaciï¿½n principal",
         assignmentDescription: "Corrige entrenador, grupo y estado del seguimiento sin salir de la ficha.", assignmentTrainer: "Entrenador",
         noTrainer: "Sin entrenador", assignmentGroup: "Grupo", noGroup: "Sin grupo", assignmentStatus: "Estado", credsTitle: "Credenciales temporales nuevas",
-        credsDescription: "�salas para entregar acceso actualizado al usuario desde el gym.", user: "Usuario", fullAccess: "Acceso completo",
-        tempPassword: "Contraseña temporal", copied: "Copiado", linkedGroups: "Grupos vinculados", linkedGroupsDescription: "Referencia rápida de grupos donde este usuario aparece actualmente.",
-        routineTitle: "Rutina actual", routineDescription: "Hábitos actuales del usuario cargados en su cuenta.", paused: "Pausado", noHabits: "Este usuario aún no tiene hábitos cargados en su cuenta.",
-        save: "Guardar ficha", saving: "Guardando cambios...", ownersProtected: "Los owners están protegidos y no se eliminan desde esta vista.", noRecord: "Sin registro"
+        credsDescription: "ï¿½salas para entregar acceso actualizado al usuario desde el gym.", user: "Usuario", fullAccess: "Acceso completo",
+        tempPassword: "ContraseÃ±a temporal", copied: "Copiado", linkedGroups: "Grupos vinculados", linkedGroupsDescription: "Referencia rÃ¡pida de grupos donde este usuario aparece actualmente.",
+        routineTitle: "Rutina actual", routineDescription: "Ejercicios actuales del usuario cargados en su cuenta.", paused: "Pausado", noHabits: "Este usuario aÃºn no tiene ejercicios cargados en su cuenta.",
+        save: "Guardar ficha", saving: "Guardando cambios...", ownersProtected: "Los owners estÃ¡n protegidos y no se eliminan desde esta vista.", noRecord: "Sin registro"
       };
 
   const loadDetail = async () => {
@@ -479,7 +479,7 @@ export default function AdminUserDetailPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-card-foreground dark:text-white">{habit.name}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} · {formatSelectedDays(habit.selectedDays, locale)}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{formatHabitTarget(habit.targetSets, habit.repsPerSet, habit.trackingMode, habit.secondsPerSet)} Â· {formatSelectedDays(habit.selectedDays, locale)}</p>
                     </div>
                     <Badge className={habit.active ? "bg-accent/12 text-accent ring-1 ring-accent/20" : "bg-muted text-card-foreground ring-1 ring-border"}>{habit.active ? statusLabel("active", locale) : copy.paused}</Badge>
                   </div>
@@ -509,3 +509,4 @@ export default function AdminUserDetailPage() {
     </div>
   );
 }
+

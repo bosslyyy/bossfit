@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Flame, Target, Trophy } from "lucide-react";
 
@@ -44,9 +44,9 @@ export function CoachMemberCard({
           plan: "Plan",
           streak: "Racha",
           compliance: "Cumpl.",
-          days: "días",
+          days: "dÃ­as",
           today: "hoy",
-          activeHabits: "hábitos activos"
+          activeHabits: "ejercicios activos"
         };
 
   return (
@@ -109,3 +109,4 @@ export function CoachMemberCard({
     </button>
   );
 }
+

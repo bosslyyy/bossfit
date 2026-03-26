@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "BossFit",
     short_name: "BossFit",
-    description: "Fitness y hábitos diarios con una experiencia premium para móvil.",
+    description: "Fitness y ejercicios diarios con una experiencia premium para móvil.",
     id: "/",
     scope: "/",
     start_url: "/",
@@ -31,4 +31,5 @@ export default function manifest(): MetadataRoute.Manifest {
     ]
   };
 }
+
 

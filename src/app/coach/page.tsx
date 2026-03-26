@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -113,7 +113,7 @@ export default function CoachPage() {
           selectMember: "Select a member",
           trainingDescription: "The editor writes directly to the member's real habits in Supabase.",
           todayTrainingDescription: (groupName: string, completedSets: number, totalSets: number) =>
-            `${groupName} · ${completedSets}/${totalSets} sets today`,
+            `${groupName} Â· ${completedSets}/${totalSets} sets today`,
           weeklyLabel: "weekly",
           closed: "Closed",
           pending: "pending",
@@ -124,40 +124,40 @@ export default function CoachPage() {
       : {
           loadPanelError: "No se pudo cargar el panel del coach.",
           loadMemberError: "No se pudo cargar la ficha del alumno.",
-          mutateError: "No se pudo completar la acci�n del coach.",
+          mutateError: "No se pudo completar la acciï¿½n del coach.",
           selectCreate: "Selecciona un alumno antes de crear un entrenamiento.",
           selectEdit: "Selecciona un alumno antes de editar un entrenamiento.",
           selectDelete: "Selecciona un alumno antes de eliminar un entrenamiento.",
           loading: "Preparando panel del entrenador...",
           eyebrow: "Coach HQ",
-          heroTitle: "Seguimiento real, comunicación y control diario de tus alumnos.",
+          heroTitle: "Seguimiento real, comunicaciÃ³n y control diario de tus alumnos.",
           heroDescription:
-            "Revisa progreso en vivo, calendario, hábitos activos, notas privadas, alertas visibles en la cuenta del alumno y chat directo desde el panel.",
+            "Revisa progreso en vivo, calendario, ejercicios activos, notas privadas, alertas visibles en la cuenta del alumno y chat directo desde el panel.",
           refreshing: "Actualizando...",
           refresh: "Actualizar panel",
           assigned: "Asignados",
           assignedHelper: "alumnos bajo tu seguimiento directo",
           completedToday: "Completados hoy",
-          completedTodayHelper: "alumnos que cerraron su día",
+          completedTodayHelper: "alumnos que cerraron su dÃ­a",
           avgCompliance: "Cumplimiento medio",
-          avgComplianceHelper: "Últimos 7 días del grupo",
+          avgComplianceHelper: "Ãšltimos 7 dÃ­as del grupo",
           avgStreak: "Racha media",
           avgStreakHelper: "consistencia de tus asignados",
-          noMembersTitle: "No tienes alumnos asignados todavía",
+          noMembersTitle: "No tienes alumnos asignados todavÃ­a",
           noMembersDescription:
-            "Cuando el admin del gym te asigne miembros, aparecer�n aquí con su progreso real y podrás gestionar entrenamientos y seguimiento.",
+            "Cuando el admin del gym te asigne miembros, aparecerï¿½n aquÃ­ con su progreso real y podrÃ¡s gestionar entrenamientos y seguimiento.",
           assignedMembers: "Alumnos asignados",
           assignedMembersDescription: "Selecciona un alumno para abrir su ficha completa o editar su plan.",
-          quickAccess: "Acceso rápido",
+          quickAccess: "Acceso rÃ¡pido",
           quickAccessDescription:
-            "Entra a la ficha del alumno para revisar series en vivo, historial, alertas y chat. Usa entrenamientos para modificar hábitos reales.",
+            "Entra a la ficha del alumno para revisar series en vivo, historial, alertas y chat. Usa entrenamientos para modificar ejercicios reales.",
           openProfile: "Abrir ficha del alumno",
           manageTraining: "Gestionar entrenamientos",
           membersDescription: "Elige un alumno para abrir su ficha completa y ver actividad real en tiempo casi real.",
           selectMember: "Selecciona un alumno",
-          trainingDescription: "El editor escribe directamente en los hábitos reales del alumno en Supabase.",
+          trainingDescription: "El editor escribe directamente en los ejercicios reales del alumno en Supabase.",
           todayTrainingDescription: (groupName: string, completedSets: number, totalSets: number) =>
-            `${groupName} · ${completedSets}/${totalSets} series hoy`,
+            `${groupName} Â· ${completedSets}/${totalSets} series hoy`,
           weeklyLabel: "semanal",
           closed: "Cerrado",
           pending: "pendientes",
@@ -581,3 +581,4 @@ export default function CoachPage() {
 
   return summaryView;
 }
+

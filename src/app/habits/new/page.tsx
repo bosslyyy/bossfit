@@ -11,7 +11,7 @@ export default function NewHabitPage() {
   return (
     <div className="space-y-6 animate-rise">
       <PageHeader
-        title={locale === "en" ? "Create habit" : "Crear hábito"}
+        title={locale === "en" ? "Create habit" : "Crear ejercicio"}
         description={
           locale === "en"
             ? "Design a clear, tactile routine that is easy to sustain from mobile."
@@ -23,3 +23,4 @@ export default function NewHabitPage() {
     </div>
   );
 }
+

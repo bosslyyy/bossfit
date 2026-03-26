@@ -125,7 +125,7 @@ export const ADMIN_RECENT_ACTIVITY = [
     time: "Hace 2 h"
   },
   {
-    title: "14 alumnos completaron sus habitos de hoy",
+    title: "14 alumnos completaron sus ejercicios de hoy",
     detail: "El pico de actividad llego entre 6:00 y 7:30 a.m.",
     time: "Hoy"
   }
@@ -157,7 +157,7 @@ export const ADMIN_MEMBERS: AdminMember[] = [
   {
     id: "member-03",
     name: "Andrea Campos",
-    goal: "Habito y constancia",
+    goal: "Ejercicio y constancia",
     group: "Beginners Reset",
     trainer: "Coach Elena",
     status: "Atención",
@@ -296,6 +296,7 @@ export const ADMIN_ASSIGNMENTS: AdminAssignment[] = [
     nextReview: "Lunes"
   }
 ];
+
 
 
 

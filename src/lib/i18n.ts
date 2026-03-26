@@ -173,7 +173,7 @@ export function getLevelTitles(locale: AppLocale = DEFAULT_LOCALE) {
 
 export function formatRemainingSetsLabel(locale: AppLocale, remainingSets: number) {
   if (remainingSets <= 0) {
-    return locale === "en" ? "Habit completed" : "Hábito completado";
+    return locale === "en" ? "Habit completed" : "Ejercicio completado";
   }
 
   if (remainingSets === 1) {
@@ -213,3 +213,4 @@ export function writeLocaleCookie(locale: AppLocale) {
 
   document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(locale)}; path=/; max-age=31536000; SameSite=Lax`;
 }
+

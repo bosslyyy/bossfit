@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | BossFit"
   },
   description:
-    "BossFit es una PWA fitness para crear hábitos, completar series por día y seguir tu progreso con una experiencia premium móvil.",
+    "BossFit es una PWA fitness para crear ejercicios, completar series por día y seguir tu progreso con una experiencia premium móvil.",
   applicationName: "BossFit",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -53,5 +53,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     </html>
   );
 }
+
 
 

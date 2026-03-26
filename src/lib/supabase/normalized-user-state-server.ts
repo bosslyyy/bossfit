@@ -201,7 +201,7 @@ export async function updateUserHabit(
 ): Promise<NormalizedActionResult<{ habitId: string }>> {
   const existing = await fetchHabitRow(supabase, userId, habitId);
   if (!existing) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const { error } = await supabase
@@ -243,7 +243,7 @@ export async function archiveUserHabit(
   const timestamp = new Date().toISOString();
   const existing = await fetchHabitRow(supabase, userId, habitId);
   if (!existing) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const { error: habitError } = await supabase
@@ -286,7 +286,7 @@ export async function toggleUserHabitActive(
 ): Promise<NormalizedActionResult<{ habitId: string; active: boolean }>> {
   const existing = await fetchHabitRow(supabase, userId, habitId);
   if (!existing) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const active = !existing.is_active;
@@ -334,7 +334,7 @@ export async function completeUserHabitSet(
 
   const row = pickFirstRpcRow(data as RpcCompletionMutationRow[] | null);
   if (!row) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const state = await syncState(supabase, userId, "sync");
@@ -365,7 +365,7 @@ export async function undoUserHabitSet(
 
   const row = pickFirstRpcRow(data as RpcCompletionMutationRow[] | null);
   if (!row) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const state = await syncState(supabase, userId, "sync");
@@ -474,3 +474,4 @@ export async function resetUserAppData(
   const state = await syncState(supabase, userId, "reset");
   return { state, result: { reset: true } };
 }
+

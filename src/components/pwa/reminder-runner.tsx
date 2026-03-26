@@ -57,8 +57,8 @@ export function ReminderRunner() {
 
       const body =
         snapshot.pendingHabits === snapshot.scheduledHabits.length
-          ? `Tienes ${snapshot.scheduledHabits.length} hábitos listos para hoy.`
-          : `Te quedan ${snapshot.pendingHabits} hábitos para cerrar el día.`;
+          ? `Tienes ${snapshot.scheduledHabits.length} ejercicios listos para hoy.`
+          : `Te quedan ${snapshot.pendingHabits} ejercicios para cerrar el día.`;
 
       new Notification("BossFit", {
         body,
@@ -79,3 +79,4 @@ export function ReminderRunner() {
 
   return null;
 }
+

@@ -57,7 +57,7 @@ function withUpdatedHabit(
   });
 
   if (!found) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   return {
@@ -133,7 +133,7 @@ export function deleteHabitFromSnapshot(snapshot: BossFitRemoteSnapshot, habitId
   const nextHabits = snapshot.habits.filter((habit) => habit.id !== habitId);
 
   if (nextHabits.length === snapshot.habits.length) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   return {
@@ -171,7 +171,7 @@ export function completeSetInSnapshot(
   const habit = snapshot.habits.find((entry) => entry.id === habitId);
 
   if (!habit) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const currentCompletion =
@@ -216,7 +216,7 @@ export function undoSetInSnapshot(snapshot: BossFitRemoteSnapshot, habitId: stri
   const habit = snapshot.habits.find((entry) => entry.id === habitId);
 
   if (!habit) {
-    throw new SnapshotMutationError("No encontramos ese habito.");
+    throw new SnapshotMutationError("No encontramos ese ejercicio.");
   }
 
   const currentCompletion =
@@ -307,3 +307,4 @@ export function resetAppDataInSnapshot(snapshot: BossFitRemoteSnapshot) {
     result: { reset: true }
   };
 }
+

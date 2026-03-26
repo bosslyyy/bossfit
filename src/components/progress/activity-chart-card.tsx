@@ -45,7 +45,7 @@ export function ActivityChartCard({ data, locale }: { data: ProgressChartPoint[]
         description: "Boss Points y cumplimiento diario en una vista rápida y móvil.",
         points: "Puntos",
         compliance: "Cumplimiento",
-        habits: "Hábitos",
+        habits: "Ejercicios",
         weeklyAverage: "Promedio semanal"
       };
 
@@ -119,3 +119,4 @@ export function ActivityChartCard({ data, locale }: { data: ProgressChartPoint[]
     </Card>
   );
 }
+

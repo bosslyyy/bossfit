@@ -56,7 +56,7 @@ async function assertTrainerCanManageMember(request: Request, memberId: string) 
 
   if (!assignment) {
     return {
-      error: NextResponse.json({ error: "No puedes gestionar los hábitos de este alumno." }, { status: 403 })
+      error: NextResponse.json({ error: "No puedes gestionar los ejercicios de este alumno." }, { status: 403 })
     } as const;
   }
 
@@ -206,5 +206,6 @@ export async function DELETE(request: Request, context: RouteContext) {
     return NextResponse.json({ error: mapCoachSchemaErrorMessage(info), details: info.details, hint: info.hint, code: info.code }, { status: 500 });
   }
 }
+
 
 

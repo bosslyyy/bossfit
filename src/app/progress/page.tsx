@@ -59,12 +59,12 @@ export default function ProgressPage() {
         title: "Progreso",
         description: "Rachas reales, calendario de cumplimiento, Boss Points y actividad reciente para ver tu constancia completa.",
         emptyTitle: "Tu progreso aparecerá aquí",
-        emptyDescription: "Cuando tengas hábitos y empieces a completar series, BossFit construirá tus estadísticas.",
-        createHabit: "Crear hábito",
+        emptyDescription: "Cuando tengas ejercicios y empieces a completar series, BossFit construirá tus estadísticas.",
+        createHabit: "Crear ejercicio",
         bossLevel: "Boss Level",
         levelSubtitle: `Nivel ${bossProfile.levelProgress.level} · ${bossProfile.levelProgress.title}`,
         totalPoints: "Boss Points totales",
-        historyTitle: "Historial por hábito"
+        historyTitle: "Historial por ejercicio"
       };
 
   return (
@@ -126,3 +126,4 @@ export default function ProgressPage() {
     </div>
   );
 }
+
