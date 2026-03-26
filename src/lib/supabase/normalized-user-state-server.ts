@@ -55,6 +55,10 @@ interface NormalizedActionResult<TResult> {
   result: TResult;
 }
 
+type ReminderSettingsPatch = Omit<Partial<ReminderSettings>, "lastSentDate"> & {
+  lastSentDate?: string | null;
+};
+
 function normalizeReminderSettings(row: ReminderSettingsRow | null): ReminderSettings {
   return {
     ...DEFAULT_REMINDER_SETTINGS,
@@ -420,7 +424,7 @@ export async function setUserLocalePreference(
 export async function updateUserReminderSettingsPreference(
   supabase: SupabaseClient,
   userId: string,
-  values: Partial<ReminderSettings>
+  values: ReminderSettingsPatch
 ): Promise<NormalizedActionResult<{ reminderSettings: ReminderSettings }>> {
   await upsertReminderSettingsRow(supabase, userId, {
     reminder_enabled: values.enabled,

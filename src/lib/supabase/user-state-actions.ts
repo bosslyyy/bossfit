@@ -11,6 +11,10 @@ interface ActionResponse<TResult> {
   result: TResult;
 }
 
+export type ReminderSettingsPatch = Omit<Partial<ReminderSettings>, "lastSentDate"> & {
+  lastSentDate?: string | null;
+};
+
 async function getAccessToken() {
   const supabase = createSupabaseBrowserClient();
   if (!supabase) {
@@ -121,7 +125,7 @@ export function setLocaleAction(locale: AppLocale) {
   });
 }
 
-export function updateReminderSettingsAction(values: Partial<ReminderSettings>) {
+export function updateReminderSettingsAction(values: ReminderSettingsPatch) {
   return runUserStateAction<{ reminderSettings: ReminderSettings }>({
     type: "update_reminder_settings",
     values

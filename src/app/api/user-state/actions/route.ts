@@ -197,12 +197,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Configuracion de recordatorio invalida." }, { status: 400, headers: noStoreHeaders });
         }
 
-        const normalized = {
-          ...parsed.data,
-          lastSentDate: parsed.data.lastSentDate === null ? undefined : parsed.data.lastSentDate
-        };
-
-        const outcome = await updateUserReminderSettingsPreference(supabase, requester.id, normalized);
+        const outcome = await updateUserReminderSettingsPreference(supabase, requester.id, parsed.data);
         return NextResponse.json({ userId: requester.id, state: outcome.state, result: outcome.result }, { headers: noStoreHeaders });
       }
 

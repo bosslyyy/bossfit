@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   BellRing,
@@ -68,6 +68,7 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [changingLocale, setChangingLocale] = useState(false);
+  const [reminderSupport, setReminderSupport] = useState(() => getReminderSupport(locale));
 
   const copy = locale === "en"
     ? {
@@ -216,11 +217,25 @@ export default function SettingsPage() {
       return;
     }
 
-    const support = getReminderSupport(locale);
-    if (support.permission !== reminderSettings.permission) {
-      void updateReminderSettingsAction({ permission: support.permission });
-    }
-  }, [hasHydrated, locale, reminderSettings.permission]);
+    const refreshSupport = () => {
+      setReminderSupport(getReminderSupport(locale));
+    };
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+      refreshSupport();
+    };
+
+    refreshSupport();
+    window.addEventListener("focus", refreshSupport);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", refreshSupport);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [hasHydrated, locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -250,33 +265,37 @@ export default function SettingsPage() {
     };
   }, [user?.id]);
 
-  const reminderSupport = useMemo(() => getReminderSupport(locale), [locale]);
-
   if (!hasHydrated) {
     return <LoadingScreen title={copy.loading} />;
   }
 
   const handleReminderToggle = async (checked: boolean) => {
+    const currentSupport = getReminderSupport(locale);
+    setReminderSupport(currentSupport);
+
     if (!checked) {
       await updateReminderSettingsAction({ enabled: false });
       return;
     }
 
-    if (!reminderSupport.supported) {
-      await updateReminderSettingsAction({ enabled: false, permission: "unsupported" });
+    if (!currentSupport.supported) {
+      await updateReminderSettingsAction({ enabled: false });
       return;
     }
 
-    let nextPermission = reminderSupport.permission;
+    let nextPermission = currentSupport.permission;
 
     if (nextPermission !== "granted") {
       nextPermission = await requestReminderPermission();
-      await updateReminderSettingsAction({ permission: nextPermission });
+      setReminderSupport(getReminderSupport(locale));
     }
 
-    await updateReminderSettingsAction({
-      enabled: nextPermission === "granted"
-    });
+    if (nextPermission !== "granted") {
+      await updateReminderSettingsAction({ enabled: false });
+      return;
+    }
+
+    await updateReminderSettingsAction({ enabled: true });
   };
 
   const handleSignOut = async () => {
@@ -564,7 +583,7 @@ export default function SettingsPage() {
             <div className="rounded-[24px] border border-border bg-surface p-4">
               <p className="text-sm font-semibold text-card-foreground">{copy.remindersStatus}</p>
               <p className="mt-2 font-display text-2xl font-semibold text-card-foreground">
-                {getReminderPermissionLabel(reminderSettings.permission, locale)}
+                {getReminderPermissionLabel(reminderSupport.permission, locale)}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">{reminderSupport.platformHint}</p>
             </div>
@@ -586,11 +605,8 @@ export default function SettingsPage() {
                 <Button
                   variant="secondary"
                   onClick={async () => {
-                    const permission = await requestReminderPermission();
-                    void updateReminderSettingsAction({
-                      permission,
-                      enabled: permission === "granted" ? reminderSettings.enabled : false
-                    });
+                    await requestReminderPermission();
+                    setReminderSupport(getReminderSupport(locale));
                   }}
                   disabled={!reminderSupport.supported}
                 >
@@ -599,7 +615,7 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    void updateReminderSettingsAction({ lastSentDate: undefined });
+                    void updateReminderSettingsAction({ lastSentDate: null });
                   }}
                   disabled={!reminderSettings.enabled}
                 >

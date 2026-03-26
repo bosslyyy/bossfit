@@ -25,21 +25,7 @@ export function ReminderRunner() {
     }
 
     const support = getReminderSupport();
-    if (support.permission !== reminderSettings.permission) {
-      void updateReminderSettingsAction({
-        permission: support.permission,
-        enabled: support.permission === "granted" ? reminderSettings.enabled : false
-      });
-    }
-  }, [hasHydrated, reminderSettings.enabled, reminderSettings.permission]);
-
-  useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
-
-    const support = getReminderSupport();
-    if (!support.supported || reminderSettings.permission !== "granted" || !reminderSettings.enabled) {
+    if (!support.supported || support.permission !== "granted" || !reminderSettings.enabled) {
       return;
     }
 
