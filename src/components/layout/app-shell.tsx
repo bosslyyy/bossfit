@@ -11,7 +11,6 @@ import { LocaleSync } from "@/components/i18n/locale-sync";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { FloatingCreateButton } from "@/components/layout/floating-create-button";
 import { NativeUpdateBanner } from "@/components/layout/native-update-banner";
-import { ReminderRunner } from "@/components/pwa/reminder-runner";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { ThemeSync } from "@/components/pwa/theme-sync";
 import { cn } from "@/lib/utils";
@@ -35,7 +34,6 @@ export function AppShell({ children }: PropsWithChildren) {
       <ServiceWorkerRegister />
       <AuthGuard>
         <SupabaseSync />
-        <ReminderRunner />
         <div
           className={cn(
             "mx-auto min-h-screen w-full px-4 pt-[calc(1rem+env(safe-area-inset-top))]",

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
-  BellRing,
   BriefcaseBusiness,
   Globe2,
   KeyRound,
@@ -25,14 +24,12 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PageHeader } from "@/components/ui/page-header";
 import { APP_VERSION } from "@/lib/constants";
 import { getIntlLocale, LOCALE_OPTIONS } from "@/lib/i18n";
-import { getReminderPermissionLabel, getReminderSupport, requestReminderPermission } from "@/lib/reminders";
 import { fetchActiveCoachGymContext } from "@/lib/supabase/coach";
 import { getSupabaseStatusLabel } from "@/lib/supabase/client";
 import {
   resetAppDataAction,
   setLocaleAction,
-  setThemeAction,
-  updateReminderSettingsAction
+  setThemeAction
 } from "@/lib/supabase/user-state-actions";
 import { useBossFitStore } from "@/store/use-bossfit-store";
 
@@ -50,11 +47,10 @@ function formatSyncDate(value: string | undefined, locale: "es" | "en") {
 }
 
 export default function SettingsPage() {
-  const { theme, locale, reminderSettings, cloudSync, hasHydrated } = useBossFitStore(
+  const { theme, locale, cloudSync, hasHydrated } = useBossFitStore(
     useShallow((state) => ({
       theme: state.theme,
       locale: state.locale,
-      reminderSettings: state.reminderSettings,
       cloudSync: state.cloudSync,
       hasHydrated: state.hasHydrated
     }))
@@ -68,13 +64,12 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [changingLocale, setChangingLocale] = useState(false);
-  const [reminderSupport, setReminderSupport] = useState(() => getReminderSupport(locale));
 
   const copy = locale === "en"
     ? {
         loading: "Opening settings...",
         headerTitle: "Settings",
-        headerDescription: "Manage your account, appearance, language, and reminders.",
+        headerDescription: "Manage your account, appearance, and language.",
         accountTitle: "Account",
         accountDescription: "Manage your access and review your current account status.",
         activeSession: "Active session",
@@ -108,18 +103,9 @@ export default function SettingsPage() {
         localeTitle: "Language",
         localeDescription: "Choose whether BossFit should display content in Spanish or English.",
         localeUpdating: "Updating...",
-        remindersTitle: "Reminders",
-        remindersDescription:
-          "Schedule a daily time so BossFit can remind you about your exercises from the browser or PWA.",
-        remindersStatus: "Status",
-        dailyTime: "Daily time",
-        requestPermission: "Request permission",
-        rearmReminder: "Reset reminder",
-        remindersNote:
-          "Reminders depend on the browser and device system. On iPhone they can vary depending on whether the app is open or installed.",
         accountIncludes: "Your account includes",
         accountIncludesDescription: "These are some personal elements you will find when you sign in.",
-        accountItems: ["Exercises and scheduled days", "Completed sets by day", "Streaks, points, and level", "Theme, language, and reminders"],
+        accountItems: ["Exercises and scheduled days", "Completed sets by day", "Streaks, points, and level", "Theme and language"],
         tipsTitle: "Get more out of it",
         tipsDescription: "Three simple tweaks to make BossFit feel more useful and consistent.",
         tips: [
@@ -128,8 +114,8 @@ export default function SettingsPage() {
             description: "It feels faster, more immersive, and closer to a real app."
           },
           {
-            title: "Use one reminder time",
-            description: "Repeating the same schedule helps create consistency without overthinking it."
+            title: "Keep your workouts realistic",
+            description: "A clear plan with achievable daily volume makes consistency easier."
           },
           {
             title: "Start with a few exercises",
@@ -144,7 +130,7 @@ export default function SettingsPage() {
     : {
         loading: "Abriendo ajustes...",
         headerTitle: "Ajustes",
-        headerDescription: "Gestiona tu cuenta, la apariencia, el idioma y los recordatorios.",
+        headerDescription: "Gestiona tu cuenta, la apariencia y el idioma.",
         accountTitle: "Cuenta",
         accountDescription: "Gestiona tu acceso y revisa el estado actual de tu cuenta.",
         activeSession: "Sesión activa",
@@ -178,18 +164,9 @@ export default function SettingsPage() {
         localeTitle: "Idioma",
         localeDescription: "Elige si BossFit debe mostrarse en español o inglés.",
         localeUpdating: "Actualizando...",
-        remindersTitle: "Recordatorios",
-        remindersDescription:
-          "Programa una hora diaria para que BossFit te recuerde tus ejercicios desde el navegador o la PWA.",
-        remindersStatus: "Estado",
-        dailyTime: "Hora diaria",
-        requestPermission: "Solicitar permiso",
-        rearmReminder: "Rearmar recordatorio",
-        remindersNote:
-          "Los recordatorios dependen del navegador y del sistema de tu dispositivo. En iPhone pueden variar según si la app está abierta o instalada.",
         accountIncludes: "Tu cuenta incluye",
         accountIncludesDescription: "Estos son algunos elementos personales que encontrarás al entrar a tu cuenta.",
-        accountItems: ["Ejercicios y días programados", "Series completadas por día", "Rachas, puntos y nivel", "Tema, idioma y recordatorios"],
+        accountItems: ["Ejercicios y días programados", "Series completadas por día", "Rachas, puntos y nivel", "Tema e idioma"],
         tipsTitle: "Sácale más provecho",
         tipsDescription: "Tres ajustes simples para que BossFit se sienta más útil y constante en tu rutina.",
         tips: [
@@ -198,8 +175,8 @@ export default function SettingsPage() {
             description: "Se siente más rápida, más inmersiva y más parecida a una app real."
           },
           {
-            title: "Usa una sola hora de recordatorio",
-            description: "Repetir el mismo horario facilita crear constancia sin pensar demasiado."
+            title: "Mantén tus entrenamientos realistas",
+            description: "Un plan claro y con volumen diario alcanzable hace más fácil sostener constancia."
           },
           {
             title: "Empieza con pocos ejercicios",
@@ -211,31 +188,6 @@ export default function SettingsPage() {
         resetButton: "Reiniciar app",
         resetConfirm: "¿Restablecer BossFit al estado inicial?"
       };
-
-  useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
-
-    const refreshSupport = () => {
-      setReminderSupport(getReminderSupport(locale));
-    };
-    const handleVisibilityChange = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-        return;
-      }
-      refreshSupport();
-    };
-
-    refreshSupport();
-    window.addEventListener("focus", refreshSupport);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("focus", refreshSupport);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [hasHydrated, locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -268,35 +220,6 @@ export default function SettingsPage() {
   if (!hasHydrated) {
     return <LoadingScreen title={copy.loading} />;
   }
-
-  const handleReminderToggle = async (checked: boolean) => {
-    const currentSupport = getReminderSupport(locale);
-    setReminderSupport(currentSupport);
-
-    if (!checked) {
-      await updateReminderSettingsAction({ enabled: false });
-      return;
-    }
-
-    if (!currentSupport.supported) {
-      await updateReminderSettingsAction({ enabled: false });
-      return;
-    }
-
-    let nextPermission = currentSupport.permission;
-
-    if (nextPermission !== "granted") {
-      nextPermission = await requestReminderPermission();
-      setReminderSupport(getReminderSupport(locale));
-    }
-
-    if (nextPermission !== "granted") {
-      await updateReminderSettingsAction({ enabled: false });
-      return;
-    }
-
-    await updateReminderSettingsAction({ enabled: true });
-  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -553,81 +476,6 @@ export default function SettingsPage() {
           </div>
 
           {changingLocale ? <p className="text-sm text-muted-foreground">{copy.localeUpdating}</p> : null}
-        </div>
-      </Card>
-
-      <Card>
-        <div className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
-                <BellRing className="h-5 w-5" />
-              </div>
-              <div className="space-y-1">
-                <CardTitle>{copy.remindersTitle}</CardTitle>
-                <CardDescription>{copy.remindersDescription}</CardDescription>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant={reminderSettings.enabled ? "primary" : "outline"}
-              onClick={() => {
-                void handleReminderToggle(!reminderSettings.enabled);
-              }}
-            >
-              {reminderSettings.enabled ? (locale === "en" ? "On" : "Activos") : (locale === "en" ? "Off" : "Desactivados")}
-            </Button>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-[0.9fr,1.1fr]">
-            <div className="rounded-[24px] border border-border bg-surface p-4">
-              <p className="text-sm font-semibold text-card-foreground">{copy.remindersStatus}</p>
-              <p className="mt-2 font-display text-2xl font-semibold text-card-foreground">
-                {getReminderPermissionLabel(reminderSupport.permission, locale)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">{reminderSupport.platformHint}</p>
-            </div>
-
-            <div className="rounded-[24px] border border-border bg-surface p-4">
-              <label htmlFor="reminder-time" className="text-sm font-semibold text-card-foreground">
-                {copy.dailyTime}
-              </label>
-              <Input
-                id="reminder-time"
-                type="time"
-                className="mt-3"
-                value={reminderSettings.time}
-                onChange={(event) => {
-                  void updateReminderSettingsAction({ time: event.target.value });
-                }}
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    await requestReminderPermission();
-                    setReminderSupport(getReminderSupport(locale));
-                  }}
-                  disabled={!reminderSupport.supported}
-                >
-                  {copy.requestPermission}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    void updateReminderSettingsAction({ lastSentDate: null });
-                  }}
-                  disabled={!reminderSettings.enabled}
-                >
-                  {copy.rearmReminder}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[22px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-            {copy.remindersNote}
-          </div>
         </div>
       </Card>
 
