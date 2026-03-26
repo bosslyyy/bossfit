@@ -43,23 +43,23 @@ export default function DashboardPage() {
   const copy = locale === "en"
     ? {
         title: "BossFit",
-        description: "Your premium dashboard to train with intent and keep habits without friction.",
-        createHabit: "Create habit",
-        firstHabitTitle: "Start with your first habit",
+        description: "Your premium dashboard to train with intent and keep exercises without friction.",
+        createHabit: "Create exercise",
+        firstHabitTitle: "Start with your first exercise",
         firstHabitDescription:
           "Create a simple routine and BossFit will start tracking your sets, daily progress, and consistency.",
         todayPlan: "Today’s plan",
-        scheduledHabits: "scheduled habits",
-        openToday: "Open today’s habits",
+        scheduledHabits: "scheduled exercises",
+        openToday: "Open today’s exercises",
         currentLevel: "Current level",
         pointsToLevel: `${bossProfile.levelProgress.pointsToNextLevel} pts to level up`,
         seeProgress: "View progress and charts",
         focusToday: "In focus today",
         seeAll: "See all",
-        noHabitsToday: "You have no habits today",
+        noHabitsToday: "You have no exercises today",
         noHabitsTodayDescription: "Use the day to create a new one or reschedule your routines for today.",
-        yourHabits: "Your habits",
-        newHabit: "New habit"
+        yourHabits: "Your exercises",
+        newHabit: "New exercise"
       }
     : {
         title: "BossFit",

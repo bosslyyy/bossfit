@@ -22,7 +22,7 @@ export default function EditHabitPage() {
   );
 
   if (!hasHydrated) {
-    return <LoadingScreen title={locale === "en" ? "Loading habit..." : "Cargando ejercicio..."} />;
+    return <LoadingScreen title={locale === "en" ? "Loading exercise..." : "Cargando ejercicio..."} />;
   }
 
   const habit = habits.find((entry) => entry.id === params.id);
@@ -31,16 +31,16 @@ export default function EditHabitPage() {
     return (
       <div className="space-y-6 animate-rise">
         <PageHeader
-          title={locale === "en" ? "Edit habit" : "Editar ejercicio"}
+          title={locale === "en" ? "Edit exercise" : "Editar ejercicio"}
           description={
             locale === "en"
-              ? "We could not find that habit in your current account."
+              ? "We could not find that exercise in your current account."
               : "No encontramos ese ejercicio en tu cuenta actual."
           }
           backHref="/"
         />
         <EmptyState
-          title={locale === "en" ? "Habit not found" : "Ejercicio no encontrado"}
+          title={locale === "en" ? "Exercise not found" : "Ejercicio no encontrado"}
           description={
             locale === "en"
               ? "It may have been deleted or the link may no longer exist."
@@ -56,7 +56,7 @@ export default function EditHabitPage() {
   return (
     <div className="space-y-6 animate-rise">
       <PageHeader
-        title={locale === "en" ? "Edit habit" : "Editar ejercicio"}
+        title={locale === "en" ? "Edit exercise" : "Editar ejercicio"}
         description={
           locale === "en"
             ? "Adjust the goal, the days, and the visual identity without losing your structure."

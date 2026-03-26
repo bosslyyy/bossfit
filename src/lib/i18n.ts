@@ -173,7 +173,7 @@ export function getLevelTitles(locale: AppLocale = DEFAULT_LOCALE) {
 
 export function formatRemainingSetsLabel(locale: AppLocale, remainingSets: number) {
   if (remainingSets <= 0) {
-    return locale === "en" ? "Habit completed" : "Ejercicio completado";
+    return locale === "en" ? "Exercise completed" : "Ejercicio completado";
   }
 
   if (remainingSets === 1) {

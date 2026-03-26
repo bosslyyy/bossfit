@@ -50,11 +50,11 @@ export function HabitForm({
 
   const copy = locale === "en"
     ? {
-        defineTitle: mode === "create" ? "Define your habit" : "Adjust your habit",
+        defineTitle: mode === "create" ? "Define your exercise" : "Adjust your exercise",
         defineDescription: "Clear name, simple goal, and exact days make it easier to complete.",
         active: "Active",
         paused: "Paused",
-        habitName: "Habit name",
+        habitName: "Exercise name",
         habitPlaceholder: "Ex. Push-ups or rope",
         category: "Category",
         categoryPlaceholder: "Select a category",
@@ -71,20 +71,20 @@ export function HabitForm({
         timerExample: "Ex. 60 = 1 minute per set.",
         longRoutineHint: "You can schedule long cardio routines or large circuits.",
         scheduledDays: "Scheduled days",
-        scheduledDaysDescription: "Tap the days when this habit repeats.",
+        scheduledDaysDescription: "Tap the days when this exercise repeats.",
         visualStyle: "Visual style",
         visualDescription: "Choose an icon and color so it is easy to spot from today’s view.",
         icon: "Icon",
         color: "Color",
         level: "Level",
         saving: "Saving...",
-        createHabit: "Create habit",
+        createHabit: "Create exercise",
         saveChanges: "Save changes",
         cancel: "Cancel",
-        deleteHabit: "Delete habit",
-        deleteConfirm: "Delete this habit? This action cannot be undone.",
-        saveError: "Could not save the habit.",
-        deleteError: "Could not delete the habit."
+        deleteHabit: "Delete exercise",
+        deleteConfirm: "Delete this exercise? This action cannot be undone.",
+        saveError: "Could not save the exercise.",
+        deleteError: "Could not delete the exercise."
       }
     : {
         defineTitle: mode === "create" ? "Define tu ejercicio" : "Ajusta tu ejercicio",

@@ -37,7 +37,7 @@ export function ActivityChartCard({ data, locale }: { data: ProgressChartPoint[]
         description: "Boss Points and daily compliance in a quick mobile view.",
         points: "Points",
         compliance: "Compliance",
-        habits: "Habits",
+        habits: "Exercises",
         weeklyAverage: "Weekly average"
       }
     : {

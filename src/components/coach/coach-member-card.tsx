@@ -38,7 +38,7 @@ export function CoachMemberCard({
           compliance: "Comp.",
           days: "days",
           today: "today",
-          activeHabits: "active habits"
+          activeHabits: "active exercises"
         }
       : {
           plan: "Plan",

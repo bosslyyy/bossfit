@@ -48,12 +48,12 @@ export default function ProgressPage() {
         title: "Progress",
         description: "Real streaks, completion calendar, Boss Points, and recent activity to see your full consistency.",
         emptyTitle: "Your progress will appear here",
-        emptyDescription: "Once you have habits and start completing sets, BossFit will build your stats.",
-        createHabit: "Create habit",
+        emptyDescription: "Once you have exercises and start completing sets, BossFit will build your stats.",
+        createHabit: "Create exercise",
         bossLevel: "Boss Level",
         levelSubtitle: `Level ${bossProfile.levelProgress.level} · ${bossProfile.levelProgress.title}`,
         totalPoints: "Total Boss Points",
-        historyTitle: "History by habit"
+        historyTitle: "History by exercise"
       }
     : {
         title: "Progreso",

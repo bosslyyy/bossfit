@@ -103,7 +103,7 @@ export function CoachHabitEditor({
           color: "Color",
           levelLabel: "Level",
           noLevel: "No level",
-          activeHabit: "Habit active for the member",
+          activeHabit: "Exercise active for the member",
           saveChanges: "Save changes",
           createAction: "Create training",
           cancelEdit: "Cancel edit"

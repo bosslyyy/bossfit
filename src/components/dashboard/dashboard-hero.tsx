@@ -23,7 +23,7 @@ export function DashboardHero({
         greetingSuffix: "Boss",
         headline: "Today you build discipline.",
         dayProgress: "Today’s progress",
-        habitsLabel: `${snapshot.completedHabits}/${snapshot.scheduledHabits.length || 0} habits`,
+        habitsLabel: `${snapshot.completedHabits}/${snapshot.scheduledHabits.length || 0} exercises`,
         pointsToday: `+${bossProfile.todayPoints} Boss Points today`,
         currentStreak: "Current streak",
         currentStreakHint: "days in a row",
@@ -33,7 +33,7 @@ export function DashboardHero({
         level: `Level ${bossProfile.levelProgress.level}`,
         nextLevel: `${bossProfile.levelProgress.pointsToNextLevel} pts to next level`,
         pending: `${snapshot.pendingHabits} pending`,
-        activeHabits: `${snapshot.activeHabits} active habits`
+        activeHabits: `${snapshot.activeHabits} active exercises`
       }
     : {
         greetingSuffix: "Boss",

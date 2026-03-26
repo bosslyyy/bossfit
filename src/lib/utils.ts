@@ -30,7 +30,7 @@ export function safePercentage(value: number, total: number) {
 
 export function formatPendingSets(remainingSets: number, locale: AppLocale = "es") {
   if (remainingSets <= 0) {
-    return locale === "en" ? "Habit completed" : "Ejercicio completado";
+    return locale === "en" ? "Exercise completed" : "Ejercicio completado";
   }
 
   if (remainingSets === 1) {

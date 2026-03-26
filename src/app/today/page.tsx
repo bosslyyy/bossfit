@@ -100,7 +100,7 @@ export default function TodayPage() {
 
   const filters: Array<{ key: FilterKey; label: string; count: number }> = locale === "en"
     ? [
-        { key: "all", label: "All habits", count: scheduledEntries.length },
+        { key: "all", label: "All exercises", count: scheduledEntries.length },
         { key: "pending", label: "In progress", count: pendingEntries.length },
         { key: "completed", label: "Completed", count: completedEntries.length }
       ]
@@ -121,14 +121,14 @@ export default function TodayPage() {
         pointsToday: `${bossProfile.todayPoints} Boss Points today`,
         completed: `${snapshot.completedHabits} completed`,
         streak: `streak ${bossProfile.currentStreak}`,
-        createFirstTitle: "Create your first habit",
+        createFirstTitle: "Create your first exercise",
         createFirstDescription: "Define a simple block and BossFit will turn this view into your main daily session.",
-        createHabit: "Create habit",
-        noneScheduledTitle: "No habits scheduled",
-        noneScheduledDescription: "You can keep the day light or create a flexible habit to hold the pace during the week.",
-        emptyFilter: "There are no active habits in this filter.",
+        createHabit: "Create exercise",
+        noneScheduledTitle: "No exercises scheduled",
+        noneScheduledDescription: "You can keep the day light or create a flexible exercise to hold the pace during the week.",
+        emptyFilter: "There are no active exercises in this filter.",
         completedTitle: `${completedEntries.length} completed`,
-        noCompleted: "You do not have completed habits in this view yet."
+        noCompleted: "You do not have completed exercises in this view yet."
       }
     : {
         heading: "HOY",

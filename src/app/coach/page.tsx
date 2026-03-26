@@ -88,7 +88,7 @@ export default function CoachPage() {
           eyebrow: "Coach HQ",
           heroTitle: "Live tracking, communication, and daily control of your members.",
           heroDescription:
-            "Review live progress, calendar, active habits, private notes, alerts visible in the member account, and direct chat from the panel.",
+            "Review live progress, calendar, active exercises, private notes, alerts visible in the member account, and direct chat from the panel.",
           refreshing: "Refreshing...",
           refresh: "Refresh panel",
           assigned: "Assigned",
@@ -106,12 +106,12 @@ export default function CoachPage() {
           assignedMembersDescription: "Select a member to open the full profile or edit the plan.",
           quickAccess: "Quick access",
           quickAccessDescription:
-            "Open the member profile to review live sets, history, alerts, and chat. Use training to modify real habits.",
+            "Open the member profile to review live sets, history, alerts, and chat. Use training to modify real exercises.",
           openProfile: "Open member profile",
           manageTraining: "Manage training",
           membersDescription: "Choose a member to open the full profile and see real activity in near real time.",
           selectMember: "Select a member",
-          trainingDescription: "The editor writes directly to the member's real habits in Supabase.",
+          trainingDescription: "The editor writes directly to the member's real exercises in Supabase.",
           todayTrainingDescription: (groupName: string, completedSets: number, totalSets: number) =>
             `${groupName} Â· ${completedSets}/${totalSets} sets today`,
           weeklyLabel: "weekly",

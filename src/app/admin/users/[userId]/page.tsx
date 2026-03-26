@@ -216,7 +216,7 @@ export default function PlatformAdminUserDetailPage() {
           backToUsers: "Back to users",
           account: "Account",
           gyms: "Gyms",
-          habits: "Habits",
+          habits: "Exercises",
           sync: "Sync",
           currentLevel: "current level",
           linkedMemberships: "linked memberships",

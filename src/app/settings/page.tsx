@@ -109,7 +109,7 @@ export default function SettingsPage() {
         localeUpdating: "Updating...",
         remindersTitle: "Reminders",
         remindersDescription:
-          "Schedule a daily time so BossFit can remind you about your habits from the browser or PWA.",
+          "Schedule a daily time so BossFit can remind you about your exercises from the browser or PWA.",
         remindersStatus: "Status",
         dailyTime: "Daily time",
         requestPermission: "Request permission",
@@ -118,7 +118,7 @@ export default function SettingsPage() {
           "Reminders depend on the browser and device system. On iPhone they can vary depending on whether the app is open or installed.",
         accountIncludes: "Your account includes",
         accountIncludesDescription: "These are some personal elements you will find when you sign in.",
-        accountItems: ["Habits and scheduled days", "Completed sets by day", "Streaks, points, and level", "Theme, language, and reminders"],
+        accountItems: ["Exercises and scheduled days", "Completed sets by day", "Streaks, points, and level", "Theme, language, and reminders"],
         tipsTitle: "Get more out of it",
         tipsDescription: "Three simple tweaks to make BossFit feel more useful and consistent.",
         tips: [
@@ -131,8 +131,8 @@ export default function SettingsPage() {
             description: "Repeating the same schedule helps create consistency without overthinking it."
           },
           {
-            title: "Start with a few habits",
-            description: "Two or three well-completed habits sustain a streak better than a huge list."
+            title: "Start with a few exercises",
+            description: "Two or three well-completed exercises sustain a streak better than a huge list."
           }
         ],
         resetTitle: "Reset data",

@@ -38,12 +38,12 @@ export function MonthlyCalendar({
         complete: "Complete",
         partial: "Partial",
         missed: "Missed",
-        habits: "habits",
+        habits: "exercises",
         closed: "Closed",
         inProgress: "In progress",
         pending: "Pending",
         upcoming: "Upcoming",
-        none: "No habits"
+        none: "No exercises"
       }
     : {
         title: "Calendario de progreso",

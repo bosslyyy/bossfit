@@ -107,7 +107,7 @@ export default function AdminUserDetailPage() {
         missingTitle: "We could not find the user", missingDescription: "It may no longer belong to this gym.",
         back: "Back", description: "Full profile to edit the account, fix assignments, review progress, and manage access from the gym panel.",
         username: "Username", noUsername: "No username", regenerateAccess: "Regenerate access", regenerating: "Regenerating access...",
-        delete: "Delete", deleting: "Deleting...", habits: "Habits", activeHabits: "active", currentStreak: "Current streak", best: "Best",
+        delete: "Delete", deleting: "Deleting...", habits: "Exercises", activeHabits: "active", currentStreak: "Current streak", best: "Best",
         points: "Boss Points", level: "Level", today: "Today", todayHelper: "completed / scheduled", accountTitle: "Account and profile",
         accountDescription: "Edit the visible name, username, role, and operating state of the account inside the gym.", fullName: "Full name",
         role: "Role", member: "Member", trainer: "Trainer", admin: "Admin", status: "Status", security: "Security and account",
@@ -118,7 +118,7 @@ export default function AdminUserDetailPage() {
         noTrainer: "No trainer", assignmentGroup: "Group", noGroup: "No group", assignmentStatus: "Status", credsTitle: "New temporary credentials",
         credsDescription: "Use them to deliver updated access to the user from the gym.", user: "User", fullAccess: "Full access",
         tempPassword: "Temporary password", copied: "Copied", linkedGroups: "Linked groups", linkedGroupsDescription: "Quick reference to groups where this user currently appears.",
-        routineTitle: "Current routine", routineDescription: "Current habits loaded into the user's account.", paused: "Paused", noHabits: "This user does not have habits loaded into the account yet.",
+        routineTitle: "Current routine", routineDescription: "Current exercises loaded into the user's account.", paused: "Paused", noHabits: "This user does not have exercises loaded into the account yet.",
         save: "Save profile", saving: "Saving changes...", ownersProtected: "Owners are protected and cannot be removed from this screen.", noRecord: "No record"
       }
     : {

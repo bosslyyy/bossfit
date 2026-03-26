@@ -24,7 +24,7 @@ export function HabitPreview({ values }: { values: HabitFormValues }) {
           </div>
           <div className="space-y-1">
             <h3 className="font-display text-lg font-semibold text-white">
-              {values.name || (locale === "en" ? "Your new habit" : "Tu nuevo ejercicio")}
+              {values.name || (locale === "en" ? "Your new exercise" : "Tu nuevo ejercicio")}
             </h3>
             <p className="text-sm text-white/70">
               {formatHabitTarget(values.targetSets, values.repsPerSet, values.trackingMode, values.secondsPerSet)} · {selectedDays.join(" · ") || (locale === "en" ? "Select days" : "Selecciona días")}
