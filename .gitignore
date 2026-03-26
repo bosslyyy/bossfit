@@ -18,3 +18,10 @@ pnpm-debug.log*
 
 .DS_Store
 Thumbs.db
+android-wrapper/.gradle/
+android-wrapper/build/
+android-wrapper/app/build/
+android-wrapper/local.properties
+android-wrapper/*.apk
+android-wrapper/*.aab
+android-wrapper/*.idsig

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { PropsWithChildren } from "react";
 
@@ -7,6 +7,7 @@ import { ArrowLeft, Building2, ShieldCheck } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { useAdminContext } from "@/components/admin/admin-access-gate";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { useAppLocale } from "@/hooks/use-app-locale";
@@ -37,7 +38,7 @@ export function AdminShell({ children }: PropsWithChildren) {
           nav: ["Resumen", "Usuarios", "Entrenadores", "Grupos", "Asignaciones"],
           accessTitle: "Acceso del panel",
           accessDescription:
-            "Esta secci�n ya consulta tu gym real y queda lista para conectar creación de usuarios, permisos y asignaciones avanzadas."
+            "Esta seccion ya consulta tu gym real y queda lista para conectar creacion de usuarios, permisos y asignaciones avanzadas."
         };
 
   return (
@@ -56,15 +57,20 @@ export function AdminShell({ children }: PropsWithChildren) {
       <div className="grid gap-4 xl:grid-cols-[17rem,1fr] xl:items-start">
         <aside className="space-y-4 rounded-[32px] border border-border bg-card p-5 shadow-soft dark:bg-[#121922] dark:text-white xl:sticky xl:top-6">
           <div className="space-y-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#121B29] text-[#8FB1FF] shadow-[0_16px_32px_rgba(2,8,16,0.24)]">
-              <Building2 className="h-5 w-5" />
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#121B29] shadow-[0_16px_32px_rgba(2,8,16,0.24)]">
+              <BrandLogo size={34} className="drop-shadow-[0_8px_20px_rgba(15,124,89,0.35)]" priority />
+              <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#4E7DFF]/30 bg-[#111A28] text-[#8FB1FF]">
+                <Building2 className="h-3.5 w-3.5" />
+              </span>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">{copy.eyebrow}</p>
               <h1 className="font-display text-2xl font-semibold leading-tight text-card-foreground dark:text-white">
                 {context.gymName}
               </h1>
-              <p className="text-sm text-muted-foreground">{copy.currentRole}: {titleCase(context.role)}</p>
+              <p className="text-sm text-muted-foreground">
+                {copy.currentRole}: {titleCase(context.role)}
+              </p>
             </div>
           </div>
 

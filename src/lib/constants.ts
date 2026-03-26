@@ -3,6 +3,10 @@ import { getBottomNavItems, getHabitCategories, getHabitIcons, getHabitLevels, g
 
 export const APP_VERSION = "BossFit v1.00";
 
+export const ANDROID_APP_PACKAGE = "com.bossfit.app";
+export const ANDROID_APK_DOWNLOAD_URL = "https://www.bossfit.lat/apk/latest.apk";
+export const ANDROID_MIN_NATIVE_VERSION_CODE = 3;
+
 export const WEEK_DAYS = getWeekDays("es");
 export const HABIT_CATEGORIES = getHabitCategories("es");
 export const HABIT_LEVELS = getHabitLevels("es");
@@ -100,3 +104,4 @@ export const BOSS_POINT_RULES = {
 
 export const STORAGE_KEY = "bossfit-store";
 export const STORAGE_VERSION = 6;
+

@@ -10,6 +10,7 @@ import { SupabaseSync } from "@/components/auth/supabase-sync";
 import { LocaleSync } from "@/components/i18n/locale-sync";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { FloatingCreateButton } from "@/components/layout/floating-create-button";
+import { NativeUpdateBanner } from "@/components/layout/native-update-banner";
 import { ReminderRunner } from "@/components/pwa/reminder-runner";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { ThemeSync } from "@/components/pwa/theme-sync";
@@ -25,6 +26,7 @@ export function AppShell({ children }: PropsWithChildren) {
   const isWideRoute = isAdminRoute || isGymRoute || isCoachRoute;
   const hideFab = isWideRoute || pathname === "/habits/new" || pathname.endsWith("/edit") || authPaths.has(pathname);
   const hideNavigation = isWideRoute || authPaths.has(pathname);
+  const showNativeUpdateBanner = !isWideRoute && !authPaths.has(pathname);
 
   return (
     <SupabaseAuthProvider>
@@ -40,6 +42,7 @@ export function AppShell({ children }: PropsWithChildren) {
             isWideRoute ? "max-w-[92rem] pb-8" : "max-w-[30rem] pb-[calc(7.5rem+env(safe-area-inset-bottom))]"
           )}
         >
+          {showNativeUpdateBanner ? <NativeUpdateBanner className="mb-4" /> : null}
           {children}
         </div>
         {!hideFab ? <FloatingCreateButton /> : null}

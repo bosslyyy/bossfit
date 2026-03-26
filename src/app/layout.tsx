@@ -15,8 +15,12 @@ export const metadata: Metadata = {
   applicationName: "BossFit",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/favicon.svg",
-    apple: "/apple-icon"
+    icon: [
+      { url: "/icon-512.png", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-512sinfondo.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/icon-512.png", type: "image/png" }
+    ],
+    apple: "/icon-512.png"
   },
   appleWebApp: {
     capable: true,
@@ -49,3 +53,5 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     </html>
   );
 }
+
+

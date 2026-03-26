@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 
 import { Loader2, MailQuestion } from "lucide-react";
 
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,17 +43,17 @@ export function ForgotPasswordCard() {
     : {
         access: "BossFit Access",
         title: "Recupera tu acceso",
-        subtitle: "Escribe tu email o usuario y te mandaremos un enlace para crear una contraseña nueva.",
-        cardTitle: "Se me olvidó la contraseña",
-        cardDescription: "Si no recuerdas tu acceso, desde aquí puedes crear una contraseña nueva para tu cuenta.",
+        subtitle: "Escribe tu email o usuario y te mandaremos un enlace para crear una contrasena nueva.",
+        cardTitle: "Se me olvido la contrasena",
+        cardDescription: "Si no recuerdas tu acceso, desde aqui puedes crear una contrasena nueva para tu cuenta.",
         identifierLabel: "Email o Usuario",
         identifierPlaceholder: "Usuario o tu@email",
-        configError: "Esta versión todavía no puede recuperar cuentas.",
+        configError: "Esta version todavia no puede recuperar cuentas.",
         missingIdentifier: "Escribe tu email o usuario.",
-        recoveryPrepError: "No se pudo preparar la recuperación.",
-        recoverySent: "Te enviamos un enlace para restablecer tu contraseña. Revisa tu correo y abre el link en este mismo dispositivo.",
-        recoveryError: "No se pudo enviar el correo de recuperación.",
-        submit: "Enviar enlace de recuperación",
+        recoveryPrepError: "No se pudo preparar la recuperacion.",
+        recoverySent: "Te enviamos un enlace para restablecer tu contrasena. Revisa tu correo y abre el link en este mismo dispositivo.",
+        recoveryError: "No se pudo enviar el correo de recuperacion.",
+        submit: "Enviar enlace de recuperacion",
         footerQuestion: "¿Recordaste tu acceso?",
         footerAction: "Volver al login"
       };
@@ -102,6 +103,9 @@ export function ForgotPasswordCard() {
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
       <div className="w-full space-y-5">
         <div className="space-y-3 px-1">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-surface/70">
+            <BrandLogo size={22} priority />
+          </div>
           <p className="text-xs font-semibold uppercase tracking-[0.34em] text-accent">{copy.access}</p>
           <h1 className="font-display text-[clamp(2.2rem,10vw,3.6rem)] font-semibold leading-none text-foreground">
             {copy.title}

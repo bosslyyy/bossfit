@@ -91,3 +91,15 @@ html[data-theme="dark"] {
     text-wrap: balance;
   }
 }
+
+.bossfit-logo-dark {
+  display: none;
+}
+
+html[data-theme="dark"] .bossfit-logo-light {
+  display: none;
+}
+
+html[data-theme="dark"] .bossfit-logo-dark {
+  display: inline-block;
+}

@@ -17,13 +17,13 @@ export default function manifest(): MetadataRoute.Manifest {
     prefer_related_applications: false,
     icons: [
       {
-        src: "/icon",
+        src: "/icon-512.png",
         type: "image/png",
         sizes: "512x512",
         purpose: "any"
       },
       {
-        src: "/icon",
+        src: "/icon-512.png",
         type: "image/png",
         sizes: "512x512",
         purpose: "maskable"
@@ -31,3 +31,4 @@ export default function manifest(): MetadataRoute.Manifest {
     ]
   };
 }
+

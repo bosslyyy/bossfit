@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { PropsWithChildren } from "react";
 
@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Activity, ArrowLeft, ClipboardList, Users } from "lucide-react";
 
 import { useCoachContext } from "@/components/coach/coach-access-gate";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { useAppLocale } from "@/hooks/use-app-locale";
 import { cn } from "@/lib/utils";
 
@@ -55,9 +56,19 @@ export function CoachShell({ children }: PropsWithChildren) {
               <ArrowLeft className="h-4 w-4" />
               {copy.back}
             </Link>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/45">{copy.eyebrow}</p>
-              <h1 className="font-display text-2xl font-semibold text-white">{context.gymName}</h1>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#111E2F]">
+                  <BrandLogo size={34} className="drop-shadow-[0_8px_20px_rgba(15,124,89,0.35)]" priority />
+                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-cyan-400/30 bg-[#0F151E] text-cyan-300">
+                    <ClipboardList className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/45">{copy.eyebrow}</p>
+                  <h1 className="font-display text-2xl font-semibold text-white">{context.gymName}</h1>
+                </div>
+              </div>
               <p className="text-sm text-white/65">{copy.description}</p>
             </div>
           </div>

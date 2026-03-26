@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
 
 import { useSupabaseAuth } from "@/components/auth/supabase-auth-provider";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,23 +57,23 @@ export function ResetPasswordCard() {
       }
     : {
         access: "BossFit Access",
-        title: "Crea tu nueva contraseña",
-        subtitle: "Si abriste el enlace del correo correctamente, aquí podrás definir una contraseña nueva para tu cuenta.",
+        title: "Crea tu nueva contrasena",
+        subtitle: "Si abriste el enlace del correo correctamente, aqui podras definir una contrasena nueva para tu cuenta.",
         cardTitle: "Restablecimiento seguro",
         cardDescription:
-          "El enlace del correo abre una sesión temporal para que puedas cambiar tu contraseña sin conocer la anterior.",
-        inactiveLink: "Este enlace no parece activo todavía. Abre de nuevo el correo de recuperación o solicita uno nuevo.",
-        newPassword: "Nueva contraseña",
-        confirmPassword: "Confirmar contraseña",
-        minimum: "Mínimo 6 caracteres",
-        repeat: "Repite tu nueva contraseña",
-        notReady: "Abre este formulario desde el enlace que llegó a tu correo.",
+          "El enlace del correo abre una sesion temporal para que puedas cambiar tu contrasena sin conocer la anterior.",
+        inactiveLink: "Este enlace no parece activo todavia. Abre de nuevo el correo de recuperacion o solicita uno nuevo.",
+        newPassword: "Nueva contrasena",
+        confirmPassword: "Confirmar contrasena",
+        minimum: "Minimo 6 caracteres",
+        repeat: "Repite tu nueva contrasena",
+        notReady: "Abre este formulario desde el enlace que llego a tu correo.",
         fillFields: "Completa ambos campos.",
-        shortPassword: "La nueva contraseña debe tener al menos 6 caracteres.",
-        mismatch: "Las contraseñas no coinciden.",
-        success: "Tu contraseña fue restablecida. Ya puedes entrar a BossFit con tu nueva clave.",
-        fallbackError: "No se pudo restablecer la contraseña.",
-        submit: "Guardar nueva contraseña",
+        shortPassword: "La nueva contrasena debe tener al menos 6 caracteres.",
+        mismatch: "Las contrasenas no coinciden.",
+        success: "Tu contrasena fue restablecida. Ya puedes entrar a BossFit con tu nueva clave.",
+        fallbackError: "No se pudo restablecer la contrasena.",
+        submit: "Guardar nueva contrasena",
         backQuestion: "¿Quieres volver?",
         backAction: "Ir al login"
       };
@@ -127,6 +128,9 @@ export function ResetPasswordCard() {
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
       <div className="w-full space-y-5">
         <div className="space-y-3 px-1">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-surface/70">
+            <BrandLogo size={22} priority />
+          </div>
           <p className="text-xs font-semibold uppercase tracking-[0.34em] text-accent">{copy.access}</p>
           <h1 className="font-display text-[clamp(2.2rem,10vw,3.6rem)] font-semibold leading-none text-foreground">
             {copy.title}
