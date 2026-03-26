@@ -23,7 +23,7 @@ plugins {
 def twaManifest = [
     applicationId: 'com.bossfit.app',
     hostName: 'www.bossfit.lat', // The domain being opened in the TWA.
-    launchUrl: '/?source=apk&apkv=3', // The start path for the TWA. Must be relative to the domain.
+    launchUrl: '/?source=apk&apkv=4', // The start path for the TWA. Must be relative to the domain.
     name: 'BossFit', // The application name.
     launcherName: 'BossFit', // The name shown on the Android Launcher.
     themeColor: '#0F7C59', // The color used for the status bar.
@@ -57,8 +57,8 @@ android {
         applicationId "com.bossfit.app"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 3
-        versionName "3"
+        versionCode 4
+        versionName "4"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
