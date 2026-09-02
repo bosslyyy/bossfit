@@ -1,51 +1,51 @@
 # 🏋️ BossFit
 
-**BossFit** es una PWA (Progressive Web App) de fitness *mobile-first* para crear hábitos, completar series por día y seguir el progreso real del usuario, con una experiencia premium tipo app nativa.
+**BossFit** is a mobile-first fitness PWA (Progressive Web App) for building habits, completing daily sets, and tracking real progress — with a premium, native-app-like experience.
 
-🔗 **Demo en vivo:** [bossfit.vercel.app](https://bossfit.vercel.app)
+🔗 **Live demo:** [bossfit.vercel.app](https://bossfit.vercel.app)
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Tech Stack
 
 - **Next.js** + **React** + **TypeScript**
-- **Tailwind CSS** para estilos
-- **Zustand** para estado local persistente
-- **React Hook Form** + **Zod** para validación de formularios
-- **Supabase Auth** con email/password
-- Persistencia local + sincronización remota por usuario
-- PWA manual con manifest, iconos y service worker
+- **Tailwind CSS** for styling
+- **Zustand** for persistent local state
+- **React Hook Form** + **Zod** for form validation
+- **Supabase Auth** with email/password
+- Local persistence + remote sync per user
+- Manual PWA setup with manifest, icons, and service worker
 
 ---
 
-## ✨ Funcionalidades actuales
+## ✨ Current Features
 
-- Login, registro y logout con Supabase
-- Rutas protegidas para la app principal
-- CRUD completo de hábitos
-- Programación por días con selector táctil `L M X J V S D`
-- Ejecución diaria por series, no por repetición individual
-- Persistencia local robusta con `localStorage`
-- Sincronización gradual del estado del usuario con Supabase
-- Dashboard con progreso del día, racha actual, mejor racha, Boss Points y nivel
-- Vista de "hoy" con estado `0/3`, `1/3`, `2/3`, `3/3`
-- Vista de progreso con resumen semanal, calendario mensual, gráfica de 7 días e historial por hábito
-- Sistema de Boss Points con niveles y progreso al siguiente nivel
-- Ajustes con modo oscuro, recordatorios locales y reinicio de datos
-- Experiencia PWA instalable con soporte iPhone/iOS
-
----
-
-## 📋 Requisitos
-
-- Node.js 20 o superior
-- npm 10 o superior
+- Login, signup, and logout with Supabase
+- Protected routes for the main app
+- Full CRUD for habits
+- Day-based scheduling with a touch selector `M T W T F S S`
+- Daily execution by sets, not individual reps
+- Robust local persistence with `localStorage`
+- Gradual sync of user state with Supabase
+- Dashboard with daily progress, current streak, best streak, Boss Points, and level
+- "Today" view with `0/3`, `1/3`, `2/3`, `3/3` status
+- Progress view with weekly summary, monthly calendar, 7-day chart, and per-habit history
+- Boss Points system with levels and progress toward the next level
+- Settings with dark mode, local reminders, and data reset
+- Installable PWA experience with iPhone/iOS support
 
 ---
 
-## 🔐 Variables de entorno
+## 📋 Requirements
 
-BossFit espera estas variables en `.env.local`:
+- Node.js 20 or higher
+- npm 10 or higher
+
+---
+
+## 🔐 Environment Variables
+
+BossFit expects these variables in `.env.local`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=...
@@ -53,19 +53,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` se usa solo en rutas del servidor para operaciones administrativas y para la sincronización crítica de cuenta. **No la expongas en el frontend ni la subas a Git.**
+> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` is used only in server routes for admin operations and critical account sync. **Never expose it in the frontend or commit it to Git.**
 
 ---
 
-## ⚙️ Configuración de Supabase
+## ⚙️ Supabase Setup
 
-1. En Supabase, habilita **Email Auth**.
-2. Ejecuta el SQL de [`supabase/schema.sql`](./supabase/schema.sql) en el SQL Editor del proyecto.
-3. Verifica que tus variables de entorno en `.env.local` apunten al mismo proyecto.
+1. In Supabase, enable **Email Auth**.
+2. Run the SQL from [`supabase/schema.sql`](./supabase/schema.sql) in the project's SQL Editor.
+3. Make sure your `.env.local` variables point to that same project.
 
-La sincronización usa dos tablas remotas: `public.bossfit_user_state` para el snapshot actual y `public.bossfit_user_state_history` para backups remotos recuperables.
+Sync uses two remote tables: `public.bossfit_user_state` for the current snapshot and `public.bossfit_user_state_history` for recoverable remote backups.
 
-### Columnas requeridas en `bossfit_user_state`
+### Required columns in `bossfit_user_state`
 
 - `user_id`
 - `storage_version`
@@ -79,18 +79,18 @@ La sincronización usa dos tablas remotas: `public.bossfit_user_state` para el s
 - `total_points`
 - `level`
 
-### ¿Qué guarda `app_state`?
+### What `app_state` stores
 
-`app_state` es un `jsonb` con el snapshot necesario para rehidratar la app:
+`app_state` is a `jsonb` field holding the snapshot needed to rehydrate the app:
 
 - `habits`
 - `completions`
 - `theme`
 - `reminderSettings`
 
-### ¿Qué se guarda como metadata auxiliar?
+### What's stored as auxiliary metadata
 
-Estas columnas ayudan para reporting y debugging, pero **no son la fuente principal de verdad**:
+These columns help with reporting and debugging, but **are not the source of truth**:
 
 - `habits_count`
 - `completions_count`
@@ -99,62 +99,62 @@ Estas columnas ayudan para reporting y debugging, pero **no son la fuente princi
 - `total_points`
 - `level`
 
-Rachas, Boss Points, niveles y estadísticas completas siguen derivándose desde el snapshot para evitar desajustes.
+Streaks, Boss Points, levels, and full stats are always derived from the snapshot to avoid mismatches.
 
 ---
 
-## 🚀 Cómo correrlo
+## 🚀 Running Locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abre `http://localhost:3000`.
+Open `http://localhost:3000`.
 
 ---
 
 ## 📜 Scripts
 
 ```bash
-npm run dev        # Servidor de desarrollo
-npm run build       # Build de producción
-npm run start        # Servidor de producción
-npm run typecheck  # Verificación de tipos
+npm run dev        # Development server
+npm run build       # Production build
+npm run start        # Production server
+npm run typecheck  # Type checking
 ```
 
 ---
 
-## 🧪 Cómo probar login + sync
+## 🧪 Testing Login + Sync
 
-1. Ejecuta el SQL de [`supabase/schema.sql`](./supabase/schema.sql).
-2. Inicia la app con `npm run dev`.
-3. Crea una cuenta o inicia sesión.
-4. Crea o edita hábitos.
-5. Marca progreso diario.
-6. Recarga la página.
-7. Cierra sesión y vuelve a entrar con el mismo usuario.
-8. Verifica que los datos vuelvan desde Supabase y también permanezcan en `localStorage`.
-
----
-
-## 🔄 Flujo de persistencia
-
-BossFit mantiene dos capas de persistencia:
-
-1. `localStorage` sigue siendo la base local del dispositivo.
-2. Si el usuario inicia sesión, el estado importante se sincroniza con Supabase bajo su `user_id`.
-
-**Estrategia de migración gradual:**
-
-- Si el usuario entra por primera vez y no hay estado remoto, BossFit sube su estado local.
-- Si ya existe estado remoto, BossFit lo recupera y lo hidrata en el store.
-- Si hay cambios locales sin sincronizar del mismo usuario, BossFit prioriza ese estado local y lo vuelve a subir.
-- Si cambia de cuenta en el mismo navegador, BossFit evita mezclar datos entre usuarios.
+1. Run the SQL from [`supabase/schema.sql`](./supabase/schema.sql).
+2. Start the app with `npm run dev`.
+3. Create an account or sign in.
+4. Create or edit habits.
+5. Log daily progress.
+6. Reload the page.
+7. Sign out and sign back in with the same user.
+8. Confirm the data comes back from Supabase and also persists in `localStorage`.
 
 ---
 
-## 🗂️ Estructura principal
+## 🔄 Persistence Flow
+
+BossFit keeps two persistence layers:
+
+1. `localStorage` remains the local base on the device.
+2. If the user is signed in, important state syncs to Supabase under their `user_id`.
+
+**Gradual migration strategy:**
+
+- If the user signs in for the first time and no remote state exists, BossFit uploads their local state.
+- If remote state already exists, BossFit fetches it and hydrates the store.
+- If there are unsynced local changes for the same user, BossFit prioritizes that local state and re-uploads it.
+- If the user switches accounts in the same browser, BossFit avoids mixing data between users.
+
+---
+
+## 🗂️ Project Structure
 
 ```text
 src/
@@ -198,23 +198,23 @@ public/
 
 ---
 
-## 🔔 Recordatorios
+## 🔔 Reminders
 
-BossFit usa la Notifications API del navegador con configuración local:
+BossFit uses the browser's Notifications API with local configuration:
 
-- Activar o desactivar recordatorios
-- Elegir una hora diaria
-- Guardar permiso y última fecha enviada localmente
-- Ejecutar recordatorios mientras BossFit está abierta o instalada en un entorno compatible
+- Turn reminders on or off
+- Choose a daily time
+- Store permission and last sent date locally
+- Trigger reminders while BossFit is open or installed in a supported environment
 
-**Limitación importante:** sin backend, push remota ni service worker de notificaciones, no existe garantía de recordatorios persistentes cuando la app está cerrada. En iPhone/iOS esta limitación es especialmente relevante; la experiencia es más fiable si BossFit está instalada en la pantalla de inicio.
+**Important limitation:** without a backend, remote push, or a notification service worker, there is no guarantee of persistent reminders when the app is closed. This limitation is especially relevant on iPhone/iOS; the experience is more reliable when BossFit is installed on the home screen.
 
 ---
 
-## 📝 Notas
+## 📝 Notes
 
-- Los usuarios nuevos empiezan sin hábitos por defecto.
-- El service worker está en `public/sw.js`.
-- El manifest se genera desde `src/app/manifest.ts`.
-- Los iconos PWA se generan desde `src/app/icon.tsx` y `src/app/apple-icon.tsx`.
-- La protección de rutas actual se resuelve en el cliente para no introducir una capa SSR adicional mientras no podamos instalar `@supabase/ssr` en este entorno.
+- New users start with no habits by default.
+- The service worker lives in `public/sw.js`.
+- The manifest is generated from `src/app/manifest.ts`.
+- PWA icons are generated from `src/app/icon.tsx` and `src/app/apple-icon.tsx`.
+- Current route protection is resolved client-side to avoid adding an extra SSR layer while `@supabase/ssr` can't yet be installed in this environment.
